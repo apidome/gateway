@@ -1,0 +1,20 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "go build ${fileName} -o bin/caf.exe"
+        },
+        {
+            "label": "debug",
+            "type": "shell",
+            "command": "cd ${fileDirname} && dlv debug --headless --listen=:2345 --log --api-version=2",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
