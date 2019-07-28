@@ -1,31 +1,29 @@
 package proxy
 
 import "net/http"
+import "log"
 
-// ProxyConfig is a struct that holds all configurations of the proxy server
-type ProxyConfig struct {
-	addr   string
-	target string
-	cert   string
-	key    string
+// Config is a struct that holds all configurations of the proxy server
+type Config struct {
+	Addr   string
+	Target string
+	Cert   string
+	Key    string
 }
 
-var conf ProxyConfig
+var proxyConf Config
 
-func Start(addr string,
-	target string,
-	cert string,
-	key string,
-	handler func(res http.ResponseWriter, req *http.Request)) {
-
-	conf = ProxyConfig{
-		addr:   addr,
-		target: target,
-		cert:   cert,
-		key:    key,
-	}
-
+// Start starts the proxy server and begins operating on requests
+func Start(config Config) {
+	proxyConf = config
 	http.HandleFunc("/", forwardHandler)
+	err := http.ListenAndServeTLS(config.Addr, config.Cert, config.Key, nil)
+
+	if err != nil {
+		log.Fatal("ListenAndServerTLS: ", err)
+	} else {
+		log.Println("Proxy is up")
+	}
 }
 
 func forwardHandler(res http.ResponseWriter, req *http.Request) {
@@ -33,6 +31,16 @@ func forwardHandler(res http.ResponseWriter, req *http.Request) {
 	// Read Request
 
 	// Create target request
+	switch req.Method {
+	case "GET":
+		targetRes, err := http.Get(proxyConf.Target)
 
+		if err != nil {
+			log.Fatal("Request to target failed:", err)
+		} else {
+			targetRes.Write(res)
+		}
+	}
 	// Forward target response as response
+	res.Write([]byte(req.Method))
 }
