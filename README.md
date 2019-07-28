@@ -1,2 +1,2 @@
 # caf
-Cloud Application Firewall OMG
+Cloud Application Firewall
