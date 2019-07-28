@@ -7,5 +7,9 @@ https://github.com/golang-standards/project-layout
 
 ## High Level Design
 ### Proxy
-- hey
+- Listen to requests from client
+- Forwards request as-is to the target
+
+### REST Engine
+
 
