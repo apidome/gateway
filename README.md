@@ -11,5 +11,7 @@ https://github.com/golang-standards/project-layout
 - Forwards request as-is to the target
 
 ### REST Engine
-
-
+- Validate REST schema (Implement RFC)
+- Check POST/PUT/PATCH/etc (Methods that contain a JSON body)
+- Validate JSON structure (Make sure all required fields exist)
+- Validate the data of each field (Validator functions)
