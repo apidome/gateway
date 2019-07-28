@@ -6,7 +6,5 @@ https://github.com/golang-standards/project-layout
 
 
 ## High Level Design
-Client -> Gateway -> Target
-             | ^
-             v |
-        Processing
+### Proxy
+
