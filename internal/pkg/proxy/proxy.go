@@ -1,7 +1,11 @@
 package proxy
 
-import "net/http"
-import "log"
+import (
+	"log"
+	"net/http"
+
+	"../../../pkg/middleman"
+)
 
 // Config is a struct that holds all configurations of the proxy server
 type Config struct {
@@ -15,32 +19,36 @@ var proxyConf Config
 
 // Start starts the proxy server and begins operating on requests
 func Start(config Config) {
-	proxyConf = config
-	http.HandleFunc("/", forwardHandler)
-	err := http.ListenAndServeTLS(config.Addr, config.Cert, config.Key, nil)
+	// Creating a new middleman (middleware manager)
+	mm := middleman.NewMiddleman(middleman.Config{
+		Addr:     config.Addr,
+		Target:   config.Target,
+		CertFile: config.Cert,
+		KeyFile:  config.Key,
+	})
 
+	msg := ""
+
+	// Create a new middleware for the root route
+	mm.Get("/", func(res http.ResponseWriter, req *http.Request) {
+		msg = ""
+		msg += "Im first!\n"
+	})
+
+	// Add another middleware to the root route
+	mm.Get("/", func(res http.ResponseWriter, req *http.Request) {
+		msg += "Im second!\n"
+
+		res.Write(([]byte)(msg))
+	})
+
+	// Begin listening
+	err := mm.ListenAndServeTLS()
+
+	// If an error occured, print a message
 	if err != nil {
-		log.Fatal("ListenAndServerTLS: ", err)
+		log.Fatalln("Failed creating a server: ", err)
 	} else {
-		log.Println("Proxy is up")
+		log.Println("Middleman listening on ", config.Addr)
 	}
-}
-
-func forwardHandler(res http.ResponseWriter, req *http.Request) {
-
-	// Read Request
-
-	// Create target request
-	switch req.Method {
-	case "GET":
-		targetRes, err := http.Get(proxyConf.Target)
-
-		if err != nil {
-			log.Fatal("Request to target failed:", err)
-		} else {
-			targetRes.Write(res)
-		}
-	}
-	// Forward target response as response
-	res.Write([]byte(req.Method))
 }
