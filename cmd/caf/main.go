@@ -1,6 +1,6 @@
 package main
 
-import "../../internal/pkg/proxy"
+import "github.com/Creespye/caf/internal/pkg/proxy"
 
 func main() {
 	proxy.Start(proxy.Config{

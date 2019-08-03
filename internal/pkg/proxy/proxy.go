@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"../../../pkg/middleman"
+	"github.com/Creespye/caf/internal/pkg/middleman"
 )
 
 // Config is a struct that holds all configurations of the proxy server
