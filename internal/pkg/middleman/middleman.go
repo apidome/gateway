@@ -41,7 +41,7 @@ func (mm *Middleman) ListenAndServeTLS() error {
 	return err
 }
 
-// Get Adds a Post middleware to a route
+// Get Adds a GET middleware to a route
 func (mm *Middleman) Get(path string, handler http.HandlerFunc) {
 	foundRoute := false
 
