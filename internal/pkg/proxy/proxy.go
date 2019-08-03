@@ -25,19 +25,34 @@ func Start(config Config) {
 		KeyFile:  config.Key,
 	})
 
-	msg := ""
-
 	// Create a new middleware for the root route
-	mm.Get("/", func(res http.ResponseWriter, req *http.Request) {
-		msg = ""
-		msg += "Im first!\n"
+	mm.Get("/", func(res http.ResponseWriter, req *http.Request,
+		store map[string]string, end middleman.End) {
+
+		store["msg"] = "/\n"
 	})
 
 	// Add another middleware to the root route
-	mm.Get("/", func(res http.ResponseWriter, req *http.Request) {
-		msg += "Im second!\n"
+	mm.Get("/hey", func(res http.ResponseWriter, req *http.Request,
+		store map[string]string, end middleman.End) {
 
-		res.Write(([]byte)(msg))
+		store["msg"] += "/hey\n"
+	})
+
+	mm.Get("/hey/im", func(res http.ResponseWriter, req *http.Request,
+		store map[string]string, end middleman.End) {
+
+		store["msg"] += "/im\n"
+	})
+
+	mm.Get("/hey/im/omer", func(res http.ResponseWriter, req *http.Request,
+		store map[string]string, end middleman.End) {
+
+		store["msg"] += "/omer\n"
+
+		res.Write(([]byte)(store["msg"]))
+
+		end()
 	})
 
 	// Begin listening
