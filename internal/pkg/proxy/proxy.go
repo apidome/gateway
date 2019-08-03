@@ -15,8 +15,6 @@ type Config struct {
 	Key    string
 }
 
-var proxyConf Config
-
 // Start starts the proxy server and begins operating on requests
 func Start(config Config) {
 	// Creating a new middleman (middleware manager)
