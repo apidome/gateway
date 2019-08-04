@@ -89,7 +89,7 @@ func (mm *Middleman) Post(path string, middleware Middleware) {
 // mainHandler is the main function that receives all requests and calls the
 // correct middlewares
 func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
-	store := make(map[string]string)
+	store := map[string]string{}
 
 	// Find all routes on the way to the desired route
 	paths := strings.Split(req.RequestURI, "/")
