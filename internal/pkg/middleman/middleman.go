@@ -97,7 +97,7 @@ func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 	// Remove the empty string at the end of the paths array
 	// (Split returns it and its useless)
 	if paths[len(paths)-1] == "" {
-		paths = paths[0:1]
+		paths = paths[0 : len(paths)-1]
 	}
 
 	// Prefix all sub-paths with a '/'
