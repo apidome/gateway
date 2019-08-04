@@ -49,7 +49,7 @@ func (mm *Middleman) ListenAndServeTLS() error {
 }
 
 // addMiddleware Adds a middleware of a certain method to a route
-func (mm *Middleman) addMiddleware(path string, method string, handler Middleware) {
+func (mm *Middleman) addMiddleware(path string, method string, middleware Middleware) {
 	foundRoute := false
 
 	// Tries to find the route in the middleman struct to add a new middleware to it
@@ -57,7 +57,7 @@ func (mm *Middleman) addMiddleware(path string, method string, handler Middlewar
 		if route.path == path {
 			foundRoute = true
 
-			route.middlewares[method] = append(route.middlewares[method], handler)
+			route.middlewares[method] = append(route.middlewares[method], middleware)
 		}
 	}
 
@@ -66,7 +66,7 @@ func (mm *Middleman) addMiddleware(path string, method string, handler Middlewar
 		newMiddlewares := make(map[string][]Middleware)
 
 		newMiddlewares[method] = []Middleware{
-			handler,
+			middleware,
 		}
 
 		mm.routes = append(mm.routes, route{
@@ -77,13 +77,13 @@ func (mm *Middleman) addMiddleware(path string, method string, handler Middlewar
 }
 
 // Get Adds a GET middleware to a route
-func (mm *Middleman) Get(path string, handler Middleware) {
-	mm.addMiddleware(path, "GET", handler)
+func (mm *Middleman) Get(path string, middleware Middleware) {
+	mm.addMiddleware(path, "GET", middleware)
 }
 
 // Post Adds a POST middleware to a route
-func (mm *Middleman) Post(path string, handler Middleware) {
-	mm.addMiddleware(path, "POST", handler)
+func (mm *Middleman) Post(path string, middleware Middleware) {
+	mm.addMiddleware(path, "POST", middleware)
 }
 
 // mainHandler is the main function that receives all requests and calls the

@@ -29,28 +29,26 @@ func Start(config Config) {
 	mm.Get("/", func(res http.ResponseWriter, req *http.Request,
 		store map[string]string, end middleman.End) {
 
-		store["msg"] = "/\n"
+		res.Write(([]byte)("/\n"))
 	})
 
 	// Add another middleware to the root route
 	mm.Get("/hey", func(res http.ResponseWriter, req *http.Request,
 		store map[string]string, end middleman.End) {
 
-		store["msg"] += "/hey\n"
+		res.Write(([]byte)("/hey\n"))
 	})
 
 	mm.Get("/hey/im", func(res http.ResponseWriter, req *http.Request,
 		store map[string]string, end middleman.End) {
 
-		store["msg"] += "/im\n"
+		res.Write(([]byte)("/im\n"))
 	})
 
 	mm.Get("/hey/im/omer", func(res http.ResponseWriter, req *http.Request,
 		store map[string]string, end middleman.End) {
 
-		store["msg"] += "/omer\n"
-
-		res.Write(([]byte)(store["msg"]))
+		res.Write(([]byte)("/omer\n"))
 
 		end()
 	})
