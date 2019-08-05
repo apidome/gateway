@@ -47,8 +47,10 @@ func NewMiddleman(config Config) Middleman {
 }
 
 // ListenAndServeTLS starts the https server
-func (mm *Middleman) ListenAndServeTLS() error {
+func (mm *Middleman) ListenAndServeTLS(callback func()) error {
 	http.HandleFunc("/", mm.mainHandler)
+
+	go callback()
 
 	// Start the listener, and if an error occures, pass is up to the caller
 	err := http.ListenAndServeTLS(mm.config.Addr, mm.config.CertFile, mm.config.KeyFile, nil)

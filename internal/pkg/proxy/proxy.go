@@ -60,12 +60,12 @@ func Start(config Config) {
 	})
 
 	// Begin listening
-	err := mm.ListenAndServeTLS()
+	err := mm.ListenAndServeTLS(func() {
+		log.Println("Middleman is listening on", config.Addr)
+	})
 
 	// If an error occured, print a message
 	if err != nil {
 		log.Fatalln("Failed creating a server: ", err)
-	} else {
-		log.Println("Middleman listening on ", config.Addr)
 	}
 }
