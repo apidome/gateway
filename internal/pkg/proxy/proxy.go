@@ -53,6 +53,12 @@ func Start(config Config) {
 		end()
 	})
 
+	mm.Use(func(res http.ResponseWriter, req *http.Request,
+		store map[string]string, end middleman.End) {
+
+		res.Write(([]byte)("Im here anyway\n"))
+	})
+
 	// Begin listening
 	err := mm.ListenAndServeTLS()
 

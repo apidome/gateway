@@ -5,6 +5,13 @@ import (
 	"strings"
 )
 
+// Define constants
+const (
+	USE  = "USE"
+	GET  = "GET"
+	POST = "POST"
+)
+
 // Middleman is a struct that holds all middlewares
 type Middleman struct {
 	config Config
@@ -26,7 +33,8 @@ type route struct {
 }
 
 // Middleware is the function needed to implement as a middleware
-type Middleware func(res http.ResponseWriter, req *http.Request, store map[string]string, end End)
+type Middleware func(res http.ResponseWriter, req *http.Request,
+	store map[string]string, end End)
 
 // End is the function that will be called to break the continuation of middlewares
 type End func()
@@ -78,20 +86,29 @@ func (mm *Middleman) addMiddleware(path string, method string, middleware Middle
 
 // Get Adds a GET middleware to a route
 func (mm *Middleman) Get(path string, middleware Middleware) {
-	mm.addMiddleware(path, "GET", middleware)
+	mm.addMiddleware(path, GET, middleware)
 }
 
 // Post Adds a POST middleware to a route
 func (mm *Middleman) Post(path string, middleware Middleware) {
-	mm.addMiddleware(path, "POST", middleware)
+	mm.addMiddleware(path, POST, middleware)
+}
+
+// Use Adds a generic middleware to the root path of the listener (and any sub-paths)
+func (mm *Middleman) Use(middleware Middleware) {
+	mm.addMiddleware("/", USE, middleware)
 }
 
 // mainHandler is the main function that receives all requests and calls the
 // correct middlewares
 func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
+	// Create a store to hold information between middlewares
 	store := map[string]string{}
 
-	// Find all routes on the way to the desired route
+	// Execute generic middlewares ('Use' middlewares)
+	mm.runMiddlewares("/", USE, res, req, store)
+
+	// Find all paths on the way to the desired path
 	paths := strings.Split(req.RequestURI, "/")
 
 	// Remove the empty string at the end of the paths array
@@ -117,22 +134,45 @@ func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 		// Remove '//' because each path is prefixed with a '/'
 		currentPath = strings.ReplaceAll(currentPath, "//", "/")
 
-		// Iterate over all routes and execute middleware of all sub paths
-		for _, route := range mm.routes {
-			if route.path == currentPath {
-				for _, middleware := range route.middlewares[req.Method] {
-					cont := true
+		// Execute middlewares of the current route
+		cont := mm.runMiddlewares(currentPath, req.Method, res, req, store)
 
-					middleware(res, req, store, func() {
-						cont = false
-					})
+		if !cont {
+			break
+		}
+	}
+}
 
-					// If the end function was called, break middleware execution
-					if !cont {
-						break
-					}
+// runMiddlewares executes add middlewares of a specific path (and all of its sub-paths)
+func (mm *Middleman) runMiddlewares(path string, method string,
+	res http.ResponseWriter,
+	req *http.Request,
+	store map[string]string) bool {
+
+	// Declare a variable to indicate if execution should be terminated before all
+	// middlewares were executed
+	terminate := false
+
+	// Iterate over all routes and execute middleware of all sub paths
+	for _, route := range mm.routes {
+		if route.path == path {
+			for _, middleware := range route.middlewares[method] {
+
+				middleware(res, req, store, func() {
+					terminate = true
+				})
+
+				// If the end function was called, break middleware execution
+				if terminate {
+					break
 				}
+			}
+
+			if terminate {
+				break
 			}
 		}
 	}
+
+	return !terminate
 }
