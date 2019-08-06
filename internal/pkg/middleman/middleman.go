@@ -2,14 +2,8 @@ package middleman
 
 import (
 	"net/http"
+	"reflect"
 	"strings"
-)
-
-// Define constants
-const (
-	USE  = "USE"
-	GET  = "GET"
-	POST = "POST"
 )
 
 // Middleman is a struct that holds all middlewares
@@ -58,49 +52,6 @@ func (mm *Middleman) ListenAndServeTLS(callback func()) error {
 	return err
 }
 
-// addMiddleware Adds a middleware of a certain method to a route
-func (mm *Middleman) addMiddleware(path string, method string, middleware Middleware) {
-	foundRoute := false
-
-	// Tries to find the route in the middleman struct to add a new middleware to it
-	for _, route := range mm.routes {
-		if route.path == path {
-			foundRoute = true
-
-			route.middlewares[method] = append(route.middlewares[method], middleware)
-		}
-	}
-
-	// If the route was not found, create it in the middleman
-	if !foundRoute {
-		newMiddlewares := make(map[string][]Middleware)
-
-		newMiddlewares[method] = []Middleware{
-			middleware,
-		}
-
-		mm.routes = append(mm.routes, route{
-			path:        path,
-			middlewares: newMiddlewares,
-		})
-	}
-}
-
-// Get Adds a GET middleware to a route
-func (mm *Middleman) Get(path string, middleware Middleware) {
-	mm.addMiddleware(path, GET, middleware)
-}
-
-// Post Adds a POST middleware to a route
-func (mm *Middleman) Post(path string, middleware Middleware) {
-	mm.addMiddleware(path, POST, middleware)
-}
-
-// Use Adds a generic middleware to the root path of the listener (and any sub-paths)
-func (mm *Middleman) Use(middleware Middleware) {
-	mm.addMiddleware("/", USE, middleware)
-}
-
 // mainHandler is the main function that receives all requests and calls the
 // correct middlewares
 func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
@@ -108,7 +59,7 @@ func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 	store := map[string]string{}
 
 	// Execute generic middlewares ('Use' middlewares)
-	mm.runMiddlewares("/", USE, res, req, store)
+	mm.runMiddlewares("/", Globals.USE, res, req, store)
 
 	// Find all paths on the way to the desired path
 	paths := strings.Split(req.RequestURI, "/")
@@ -145,6 +96,34 @@ func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// addMiddleware Adds a middleware of a certain method to a route
+func (mm *Middleman) addMiddleware(path string, method string, middleware Middleware) {
+	foundRoute := false
+
+	// Tries to find the route in the middleman struct to add a new middleware to it
+	for _, route := range mm.routes {
+		if route.path == path {
+			foundRoute = true
+
+			route.middlewares[method] = append(route.middlewares[method], middleware)
+		}
+	}
+
+	// If the route was not found, create it in the middleman
+	if !foundRoute {
+		newMiddlewares := make(map[string][]Middleware)
+
+		newMiddlewares[method] = []Middleware{
+			middleware,
+		}
+
+		mm.routes = append(mm.routes, route{
+			path:        path,
+			middlewares: newMiddlewares,
+		})
+	}
+}
+
 // runMiddlewares executes add middlewares of a specific path (and all of its sub-paths)
 func (mm *Middleman) runMiddlewares(path string, method string,
 	res http.ResponseWriter,
@@ -177,4 +156,28 @@ func (mm *Middleman) runMiddlewares(path string, method string,
 	}
 
 	return !terminate
+}
+
+// Get Adds a GET middleware to a route
+func (mm *Middleman) Get(path string, middleware Middleware) {
+	mm.addMiddleware(path, Methods.GET, middleware)
+}
+
+// Post Adds a POST middleware to a route
+func (mm *Middleman) Post(path string, middleware Middleware) {
+	mm.addMiddleware(path, Methods.POST, middleware)
+}
+
+// All Adds a middleware to all methods of a route
+func (mm *Middleman) All(path string, middleware Middleware) {
+	ref := reflect.ValueOf(Methods)
+
+	for i := 0; i < ref.NumField(); i++ {
+		mm.addMiddleware(path, ref.Field(i).String(), middleware)
+	}
+}
+
+// Use Adds a generic middleware to the root path of the listener (and any sub-paths)
+func (mm *Middleman) Use(middleware Middleware) {
+	mm.addMiddleware("/", Globals.USE, middleware)
 }

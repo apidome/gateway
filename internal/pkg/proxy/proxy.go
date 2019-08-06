@@ -59,6 +59,12 @@ func Start(config Config) {
 		res.Write(([]byte)("Im here anyway\n"))
 	})
 
+	mm.All("/", func(res http.ResponseWriter, req *http.Request,
+		store map[string]string, end middleman.End) {
+
+		res.Write(([]byte)("All done!"))
+	})
+
 	// Begin listening
 	err := mm.ListenAndServeTLS(func() {
 		log.Println("Middleman is listening on", config.Addr)
