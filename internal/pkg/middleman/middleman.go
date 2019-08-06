@@ -1,6 +1,7 @@
 package middleman
 
 import (
+	"log"
 	"net/http"
 	"reflect"
 	"strings"
@@ -138,6 +139,8 @@ func (mm *Middleman) runMiddlewares(path string, method string,
 	for _, route := range mm.routes {
 		if route.path == path {
 			for _, middleware := range route.middlewares[method] {
+
+				log.Println("'"+route.path+"'", "was hit")
 
 				middleware(res, req, store, func() {
 					terminate = true
