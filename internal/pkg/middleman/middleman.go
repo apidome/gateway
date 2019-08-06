@@ -140,6 +140,7 @@ func (mm *Middleman) runMiddlewares(path string, method string,
 		if route.path == path {
 			for _, middleware := range route.middlewares[method] {
 
+				//TODO Remove this when full logging is implemented
 				log.Println("'"+route.path+"'", "was hit")
 
 				middleware(res, req, store, func() {
