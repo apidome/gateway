@@ -35,10 +35,15 @@ func Start(config Config) {
 	// Forward request to the target
 	mm.Use(proxyMiddlewares.SendRequest(config.Target))
 
+	// =============== Proxy code begins here ===============
+
 	mm.Use(proxyMiddlewares.PrintRequestBody())
 
 	mm.Use(proxyMiddlewares.PrintTargetResponseBody())
 
+	// ================ Proxy code ends here ================
+
+	// Forward response to the client
 	mm.Use(proxyMiddlewares.SendResponse())
 
 	log.Println("[Middleman is listening on]:", config.Addr)
