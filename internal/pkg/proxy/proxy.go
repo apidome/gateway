@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/Creespye/caf/internal/pkg/middleman"
 	mmMiddlewares "github.com/Creespye/caf/internal/pkg/middleman/middlewares"
@@ -36,10 +35,9 @@ func Start(config Config) {
 	// Forward request to the target
 	mm.Use(proxyMiddlewares.SendRequest(config.Target))
 
-	mm.Use(func(res http.ResponseWriter, req *http.Request,
-		store *middleman.Store, end middleman.End) {
-		log.Println(store.TargetResponseBody)
-	})
+	mm.Use(proxyMiddlewares.PrintRequestBody())
+
+	mm.Use(proxyMiddlewares.PrintTargetResponseBody())
 
 	mm.Use(proxyMiddlewares.SendResponse())
 

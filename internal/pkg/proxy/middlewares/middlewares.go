@@ -70,3 +70,19 @@ func SendResponse() middleman.Middleware {
 		io.Copy(res, targetResBody)
 	}
 }
+
+// PrintRequestBody prints the request body
+func PrintRequestBody() middleman.Middleware {
+	return func(res http.ResponseWriter, req *http.Request,
+		store *middleman.Store, end middleman.End) {
+		log.Println("[RequestBody]:", store.RequestBody)
+	}
+}
+
+// PrintTargetResponseBody prints the request body
+func PrintTargetResponseBody() middleman.Middleware {
+	return func(res http.ResponseWriter, req *http.Request,
+		store *middleman.Store, end middleman.End) {
+		log.Println("[TargetResponseBody]:", store.TargetResponseBody)
+	}
+}
