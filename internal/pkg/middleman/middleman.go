@@ -25,9 +25,15 @@ type route struct {
 	middlewares map[string][]Middleware
 }
 
+// Store is a struct that holds data between middlewares
+type Store struct {
+	Body     []byte
+	Generics map[string]interface{}
+}
+
 // Middleware is the function needed to implement as a middleware
 type Middleware func(res http.ResponseWriter, req *http.Request,
-	store map[string]interface{}, end End)
+	store *Store, end End)
 
 // End is the function that will be called to break the continuation of middlewares
 type End func()
@@ -57,20 +63,20 @@ func NewMiddleman(config Config) Middleman {
 func (mm *Middleman) ListenAndServeTLS() error {
 	http.HandleFunc("/", mm.mainHandler)
 
-	// Start the listener, and if an error occures, pass is up to the caller
+	// Start the listener, and if an error occures, pass it up to the caller
 	err := http.ListenAndServeTLS(mm.config.Addr, mm.config.CertFile, mm.config.KeyFile, nil)
 
 	return err
 }
 
-// mainHandler is the main function that receives all requests and calls the
-// correct middlewares
+// mainHandler is the main function that receives all requests and calls the correct middlewares
 func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 	// Create a store to hold information between middlewares
-	store := map[string]interface{}{}
+	store := Store{}
 
+	// TODO Rework this if rquired
 	// Execute generic middlewares ('Use' middlewares)
-	mm.runMiddlewares("/", req.Method, res, req, store)
+	//mm.runMiddlewares("/", req.Method, res, req, store)
 
 	// Find all paths on the way to the desired path
 	paths := strings.Split(req.RequestURI, "/")
@@ -99,7 +105,7 @@ func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 		currentPath = strings.ReplaceAll(currentPath, "//", "/")
 
 		// Execute middlewares of the current route
-		cont := mm.runMiddlewares(currentPath, req.Method, res, req, store)
+		cont := mm.runMiddlewares(currentPath, req.Method, res, req, &store)
 
 		if !cont {
 			break
@@ -136,10 +142,11 @@ func (mm *Middleman) addMiddleware(path string, method string, middleware Middle
 }
 
 // runMiddlewares executes add middlewares of a specific path (and all of its sub-paths)
+// it returns a boolean indication if middleware execution should continue
 func (mm *Middleman) runMiddlewares(path string, method string,
 	res http.ResponseWriter,
 	req *http.Request,
-	store map[string]interface{}) bool {
+	store *Store) bool {
 
 	// Declare a variable to indicate if execution should be terminated before all
 	// middlewares were executed

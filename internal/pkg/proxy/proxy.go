@@ -33,9 +33,9 @@ func Start(config Config) {
 	mm.Use(mmMiddlewares.BodyReader())
 
 	mm.Use(func(res http.ResponseWriter, req *http.Request,
-		store map[string]interface{}, end middleman.End) {
+		store *middleman.Store, end middleman.End) {
 
-		log.Println(store["body"])
+		log.Println(store.Body)
 	})
 
 	// Forward request to the target
