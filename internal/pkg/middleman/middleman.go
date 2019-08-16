@@ -27,8 +27,10 @@ type route struct {
 
 // Store is a struct that holds data between middlewares
 type Store struct {
-	Body     []byte
-	Generics map[string]interface{}
+	RequestBody        []byte
+	TargetResponse     *http.Response
+	TargetResponseBody []byte
+	Generics           map[string]interface{}
 }
 
 // Middleware is the function needed to implement as a middleware

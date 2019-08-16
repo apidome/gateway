@@ -3,7 +3,8 @@ package middlewares
 import (
 	"log"
 	"net/http"
-	"strconv"
+
+	"github.com/Creespye/caf/internal/pkg/httputils"
 
 	"github.com/Creespye/caf/internal/pkg/middleman"
 )
@@ -22,28 +23,19 @@ func BodyReader() middleman.Middleware {
 		store *middleman.Store, end middleman.End) {
 
 		// If a request has the Content-Length header, it has a body
-		contentLength := req.Header.Get("Content-Length")
+		contentLength := httputils.GetContentLength(req.Header)
 
-		// If the Content-Length header exist, convert it to an integer
-		if contentLength != "" {
-			contentLengthNum, err := strconv.Atoi(req.Header.Get("Content-Length"))
+		// If the Content-Length is higher than zero, allocate an array for the
+		// body data and read it
+		if contentLength > 0 {
+			body := make([]byte, contentLength, contentLength)
 
-			if err != nil {
-				log.Println("[Content-Length convert error]:", err.Error())
-			} else {
-				// If the Content-Length is higher than zero, allocate an array for the
-				// body data and read it
-				if contentLengthNum > 0 {
-					body := make([]byte, contentLengthNum, contentLengthNum)
+			req.Body.Read(body)
 
-					req.Body.Read(body)
+			req.Body.Close()
 
-					req.Body.Close()
-
-					// Store the body data in the store for future middlewares to use freely
-					store.Body = body
-				}
-			}
+			// Store the body data in the store for future middlewares to use freely
+			store.RequestBody = body
 		}
 	}
 }
