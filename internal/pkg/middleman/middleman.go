@@ -27,7 +27,7 @@ type route struct {
 
 // Middleware is the function needed to implement as a middleware
 type Middleware func(res http.ResponseWriter, req *http.Request,
-	store map[string]string, end End)
+	store map[string]interface{}, end End)
 
 // End is the function that will be called to break the continuation of middlewares
 type End func()
@@ -54,10 +54,8 @@ func NewMiddleman(config Config) Middleman {
 }
 
 // ListenAndServeTLS starts the https server
-func (mm *Middleman) ListenAndServeTLS(callback func()) error {
+func (mm *Middleman) ListenAndServeTLS() error {
 	http.HandleFunc("/", mm.mainHandler)
-
-	go callback()
 
 	// Start the listener, and if an error occures, pass is up to the caller
 	err := http.ListenAndServeTLS(mm.config.Addr, mm.config.CertFile, mm.config.KeyFile, nil)
@@ -69,7 +67,7 @@ func (mm *Middleman) ListenAndServeTLS(callback func()) error {
 // correct middlewares
 func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 	// Create a store to hold information between middlewares
-	store := map[string]string{}
+	store := map[string]interface{}{}
 
 	// Execute generic middlewares ('Use' middlewares)
 	mm.runMiddlewares("/", req.Method, res, req, store)
@@ -141,7 +139,7 @@ func (mm *Middleman) addMiddleware(path string, method string, middleware Middle
 func (mm *Middleman) runMiddlewares(path string, method string,
 	res http.ResponseWriter,
 	req *http.Request,
-	store map[string]string) bool {
+	store map[string]interface{}) bool {
 
 	// Declare a variable to indicate if execution should be terminated before all
 	// middlewares were executed
