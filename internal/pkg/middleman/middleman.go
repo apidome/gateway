@@ -1,9 +1,7 @@
 package middleman
 
 import (
-	"log"
 	"net/http"
-	"reflect"
 	"strings"
 )
 
@@ -34,6 +32,20 @@ type Middleware func(res http.ResponseWriter, req *http.Request,
 // End is the function that will be called to break the continuation of middlewares
 type End func()
 
+var (
+	methods = []string{
+		http.MethodConnect,
+		http.MethodDelete,
+		http.MethodGet,
+		http.MethodHead,
+		http.MethodOptions,
+		http.MethodPatch,
+		http.MethodPost,
+		http.MethodPut,
+		http.MethodTrace,
+	}
+)
+
 // NewMiddleman returns a new instance of a middleman
 func NewMiddleman(config Config) Middleman {
 	return Middleman{
@@ -60,7 +72,7 @@ func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 	store := map[string]string{}
 
 	// Execute generic middlewares ('Use' middlewares)
-	mm.runMiddlewares("/", Globals.USE, res, req, store)
+	mm.runMiddlewares("/", req.Method, res, req, store)
 
 	// Find all paths on the way to the desired path
 	paths := strings.Split(req.RequestURI, "/")
@@ -139,10 +151,6 @@ func (mm *Middleman) runMiddlewares(path string, method string,
 	for _, route := range mm.routes {
 		if route.path == path {
 			for _, middleware := range route.middlewares[method] {
-
-				//TODO Remove this when full logging is implemented
-				log.Println("'"+route.path+"'", "was hit")
-
 				middleware(res, req, store, func() {
 					terminate = true
 				})
@@ -164,24 +172,22 @@ func (mm *Middleman) runMiddlewares(path string, method string,
 
 // Get Adds a GET middleware to a route
 func (mm *Middleman) Get(path string, middleware Middleware) {
-	mm.addMiddleware(path, Methods.GET, middleware)
+	mm.addMiddleware(path, http.MethodGet, middleware)
 }
 
 // Post Adds a POST middleware to a route
 func (mm *Middleman) Post(path string, middleware Middleware) {
-	mm.addMiddleware(path, Methods.POST, middleware)
+	mm.addMiddleware(path, http.MethodPost, middleware)
 }
 
 // All Adds a middleware to all methods of a route
 func (mm *Middleman) All(path string, middleware Middleware) {
-	ref := reflect.ValueOf(Methods)
-
-	for i := 0; i < ref.NumField(); i++ {
-		mm.addMiddleware(path, ref.Field(i).String(), middleware)
+	for _, method := range methods {
+		mm.addMiddleware(path, method, middleware)
 	}
 }
 
 // Use Adds a generic middleware to the root path of the listener (and any sub-paths)
 func (mm *Middleman) Use(middleware Middleware) {
-	mm.addMiddleware("/", Globals.USE, middleware)
+	mm.All("/", middleware)
 }
