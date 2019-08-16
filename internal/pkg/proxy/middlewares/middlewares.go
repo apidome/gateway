@@ -19,7 +19,7 @@ func ForwardRequest(target string) middleman.Middleware {
 		bodyReader := bytes.NewReader(store.Body)
 
 		// Create a target request
-		tReq, err := http.NewRequest(req.Method, target, bodyReader)
+		tReq, err := http.NewRequest(req.Method, target+req.RequestURI, bodyReader)
 
 		if err != nil {
 			log.Println("[Request creation error]:", err.Error())

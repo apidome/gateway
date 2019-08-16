@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/Creespye/caf/internal/pkg/middleman"
 	mmMiddlewares "github.com/Creespye/caf/internal/pkg/middleman/middlewares"
@@ -30,13 +29,8 @@ func Start(config Config) {
 	// Print all routes that were hit
 	mm.Use(mmMiddlewares.RouteLogger())
 
+	// Read request body and store it in store.Body
 	mm.Use(mmMiddlewares.BodyReader())
-
-	mm.Use(func(res http.ResponseWriter, req *http.Request,
-		store *middleman.Store, end middleman.End) {
-
-		log.Println(store.Body)
-	})
 
 	// Forward request to the target
 	mm.Use(proxyMiddlewares.ForwardRequest(config.Target))

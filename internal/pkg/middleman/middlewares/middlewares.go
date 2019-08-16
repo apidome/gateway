@@ -12,7 +12,7 @@ import (
 func RouteLogger() middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store *middleman.Store, end middleman.End) {
-		log.Println("[RouteLogger]: " + req.RequestURI)
+		log.Println("[RouteLogger]: " + req.Method + " " + req.RequestURI)
 	}
 }
 
