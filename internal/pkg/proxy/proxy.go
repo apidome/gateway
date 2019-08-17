@@ -31,27 +31,18 @@ func Start(config Config) {
 	// Read request body and store it in store.Body
 	mm.All("/.*", middleman.BodyReader())
 
-	// Forward request to the target
-	mm.All("/.*", SendRequest(config.Target))
-
 	// ======================== Proxy code begins here ========================
 
 	mm.Get("/pp", func(res http.ResponseWriter, req *http.Request,
 		store *middleman.Store, end middleman.End) {
 
-		log.Println("1")
+		log.Println(store.RequestBody)
 	})
 
 	mm.Get("/pp", func(res http.ResponseWriter, req *http.Request,
 		store *middleman.Store, end middleman.End) {
 
-		log.Println("2")
-	})
-
-	mm.Get("/pp*", func(res http.ResponseWriter, req *http.Request,
-		store *middleman.Store, end middleman.End) {
-
-		log.Println("3")
+		log.Println(store.TargetResponseBody)
 	})
 
 	mm.All("/.*", PrintRequestBody())
@@ -60,8 +51,11 @@ func Start(config Config) {
 
 	// ========================= Proxy code ends here =========================
 
+	// Forward request to the target
+	mm.All("/.*", SendRequest(config.Target))
+
 	// Forward response to the client
-	//mm.Use(proxyMiddlewares.SendResponse())
+	mm.All("/.*", SendResponse())
 
 	log.Println("[Middleman is listening on]:", config.Addr)
 
