@@ -2,10 +2,9 @@ package proxy
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/Creespye/caf/internal/pkg/middleman"
-	mmMiddlewares "github.com/Creespye/caf/internal/pkg/middleman/middlewares"
-	proxyMiddlewares "github.com/Creespye/caf/internal/pkg/proxy/middlewares"
 )
 
 // Config is a struct that holds all configurations of the proxy server
@@ -27,24 +26,42 @@ func Start(config Config) {
 	})
 
 	// Print all routes that were hit
-	mm.Use(mmMiddlewares.RouteLogger())
+	mm.All("/.*", middleman.RouteLogger())
 
 	// Read request body and store it in store.Body
-	mm.Use(mmMiddlewares.BodyReader())
+	mm.All("/.*", middleman.BodyReader())
 
 	// Forward request to the target
-	mm.Use(proxyMiddlewares.SendRequest(config.Target))
+	mm.All("/.*", SendRequest(config.Target))
 
 	// =============== Proxy code begins here ===============
 
-	mm.Use(proxyMiddlewares.PrintRequestBody())
+	mm.Get("/pp", func(res http.ResponseWriter, req *http.Request,
+		store *middleman.Store, end middleman.End) {
 
-	mm.Use(proxyMiddlewares.PrintTargetResponseBody())
+		log.Println("1")
+	})
+
+	mm.Get("/pp", func(res http.ResponseWriter, req *http.Request,
+		store *middleman.Store, end middleman.End) {
+
+		log.Println("2")
+	})
+
+	mm.Get("/pp*", func(res http.ResponseWriter, req *http.Request,
+		store *middleman.Store, end middleman.End) {
+
+		log.Println("3")
+	})
+
+	mm.All("/.*", PrintRequestBody())
+
+	mm.All("/.*", PrintTargetResponseBody())
 
 	// ================ Proxy code ends here ================
 
 	// Forward response to the client
-	mm.Use(proxyMiddlewares.SendResponse())
+	//mm.Use(proxyMiddlewares.SendResponse())
 
 	log.Println("[Middleman is listening on]:", config.Addr)
 
