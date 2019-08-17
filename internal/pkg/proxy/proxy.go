@@ -34,7 +34,7 @@ func Start(config Config) {
 	// Forward request to the target
 	mm.All("/.*", SendRequest(config.Target))
 
-	// =============== Proxy code begins here ===============
+	// ======================== Proxy code begins here ========================
 
 	mm.Get("/pp", func(res http.ResponseWriter, req *http.Request,
 		store *middleman.Store, end middleman.End) {
@@ -58,7 +58,7 @@ func Start(config Config) {
 
 	mm.All("/.*", PrintTargetResponseBody())
 
-	// ================ Proxy code ends here ================
+	// ========================= Proxy code ends here =========================
 
 	// Forward response to the client
 	//mm.Use(proxyMiddlewares.SendResponse())

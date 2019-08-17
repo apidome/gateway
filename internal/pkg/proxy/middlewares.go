@@ -15,11 +15,14 @@ func SendRequest(target string) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store *middleman.Store, end middleman.End) {
 
-		// Create a reader from the body data, this requires the BodyReader middleware from middleman
+		// Create a reader from the body data, this requires the
+		// BodyReader middleware from middleman
 		bodyReader := bytes.NewReader(store.RequestBody)
 
 		// Create a target request
-		tReq, err := http.NewRequest(req.Method, target+req.RequestURI, bodyReader)
+		tReq, err := http.NewRequest(req.Method,
+			target+req.RequestURI,
+			bodyReader)
 
 		if err != nil {
 			log.Println("[Request creation error]:", err.Error())
@@ -38,17 +41,23 @@ func SendRequest(target string) middleman.Middleware {
 			log.Println("[Request send error]:", err.Error())
 		}
 
+		// Store the target response in the middleware store
 		store.TargetResponse = tRes
 
+		// Read the content length header from the target response
 		contentLength := httputils.GetContentLength(tRes.Header)
 
+		// If the content length header exists,
+		// read the body of the target response
 		if contentLength > 0 {
+			// Create a buffer to read the body
 			body := make([]byte, contentLength, contentLength)
 
 			tRes.Body.Read(body)
 
 			tRes.Body.Close()
 
+			// Store the target response body in the middleware store
 			store.TargetResponseBody = body
 		}
 
