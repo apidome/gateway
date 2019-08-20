@@ -33,13 +33,13 @@ func Start(config Config) {
 
 	// ======================== Proxy code begins here ========================
 
-	mm.Get("/pp", func(res http.ResponseWriter, req *http.Request,
+	mm.Get("/", func(res http.ResponseWriter, req *http.Request,
 		store *middleman.Store, end middleman.End) {
 
 		log.Println(store.RequestBody)
 	})
 
-	mm.Get("/pp", func(res http.ResponseWriter, req *http.Request,
+	mm.Get("/", func(res http.ResponseWriter, req *http.Request,
 		store *middleman.Store, end middleman.End) {
 
 		log.Println(store.TargetResponseBody)
