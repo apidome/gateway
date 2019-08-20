@@ -7,7 +7,7 @@ import (
 	"github.com/Creespye/caf/internal/pkg/httputils"
 )
 
-// RouteLogger is a middleware that prints the path of any route hit.
+// RouteLogger is a middleware that prints the path of any route hit
 func RouteLogger() Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store *Store, end End) {
