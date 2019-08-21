@@ -1,4 +1,4 @@
-package json_configs
+package configs
 
 /*
 A struct that hold the configuration of the trusted side.

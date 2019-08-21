@@ -2,7 +2,7 @@ package caf
 
 import (
 	"fmt"
-	"github.com/Creespye/caf/configs/json_configs"
+	"github.com/Creespye/caf/internal/pkg/configs"
 	"github.com/Creespye/caf/internal/pkg/proxy"
 	"os"
 )
@@ -12,10 +12,10 @@ func Start() {
 	var err error
 
 	// Create a new configuration struct.
-	config := json_configs.NewConfiguration()
+	config := configs.NewConfiguration()
 
 	// Populate the configuration struct.
-	err = json_configs.GetConf(&config)
+	err = configs.GetConf(&config)
 	if err != nil {
 		fmt.Println("Could not load configuration correctly:", err)
 		os.Exit(2)

@@ -1,4 +1,4 @@
-package json_configs
+package configs
 
 /*
 This struct represents a Target json object.
