@@ -8,8 +8,8 @@
     "in": {
         "targets": [
             {
-                "host": "ynet.co.il",
-                "port": "80",
+                "host": "localhost",
+                "port": "8081",
                 "ssl": false,
                 "clientAuth": false,
                 "validators": [

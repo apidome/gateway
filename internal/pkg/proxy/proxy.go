@@ -21,6 +21,8 @@ func Start(config Config) {
 		Addr:     config.Addr,
 		CertFile: config.Cert,
 		KeyFile:  config.Key,
+	}, func(err error) {
+		log.Print(err.Error())
 	})
 
 	// Print all routes that were hit

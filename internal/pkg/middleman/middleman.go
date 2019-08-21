@@ -24,7 +24,7 @@ type Store struct {
 
 // Middleware is the function needed to implement as a middleware
 type Middleware func(res http.ResponseWriter, req *http.Request,
-	store *Store, end End)
+	store *Store, end End) error
 
 // handler is a struct that hold middleware information
 type handler struct {
@@ -35,8 +35,9 @@ type handler struct {
 
 // Middleman is a struct that holds all middlewares
 type Middleman struct {
-	config   Config
-	handlers []handler
+	config       Config
+	handlers     []handler
+	errorHandler func(error)
 }
 
 // End is the function that will be called to break
@@ -58,9 +59,10 @@ var (
 )
 
 // NewMiddleman returns a new instance of a middleman
-func NewMiddleman(config Config) Middleman {
+func NewMiddleman(config Config, errorHandler func(error)) Middleman {
 	return Middleman{
-		config: config,
+		config:       config,
+		errorHandler: errorHandler,
 	}
 }
 
@@ -81,6 +83,13 @@ func (mm *Middleman) ListenAndServe() error {
 	err := http.ListenAndServe(mm.config.Addr, nil)
 
 	return err
+}
+
+// emitError calls the error handler callback to inform the user of an error
+func (mm *Middleman) emitError(err error) {
+	if mm.errorHandler != nil {
+		mm.errorHandler(err)
+	}
 }
 
 // mainHandler is the main function that receives all
@@ -130,14 +139,21 @@ func (mm *Middleman) runMiddlewares(res http.ResponseWriter, req *http.Request,
 			req.RequestURI)
 
 		if err != nil {
-			log.Println("[Regex matching error]:", err.Error())
+			mm.emitError(errors.New("[Regex matching error]: " + err.Error()))
 
 			return false,
 				errors.New("[Regex matching error]: " + err.Error())
 		}
 
 		if regexMatch && handler.method == req.Method {
-			handler.middleware(res, req, store, end)
+			err := handler.middleware(res, req, store, end)
+
+			if err != nil {
+				errMsg := "[Path]: " + req.RequestURI + "\n" +
+					"[Method]: " + req.Method + "\n"
+
+				mm.emitError(errors.New(errMsg + "\n" + err.Error()))
+			}
 		}
 	}
 

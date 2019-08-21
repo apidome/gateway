@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 // SendRequest forwards the request to the target
 func SendRequest(target string) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
-		store *middleman.Store, end middleman.End) {
+		store *middleman.Store, end middleman.End) error {
 
 		// Create a reader from the body data, this requires the
 		// BodyReader middleware from middleman
@@ -25,7 +26,7 @@ func SendRequest(target string) middleman.Middleware {
 			bodyReader)
 
 		if err != nil {
-			log.Println("[Request creation error]:", err.Error())
+			return errors.New("[Request creation error]:" + err.Error())
 		}
 
 		// Copy headers from the request to the target request
@@ -38,7 +39,7 @@ func SendRequest(target string) middleman.Middleware {
 		tRes, err := c.Do(tReq)
 
 		if err != nil {
-			log.Println("[Request send error]:", err.Error())
+			return errors.New("[Request send error]:" + err.Error())
 		}
 
 		// Store the target response in the middleware store
@@ -59,15 +60,17 @@ func SendRequest(target string) middleman.Middleware {
 
 			// Store the target response body in the middleware store
 			store.TargetResponseBody = body
+
 		}
 
+		return nil
 	}
 }
 
 // SendResponse sends the target response to the client
 func SendResponse() middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
-		store *middleman.Store, end middleman.End) {
+		store *middleman.Store, end middleman.End) error {
 
 		// Copy headers from target response
 		httputils.CopyHeaders(store.TargetResponse.Header, res.Header())
@@ -77,21 +80,27 @@ func SendResponse() middleman.Middleware {
 
 		// Copy target response to response
 		io.Copy(res, targetResBody)
+
+		return nil
 	}
 }
 
 // PrintRequestBody prints the request body
 func PrintRequestBody() middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
-		store *middleman.Store, end middleman.End) {
+		store *middleman.Store, end middleman.End) error {
 		log.Println("[RequestBody]:", store.RequestBody)
+
+		return nil
 	}
 }
 
 // PrintTargetResponseBody prints the request body
 func PrintTargetResponseBody() middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
-		store *middleman.Store, end middleman.End) {
+		store *middleman.Store, end middleman.End) error {
 		log.Println("[TargetResponseBody]:", store.TargetResponseBody)
+
+		return nil
 	}
 }
