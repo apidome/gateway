@@ -1,0 +1,13 @@
+{
+    "name": "Omer",
+    "stuff:": [
+        "this",
+        "that",
+        {
+            "name": "Bar"
+        }
+    ],
+    "obj": {
+        "name": "tituf"
+    }
+}
