@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"log"
-	"net/http"
 
 	"github.com/Creespye/caf/internal/pkg/middleman"
 )
@@ -20,7 +19,6 @@ func Start(config Config) {
 	// Creating a new middleman (middleware manager)
 	mm := middleman.NewMiddleman(middleman.Config{
 		Addr:     config.Addr,
-		Target:   config.Target,
 		CertFile: config.Cert,
 		KeyFile:  config.Key,
 	})
@@ -32,18 +30,6 @@ func Start(config Config) {
 	mm.All("/.*", middleman.BodyReader())
 
 	// ======================== Proxy code begins here ========================
-
-	mm.Get("/test", func(res http.ResponseWriter, req *http.Request,
-		store *middleman.Store, end middleman.End) {
-
-		log.Println(store.RequestBody)
-	})
-
-	mm.Get("/", func(res http.ResponseWriter, req *http.Request,
-		store *middleman.Store, end middleman.End) {
-
-		log.Println(store.TargetResponseBody)
-	})
 
 	mm.All("/.*", PrintRequestBody())
 

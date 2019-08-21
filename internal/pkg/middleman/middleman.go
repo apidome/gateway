@@ -10,7 +10,6 @@ import (
 // Config holds the configurations for the underlying web server
 type Config struct {
 	Addr     string
-	Target   string
 	CertFile string
 	KeyFile  string
 }
@@ -71,6 +70,15 @@ func (mm *Middleman) ListenAndServeTLS() error {
 
 	// Start the listener, and if an error occures, pass it up to the caller
 	err := http.ListenAndServeTLS(mm.config.Addr, mm.config.CertFile, mm.config.KeyFile, nil)
+
+	return err
+}
+
+// ListenAndServe starts the http server
+func (mm *Middleman) ListenAndServe() error {
+	http.HandleFunc("/", mm.mainHandler)
+
+	err := http.ListenAndServe(mm.config.Addr, nil)
 
 	return err
 }
