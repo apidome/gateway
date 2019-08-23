@@ -33,19 +33,21 @@ func Start(config Config) {
 
 	// ======================== Proxy code begins here ========================
 
-	mm.All("/.*", PrintRequestBody())
-
-	mm.All("/.*", PrintTargetResponseBody())
+	//mm.All("/.*", PrintRequestBody())
 
 	// ========================= Proxy code ends here =========================
 
 	// Forward request to the target
 	mm.All("/.*", SendRequest(config.Target))
 
+	// Print the target response body
+	//mm.All("/.*", PrintTargetResponseBody())
+
 	// Forward response to the client
 	mm.All("/.*", SendResponse())
 
 	log.Println("[Middleman is listening on]:", config.Addr)
+	log.Println("[Proxy is fowrarding to]:", config.Target)
 
 	// Begin listening
 	err := mm.ListenAndServeTLS()

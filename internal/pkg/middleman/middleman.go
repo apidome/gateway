@@ -103,6 +103,8 @@ func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Println("[mainHandler error]:", err.Error())
 	}
+
+	res.Write([]byte{0})
 }
 
 // addMiddleware adds a middleware to the middleware store
@@ -148,11 +150,15 @@ func (mm *Middleman) runMiddlewares(res http.ResponseWriter, req *http.Request,
 		if regexMatch && handler.method == req.Method {
 			err := handler.middleware(res, req, store, end)
 
+			// If an error occured in the middleware, emit the error
 			if err != nil {
-				errMsg := "[Path]: " + req.RequestURI + "\n" +
-					"[Method]: " + req.Method + "\n"
+				errMsg := "[Method: " + req.Method +
+					" Path: " + req.RequestURI + "]: "
 
-				mm.emitError(errors.New(errMsg + "\n" + err.Error()))
+				mm.emitError(errors.New(errMsg + err.Error()))
+
+				// Break middleware execution when an error occured
+				break
 			}
 		}
 	}

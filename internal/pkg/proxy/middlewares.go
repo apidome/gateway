@@ -3,7 +3,7 @@ package proxy
 import (
 	"bytes"
 	"errors"
-	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -15,10 +15,13 @@ import (
 func SendRequest(target string) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store *middleman.Store, end middleman.End) error {
-
 		// Create a reader from the body data, this requires the
 		// BodyReader middleware from middleman
 		bodyReader := bytes.NewReader(store.RequestBody)
+
+		str := target + req.RequestURI
+
+		log.Println(str)
 
 		// Create a target request
 		tReq, err := http.NewRequest(req.Method,
@@ -26,8 +29,11 @@ func SendRequest(target string) middleman.Middleware {
 			bodyReader)
 
 		if err != nil {
-			return errors.New("[Request creation error]:" + err.Error())
+			return errors.New("Request creation error:" + err.Error())
 		}
+
+		tReq.URL.Path = req.URL.Path
+		tReq.URL.RawQuery = req.URL.RawQuery
 
 		// Copy headers from the request to the target request
 		httputils.CopyHeaders(req.Header, tReq.Header)
@@ -39,28 +45,23 @@ func SendRequest(target string) middleman.Middleware {
 		tRes, err := c.Do(tReq)
 
 		if err != nil {
-			return errors.New("[Request send error]:" + err.Error())
+			return errors.New("Request send error:" + err.Error())
 		}
 
 		// Store the target response in the middleware store
 		store.TargetResponse = tRes
 
-		// Read the content length header from the target response
-		contentLength := httputils.GetContentLength(tRes.Header)
+		store.TargetResponseBody, err = ioutil.ReadAll(tRes.Body)
 
-		// If the content length header exists,
-		// read the body of the target response
-		if contentLength > 0 {
-			// Create a buffer to read the body
-			body := make([]byte, contentLength, contentLength)
+		if err != nil {
+			return errors.New("Target response body read error: " + err.Error())
+		}
 
-			tRes.Body.Read(body)
+		// Close the target response body
+		err = tRes.Body.Close()
 
-			tRes.Body.Close()
-
-			// Store the target response body in the middleware store
-			store.TargetResponseBody = body
-
+		if err != nil {
+			return errors.New("Body close error: " + err.Error())
 		}
 
 		return nil
@@ -75,11 +76,12 @@ func SendResponse() middleman.Middleware {
 		// Copy headers from target response
 		httputils.CopyHeaders(store.TargetResponse.Header, res.Header())
 
-		// Create a reader to read the target response body from
-		targetResBody := bytes.NewReader(store.TargetResponseBody)
+		// Write target response body to response
+		_, err := res.Write(store.TargetResponseBody)
 
-		// Copy target response to response
-		io.Copy(res, targetResBody)
+		if err != nil {
+			return errors.New("Send response error: " + err.Error())
+		}
 
 		return nil
 	}

@@ -1,10 +1,10 @@
 package middleman
 
 import (
+	"errors"
+	"io/ioutil"
 	"log"
 	"net/http"
-
-	"github.com/Creespye/caf/internal/pkg/httputils"
 )
 
 // RouteLogger is a middleware that prints the path of any route hit
@@ -22,23 +22,19 @@ func RouteLogger() Middleware {
 func BodyReader() Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store *Store, end End) error {
+		// Read the body of the request
+		body, err := ioutil.ReadAll(req.Body)
 
-		// If a request has the Content-Length header, it has a body
-		contentLength := httputils.GetContentLength(req.Header)
-
-		// If the Content-Length is higher than zero, allocate an array for the
-		// body data and read it
-		if contentLength > 0 {
-			body := make([]byte, contentLength, contentLength)
-
-			req.Body.Read(body)
-
-			req.Body.Close()
-
-			// Store the body data in the store for future
-			// middlewares to use freely
-			store.RequestBody = body
+		if err != nil {
+			return errors.New("Request body read error: " + err.Error())
 		}
+
+		// Close the request body
+		req.Body.Close()
+
+		// Store the body data in the store for future
+		// middlewares to use freely
+		store.RequestBody = body
 
 		return nil
 	}
