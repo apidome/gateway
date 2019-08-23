@@ -1,8 +1,6 @@
 package configs
 
-/*
-A struct that hold the configuration of the untrusted side.
-*/
+// Out is a struct that hold the configuration of the untrusted side.
 type Out struct {
 	Port            string `json:"port"`
 	SSL             bool   `json:"ssl"`

@@ -1,8 +1,6 @@
 package configs
 
-/*
-This struct represents a Target json object.
-*/
+// Target is a struct that represents a Target json object.
 type Target struct {
 	Host       string      `json:"host"`
 	Port       string      `json:"port"`
@@ -11,9 +9,7 @@ type Target struct {
 	Validators []Validator `json:"validators"`
 }
 
-/*
-A function that returns a string of the URL of the target.
-*/
+//GetURL is a function that returns a string of the URL of the target.
 func (t Target) GetURL() string {
 	var scheme string
 
