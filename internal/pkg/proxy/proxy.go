@@ -21,8 +21,10 @@ func Start(config Config) {
 		Addr:     config.Addr,
 		CertFile: config.Cert,
 		KeyFile:  config.Key,
-	}, func(err error) {
+	}, func(err error) bool {
 		log.Print("[Middleman Error]: " + err.Error())
+
+		return false
 	})
 
 	// Print all routes that were hit
@@ -33,15 +35,13 @@ func Start(config Config) {
 
 	// ======================== Proxy code begins here ========================
 
-	//mm.All("/.*", PrintRequestBody())
-
 	// ========================= Proxy code ends here =========================
 
 	// Forward request to the target
 	mm.All("/.*", SendRequest(config.Target))
 
-	// Print the target response body
-	//mm.All("/.*", PrintTargetResponseBody())
+	// Read the target response body from store.TargetResponse
+	mm.All("/.*", ReadResponseBody())
 
 	// Forward response to the client
 	mm.All("/.*", SendResponse())

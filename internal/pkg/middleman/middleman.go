@@ -37,7 +37,7 @@ type handler struct {
 type Middleman struct {
 	config       Config
 	handlers     []handler
-	errorHandler func(error)
+	errorHandler func(error) bool
 }
 
 // End is the function that will be called to break
@@ -59,7 +59,7 @@ var (
 )
 
 // NewMiddleman returns a new instance of a middleman
-func NewMiddleman(config Config, errorHandler func(error)) Middleman {
+func NewMiddleman(config Config, errorHandler func(error) bool) Middleman {
 	return Middleman{
 		config:       config,
 		errorHandler: errorHandler,
@@ -86,10 +86,12 @@ func (mm *Middleman) ListenAndServe() error {
 }
 
 // emitError calls the error handler callback to inform the user of an error
-func (mm *Middleman) emitError(err error) {
+func (mm *Middleman) emitError(err error) bool {
 	if mm.errorHandler != nil {
-		mm.errorHandler(err)
+		return mm.errorHandler(err)
 	}
+
+	return true
 }
 
 // mainHandler is the main function that receives all
@@ -118,6 +120,8 @@ func (mm *Middleman) addMiddleware(path string, method string,
 }
 
 // runMiddlewares runs middlewares on a request
+// Returns a bool value to indicate if execution stopped
+// Returns an error if any occured
 func (mm *Middleman) runMiddlewares(res http.ResponseWriter, req *http.Request,
 	store *Store) (bool, error) {
 	// Indication weather execution should be stopped
@@ -141,9 +145,11 @@ func (mm *Middleman) runMiddlewares(res http.ResponseWriter, req *http.Request,
 			req.RequestURI)
 
 		if err != nil {
-			mm.emitError(errors.New("[Regex matching error]: " + err.Error()))
+			continueAfterError :=
+				mm.emitError(errors.New("[Regex matching error]: " +
+					err.Error()))
 
-			return false,
+			return continueAfterError,
 				errors.New("[Regex matching error]: " + err.Error())
 		}
 
@@ -155,10 +161,14 @@ func (mm *Middleman) runMiddlewares(res http.ResponseWriter, req *http.Request,
 				errMsg := "[Method: " + req.Method +
 					" Path: " + req.RequestURI + "]: "
 
-				mm.emitError(errors.New(errMsg + err.Error()))
+				// Raise error emitter and decide to continue or break
+				continueAfterError :=
+					mm.emitError(errors.New(errMsg + err.Error()))
 
-				// Break middleware execution when an error occured
-				break
+				// If emitError returns false, break execution
+				if !continueAfterError {
+					break
+				}
 			}
 		}
 	}

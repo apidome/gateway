@@ -19,10 +19,6 @@ func SendRequest(target string) middleman.Middleware {
 		// BodyReader middleware from middleman
 		bodyReader := bytes.NewReader(store.RequestBody)
 
-		str := target + req.RequestURI
-
-		log.Println(str)
-
 		// Create a target request
 		tReq, err := http.NewRequest(req.Method,
 			target+req.RequestURI,
@@ -51,14 +47,28 @@ func SendRequest(target string) middleman.Middleware {
 		// Store the target response in the middleware store
 		store.TargetResponse = tRes
 
-		store.TargetResponseBody, err = ioutil.ReadAll(tRes.Body)
+		return nil
+	}
+}
+
+// ReadResponseBody will read the response body and store it in
+// store.TargetResponseBody
+func ReadResponseBody() middleman.Middleware {
+	return func(res http.ResponseWriter, req *http.Request,
+		store *middleman.Store, end middleman.End) error {
+		// Read the target response body
+		targetResBody, err :=
+			ioutil.ReadAll(store.TargetResponse.Body)
 
 		if err != nil {
 			return errors.New("Target response body read error: " + err.Error())
 		}
 
+		// Store it in the middleware store
+		store.TargetResponseBody = targetResBody
+
 		// Close the target response body
-		err = tRes.Body.Close()
+		err = store.TargetResponse.Body.Close()
 
 		if err != nil {
 			return errors.New("Body close error: " + err.Error())
