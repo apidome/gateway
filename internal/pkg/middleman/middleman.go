@@ -15,17 +15,19 @@ type Config struct {
 }
 
 // Store is a struct that holds data between middlewares
-type Store struct {
-	RequestBody        []byte
-	TargetRequest      *http.Request
-	TargetResponse     *http.Response
-	TargetResponseBody []byte
-	Generics           map[string]interface{}
-}
+type Store map[string]interface{}
+
+// type Store struct {
+// 	RequestBody        []byte
+// 	TargetRequest      *http.Request
+// 	TargetResponse     *http.Response
+// 	TargetResponseBody []byte
+// 	Generics           map[string]interface{}
+// }
 
 // Middleware is the function needed to implement as a middleware
 type Middleware func(res http.ResponseWriter, req *http.Request,
-	store *Store, end End) error
+	store Store, end End) error
 
 // handler is a struct that hold middleware information
 type handler struct {
@@ -102,7 +104,7 @@ func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 	// Create a store to hold information between middlewares
 	store := Store{}
 
-	_, err := mm.runMiddlewares(res, req, &store)
+	_, err := mm.runMiddlewares(res, req, store)
 
 	if err != nil {
 		log.Println("[mainHandler error]:", err.Error())
@@ -125,7 +127,7 @@ func (mm *Middleman) addMiddleware(path string, method string,
 // Returns a bool value to indicate if execution stopped
 // Returns an error if any occured
 func (mm *Middleman) runMiddlewares(res http.ResponseWriter, req *http.Request,
-	store *Store) (bool, error) {
+	store Store) (bool, error) {
 	// Indication weather execution should be stopped
 	cont := true
 

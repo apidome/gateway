@@ -4,8 +4,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/Creespye/caf/internal/pkg/middleman"
+	"github.com/Creespye/caf/internal/pkg/proxymiddlewares"
+
 	"github.com/Creespye/caf/internal/pkg/configs"
-	"github.com/Creespye/caf/internal/pkg/proxy"
 )
 
 // Start starts CAF
@@ -28,10 +30,50 @@ func Start() {
 		os.Exit(2)
 	}
 
-	proxy.Start(proxy.Config{
-		Addr:   ":" + config.Out.Port,
-		Target: config.In.Targets[0].GetURL(),
-		Cert:   config.Out.CertificatePath,
-		Key:    config.Out.KeyPath,
+	// Create a middleman webserver
+	mm := middleman.NewMiddleman(middleman.Config{
+		Addr:     ":" + config.Out.Port,
+		CertFile: config.Out.CertificatePath,
+		KeyFile:  config.Out.KeyPath,
+	}, func(err error) bool {
+		log.Println("[Middleman Error]: " + err.Error())
+
+		return false
 	})
+
+	// ================ Web server request handling begins here ===============
+
+	mm.All("/.*", middleman.RouteLogger())
+
+	mm.All("/.*", middleman.BodyReader())
+
+	// ==================== Request proxy code begins here ====================
+
+	// ===================== Request proxy code ends here =====================
+
+	mm.All("/.*",
+		proxymiddlewares.CreateTargetRequest(config.In.Targets[0].GetURL()))
+
+	mm.All("/.*", proxymiddlewares.SendTargetRequest())
+
+	mm.All("/.*", proxymiddlewares.ReadTargetResponseBody())
+
+	// =================== Response proxy code begins here ====================
+
+	// =================== Response proxy code ends here ======================
+
+	mm.All("/.*", proxymiddlewares.SendTargetResponse())
+
+	// ================ Web server request handling ends here =================
+
+	log.Println("[Middleman is listening on]:", config.Out.Port)
+	log.Println("[Proxy is fowrarding to]:", config.In.Targets[0].GetURL())
+
+	// Begin listening
+	err = mm.ListenAndServeTLS()
+
+	// If an error occured, print a message
+	if err != nil {
+		log.Fatalln("[Failed creating a server]:", err)
+	}
 }

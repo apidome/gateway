@@ -1,76 +1,106 @@
 package proxy
 
 import (
+	"errors"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
-	"github.com/Creespye/caf/internal/pkg/middleman"
+	"github.com/Creespye/caf/internal/pkg/httputils"
 )
 
-// Config is a struct that holds all configurations of the proxy server
-type Config struct {
-	Addr   string
-	Target string
-	Cert   string
-	Key    string
+// CreateTargetRequest creates a new request as a copy
+// of the request from the client
+func CreateTargetRequest(method, target, path, query string,
+	body io.Reader, header http.Header) (*http.Request, error) {
+	// Create a target request
+	tReq, err := http.NewRequest(method,
+		target,
+		body)
+
+	if err != nil {
+		return nil, errors.New("Target request creation error:" + err.Error())
+	}
+
+	tReq.URL.Path = path
+	tReq.URL.RawQuery = query
+
+	// Copy headers from the request to the target request
+	httputils.CopyHeaders(header, tReq.Header)
+
+	return tReq, nil
 }
 
-// Start starts the proxy server and begins operating on requests
-func Start(config Config) {
-	// Creating a new middleman (middleware manager)
-	mm := middleman.NewMiddleman(middleman.Config{
-		Addr:     config.Addr,
-		CertFile: config.Cert,
-		KeyFile:  config.Key,
-	}, func(err error) bool {
-		log.Print("[Middleware Error]: " + err.Error())
+// SendTargetRequest forwards the target request to the target
+// and returnes the response
+func SendTargetRequest(req *http.Request) (*http.Response, error) {
+	// Create an http client to send the target request
+	c := http.Client{}
 
-		return false
-	})
+	// Send the target request
+	tRes, err := c.Do(req)
 
-	// Print all routes that were hit
-	mm.All("/.*", middleman.RouteLogger())
-
-	// Read request body and store it in store.Body
-	mm.All("/.*", middleman.BodyReader())
-
-	// ==================== Request proxy code begins here ====================
-
-	// ===================== Request proxy code ends here =====================
-
-	// Create the target request
-	mm.All("/.*", CreateTargetRequest(config.Target))
-
-	// Forward request to the target
-	mm.All("/.*", SendTargetRequest())
-
-	// Read the target response body from store.TargetResponse
-	mm.All("/.*", ReadTargetResponseBody())
-
-	// ==================== Response proxy code begins here ===================
-
-	// Change referer header for youtube
-	mm.All("/.*", func(res http.ResponseWriter, req *http.Request,
-		store *middleman.Store, end middleman.End) error {
-
-		//store.TargetRequest.Header.Del("Referer")
-
-		return nil
-	})
-
-	// ===================== Response proxy code ends here ====================
-
-	// Forward response to the client
-	mm.All("/.*", SendTargetResponse())
-
-	log.Println("[Middleman is listening on]:", config.Addr)
-	log.Println("[Proxy is fowrarding to]:", config.Target)
-
-	// Begin listening
-	err := mm.ListenAndServeTLS()
-
-	// If an error occured, print a message
 	if err != nil {
-		log.Fatalln("[Failed creating a server]:", err)
+		return nil, errors.New("Target request send error:" + err.Error())
 	}
+
+	return tRes, nil
+}
+
+// ReadTargetResponseBody will read the target response body and return it
+func ReadTargetResponseBody(tRes *http.Response) ([]byte, error) {
+	// Read the target response body
+	targetResBody, err :=
+		ioutil.ReadAll(tRes.Body)
+
+	if err != nil {
+		errMsg := "Target response body read error: " + err.Error()
+		return nil, errors.New(errMsg)
+	}
+
+	// Close the target response body
+	err = tRes.Body.Close()
+
+	if err != nil {
+		errMsg := "Target response body close error: " + err.Error()
+		return nil, errors.New(errMsg)
+	}
+
+	return targetResBody, nil
+}
+
+// SendTargetResponse sends the target response to the client
+func SendTargetResponse(res http.ResponseWriter,
+	targetRes *http.Response, body []byte) error {
+	// Copy headers from target response
+	httputils.CopyHeaders(targetRes.Header, res.Header())
+
+	// Write the header of the target response
+	res.WriteHeader(targetRes.StatusCode)
+
+	// Write target response body to response
+	_, err := res.Write(body)
+
+	// If the response status code does not support body it will not
+	// be written and can be ignored
+	if err != nil {
+		if !strings.HasSuffix(err.Error(),
+			"request method or response status code does not allow body") {
+			return errors.New("Send response error: " + err.Error())
+		}
+	}
+
+	return nil
+}
+
+// PrintRequestBody prints the request body
+func PrintRequestBody(body []byte) {
+	log.Println("[RequestBody]:", body)
+}
+
+// PrintTargetResponseBody prints the request body
+func PrintTargetResponseBody(body []byte) {
+	log.Println("[TargetResponseBody]:", body)
 }

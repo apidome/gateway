@@ -10,7 +10,7 @@ import (
 // RouteLogger is a middleware that prints the path of any route hit
 func RouteLogger() Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
-		store *Store, end End) error {
+		store Store, end End) error {
 		log.Println("[RouteLogger]: " + req.Method + " " + req.RequestURI)
 
 		return nil
@@ -21,7 +21,7 @@ func RouteLogger() Middleware {
 // in the store argument under 'body'
 func BodyReader() Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
-		store *Store, end End) error {
+		store Store, end End) error {
 		// Read the body of the request
 		body, err := ioutil.ReadAll(req.Body)
 
@@ -34,7 +34,7 @@ func BodyReader() Middleware {
 
 		// Store the body data in the store for future
 		// middlewares to use freely
-		store.RequestBody = body
+		store["requestBody"] = body
 
 		return nil
 	}
