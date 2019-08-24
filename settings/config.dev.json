@@ -8,7 +8,7 @@
     "in": {
         "targets": [
             {
-                "host": "youtube.com",
+                "host": "ksp.co.il",
                 "port": "443",
                 "ssl": true,
                 "clientAuth": false,

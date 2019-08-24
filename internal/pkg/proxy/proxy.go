@@ -22,7 +22,7 @@ func Start(config Config) {
 		CertFile: config.Cert,
 		KeyFile:  config.Key,
 	}, func(err error) {
-		log.Print(err.Error())
+		log.Print("[Middleman Error]: " + err.Error())
 	})
 
 	// Print all routes that were hit
