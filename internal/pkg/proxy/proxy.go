@@ -11,9 +11,21 @@ import (
 	"github.com/Creespye/caf/internal/pkg/httputils"
 )
 
+// Proxy is a struct that holds the proxy information
+type Proxy struct {
+	Client http.Client
+}
+
+// NewProxy creates a new default proxy
+func NewProxy() Proxy {
+	return Proxy{
+		Client: http.Client{},
+	}
+}
+
 // CreateTargetRequest creates a new request as a copy
 // of the request from the client
-func CreateTargetRequest(method, target, path, query string,
+func (pr *Proxy) CreateTargetRequest(method, target, path, query string,
 	body io.Reader, header http.Header) (*http.Request, error) {
 	// Create a target request
 	tReq, err := http.NewRequest(method,
@@ -35,12 +47,9 @@ func CreateTargetRequest(method, target, path, query string,
 
 // SendTargetRequest forwards the target request to the target
 // and returnes the response
-func SendTargetRequest(req *http.Request) (*http.Response, error) {
-	// Create an http client to send the target request
-	c := http.Client{}
-
+func (pr *Proxy) SendTargetRequest(req *http.Request) (*http.Response, error) {
 	// Send the target request
-	tRes, err := c.Do(req)
+	tRes, err := pr.Client.Do(req)
 
 	if err != nil {
 		return nil, errors.New("Target request send error:" + err.Error())
@@ -50,7 +59,7 @@ func SendTargetRequest(req *http.Request) (*http.Response, error) {
 }
 
 // ReadTargetResponseBody will read the target response body and return it
-func ReadTargetResponseBody(tRes *http.Response) ([]byte, error) {
+func (pr *Proxy) ReadTargetResponseBody(tRes *http.Response) ([]byte, error) {
 	// Read the target response body
 	targetResBody, err :=
 		ioutil.ReadAll(tRes.Body)
@@ -72,7 +81,7 @@ func ReadTargetResponseBody(tRes *http.Response) ([]byte, error) {
 }
 
 // SendTargetResponse sends the target response to the client
-func SendTargetResponse(res http.ResponseWriter,
+func (pr *Proxy) SendTargetResponse(res http.ResponseWriter,
 	targetRes *http.Response, body []byte) error {
 	// Copy headers from target response
 	httputils.CopyHeaders(targetRes.Header, res.Header())
@@ -96,11 +105,11 @@ func SendTargetResponse(res http.ResponseWriter,
 }
 
 // PrintRequestBody prints the request body
-func PrintRequestBody(body []byte) {
+func (pr *Proxy) PrintRequestBody(body []byte) {
 	log.Println("[RequestBody]:", body)
 }
 
 // PrintTargetResponseBody prints the request body
-func PrintTargetResponseBody(body []byte) {
+func (pr *Proxy) PrintTargetResponseBody(body []byte) {
 	log.Println("[TargetResponseBody]:", body)
 }

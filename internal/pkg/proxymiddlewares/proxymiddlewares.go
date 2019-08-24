@@ -4,19 +4,20 @@ import (
 	"bytes"
 	"net/http"
 
-	"github.com/Creespye/caf/internal/pkg/middleman"
 	"github.com/Creespye/caf/internal/pkg/proxy"
+
+	"github.com/Creespye/caf/internal/pkg/middleman"
 )
 
 // CreateTargetRequest creates a new request as a copy
 // of the request from the client
-func CreateTargetRequest(target string) middleman.Middleware {
+func CreateTargetRequest(pr *proxy.Proxy, target string) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
 
 		bodyReader := bytes.NewReader(store["requestBody"].([]byte))
 
-		tReq, err := proxy.CreateTargetRequest(req.Method,
+		tReq, err := pr.CreateTargetRequest(req.Method,
 			target+req.RequestURI,
 			req.URL.Path,
 			req.URL.RawQuery,
@@ -31,12 +32,12 @@ func CreateTargetRequest(target string) middleman.Middleware {
 
 // SendTargetRequest forwards the target request to the target
 // and stores the target response in store.TargetResponse
-func SendTargetRequest() middleman.Middleware {
+func SendTargetRequest(pr *proxy.Proxy) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
 
 		tRes, err :=
-			proxy.SendTargetRequest(store["targetRequest"].(*http.Request))
+			pr.SendTargetRequest(store["targetRequest"].(*http.Request))
 
 		store["targetResponse"] = tRes
 
@@ -46,11 +47,11 @@ func SendTargetRequest() middleman.Middleware {
 
 // ReadTargetResponseBody will read the target response body and store it in
 // store.TargetResponseBody
-func ReadTargetResponseBody() middleman.Middleware {
+func ReadTargetResponseBody(pr *proxy.Proxy) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
 		body, err :=
-			proxy.ReadTargetResponseBody(store["targetResponse"].(*http.Response))
+			pr.ReadTargetResponseBody(store["targetResponse"].(*http.Response))
 
 		store["targetResponseBody"] = body
 
@@ -59,10 +60,10 @@ func ReadTargetResponseBody() middleman.Middleware {
 }
 
 // SendTargetResponse sends the target response to the client
-func SendTargetResponse() middleman.Middleware {
+func SendTargetResponse(pr *proxy.Proxy) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
-		err := proxy.SendTargetResponse(res,
+		err := pr.SendTargetResponse(res,
 			store["targetResponse"].(*http.Response),
 			store["targetResponseBody"].([]byte))
 
@@ -71,20 +72,20 @@ func SendTargetResponse() middleman.Middleware {
 }
 
 // PrintRequestBody prints the request body
-func PrintRequestBody() middleman.Middleware {
+func PrintRequestBody(pr *proxy.Proxy) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
-		proxy.PrintRequestBody(store["requestBody"].([]byte))
+		pr.PrintRequestBody(store["requestBody"].([]byte))
 
 		return nil
 	}
 }
 
 // PrintTargetResponseBody prints the request body
-func PrintTargetResponseBody() middleman.Middleware {
+func PrintTargetResponseBody(pr *proxy.Proxy) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
-		proxy.PrintTargetResponseBody(store["targetResponseBody"].([]byte))
+		pr.PrintTargetResponseBody(store["targetResponseBody"].([]byte))
 
 		return nil
 	}

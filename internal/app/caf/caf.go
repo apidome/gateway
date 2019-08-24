@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/Creespye/caf/internal/pkg/middleman"
+	"github.com/Creespye/caf/internal/pkg/proxy"
 	"github.com/Creespye/caf/internal/pkg/proxymiddlewares"
 
 	"github.com/Creespye/caf/internal/pkg/configs"
@@ -41,6 +42,9 @@ func Start() {
 		return false
 	})
 
+	// Create a new proxy server
+	proxy := proxy.NewProxy()
+
 	// ================ Web server request handling begins here ===============
 
 	mm.All("/.*", middleman.RouteLogger())
@@ -52,17 +56,18 @@ func Start() {
 	// ===================== Request proxy code ends here =====================
 
 	mm.All("/.*",
-		proxymiddlewares.CreateTargetRequest(config.In.Targets[0].GetURL()))
+		proxymiddlewares.CreateTargetRequest(&proxy,
+			config.In.Targets[0].GetURL()))
 
-	mm.All("/.*", proxymiddlewares.SendTargetRequest())
+	mm.All("/.*", proxymiddlewares.SendTargetRequest(&proxy))
 
-	mm.All("/.*", proxymiddlewares.ReadTargetResponseBody())
+	mm.All("/.*", proxymiddlewares.ReadTargetResponseBody(&proxy))
 
 	// =================== Response proxy code begins here ====================
 
 	// =================== Response proxy code ends here ======================
 
-	mm.All("/.*", proxymiddlewares.SendTargetResponse())
+	mm.All("/.*", proxymiddlewares.SendTargetResponse(&proxy))
 
 	// ================ Web server request handling ends here =================
 
