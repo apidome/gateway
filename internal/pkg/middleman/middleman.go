@@ -17,6 +17,7 @@ type Config struct {
 // Store is a struct that holds data between middlewares
 type Store struct {
 	RequestBody        []byte
+	TargetRequest      *http.Request
 	TargetResponse     *http.Response
 	TargetResponseBody []byte
 	Generics           map[string]interface{}
@@ -86,6 +87,7 @@ func (mm *Middleman) ListenAndServe() error {
 }
 
 // emitError calls the error handler callback to inform the user of an error
+// and returns if execution should continue
 func (mm *Middleman) emitError(err error) bool {
 	if mm.errorHandler != nil {
 		return mm.errorHandler(err)

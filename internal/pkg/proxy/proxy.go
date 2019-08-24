@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/Creespye/caf/internal/pkg/middleman"
 )
@@ -22,7 +23,7 @@ func Start(config Config) {
 		CertFile: config.Cert,
 		KeyFile:  config.Key,
 	}, func(err error) bool {
-		log.Print("[Middleman Error]: " + err.Error())
+		log.Print("[Middleware Error]: " + err.Error())
 
 		return false
 	})
@@ -33,18 +34,34 @@ func Start(config Config) {
 	// Read request body and store it in store.Body
 	mm.All("/.*", middleman.BodyReader())
 
-	// ======================== Proxy code begins here ========================
+	// ==================== Request proxy code begins here ====================
 
-	// ========================= Proxy code ends here =========================
+	// ===================== Request proxy code ends here =====================
+
+	// Create the target request
+	mm.All("/.*", CreateTargetRequest(config.Target))
 
 	// Forward request to the target
-	mm.All("/.*", SendRequest(config.Target))
+	mm.All("/.*", SendTargetRequest())
 
 	// Read the target response body from store.TargetResponse
-	mm.All("/.*", ReadResponseBody())
+	mm.All("/.*", ReadTargetResponseBody())
+
+	// ==================== Response proxy code begins here ===================
+
+	// Change referer header for youtube
+	mm.All("/.*", func(res http.ResponseWriter, req *http.Request,
+		store *middleman.Store, end middleman.End) error {
+
+		//store.TargetRequest.Header.Del("Referer")
+
+		return nil
+	})
+
+	// ===================== Response proxy code ends here ====================
 
 	// Forward response to the client
-	mm.All("/.*", SendResponse())
+	mm.All("/.*", SendTargetResponse())
 
 	log.Println("[Middleman is listening on]:", config.Addr)
 	log.Println("[Proxy is fowrarding to]:", config.Target)
