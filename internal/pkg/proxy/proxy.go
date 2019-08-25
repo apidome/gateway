@@ -5,8 +5,10 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Creespye/caf/internal/pkg/httputils"
 )
@@ -25,8 +27,12 @@ func NewProxy() Proxy {
 
 // CreateTargetRequest creates a new request as a copy
 // of the request from the client
-func (pr *Proxy) CreateTargetRequest(method, target, path, query string,
-	body io.Reader, header http.Header) (*http.Request, error) {
+func (pr *Proxy) CreateTargetRequest(method,
+	target,
+	path,
+	query string,
+	body io.Reader,
+	header http.Header) (*http.Request, error) {
 	// Create a target request
 	tReq, err := http.NewRequest(method,
 		target,
@@ -82,7 +88,8 @@ func (pr *Proxy) ReadTargetResponseBody(tRes *http.Response) ([]byte, error) {
 
 // SendTargetResponse sends the target response to the client
 func (pr *Proxy) SendTargetResponse(res http.ResponseWriter,
-	targetRes *http.Response, body []byte) error {
+	targetRes *http.Response,
+	body []byte) error {
 	// Copy headers from target response
 	httputils.CopyHeaders(targetRes.Header, res.Header())
 
@@ -112,4 +119,45 @@ func (pr *Proxy) PrintRequestBody(body []byte) {
 // PrintTargetResponseBody prints the request body
 func (pr *Proxy) PrintTargetResponseBody(body []byte) {
 	log.Println("[TargetResponseBody]:", body)
+}
+
+// TunnelConnection tunnels a connection to the target server
+func (pr *Proxy) TunnelConnection(res http.ResponseWriter,
+	req *http.Request,
+	target string) error {
+	destConn, err := net.DialTimeout("tcp", target, 10*time.Second)
+
+	if err != nil {
+		http.Error(res, "Service unavailable", http.StatusServiceUnavailable)
+		return err
+	}
+
+	res.WriteHeader(http.StatusOK)
+
+	hijacker, ok := res.(http.Hijacker)
+
+	if !ok {
+		http.Error(res, "Service unavailable", http.StatusInternalServerError)
+		return errors.New("Hijacking not supported")
+	}
+
+	clientCon, _, err := hijacker.Hijack()
+
+	if err != nil {
+		http.Error(res, "Service unavailable", http.StatusServiceUnavailable)
+		return err
+	}
+
+	go tunnelConnection(destConn, clientCon)
+	go tunnelConnection(clientCon, destConn)
+
+	return nil
+}
+
+// tunnelConnection copies data from a socket to another
+func tunnelConnection(dst io.WriteCloser, src io.ReadCloser) {
+	defer dst.Close()
+	defer src.Close()
+
+	io.Copy(dst, src)
 }

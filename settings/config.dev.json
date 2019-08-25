@@ -2,8 +2,8 @@
     "out": {
         "port": "3000",
         "ssl": true,
-        "certPath": "certs/localhost/localhost.cert",
-        "keyPath": "certs/localhost/localhost.key"
+        "certPath": "certs/localhost/ca/all.crt",
+        "keyPath": "certs/localhost/ca/all.key"
     },
     "in": {
         "targets": [

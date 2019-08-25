@@ -2,6 +2,7 @@ package proxymiddlewares
 
 import (
 	"bytes"
+	"log"
 	"net/http"
 
 	"github.com/Creespye/caf/internal/pkg/proxy"
@@ -18,7 +19,7 @@ func CreateTargetRequest(pr *proxy.Proxy, target string) middleman.Middleware {
 		bodyReader := bytes.NewReader(store["requestBody"].([]byte))
 
 		tReq, err := pr.CreateTargetRequest(req.Method,
-			target+req.RequestURI,
+			req.Host,
 			req.URL.Path,
 			req.URL.RawQuery,
 			bodyReader,
@@ -87,6 +88,25 @@ func PrintTargetResponseBody(pr *proxy.Proxy) middleman.Middleware {
 		store middleman.Store, end middleman.End) error {
 		pr.PrintTargetResponseBody(store["targetResponseBody"].([]byte))
 
+		return nil
+	}
+}
+
+// TunnelConnection is a middleware to handle proxy tunneling
+func TunnelConnection(pr *proxy.Proxy, target string) middleman.Middleware {
+	return func(res http.ResponseWriter, req *http.Request,
+		store middleman.Store, end middleman.End) error {
+		err := pr.TunnelConnection(res, req, target)
+		//end()
+		return err
+	}
+}
+
+// PrintConnections is a middleware to print anytime a CONNECTion is made
+func PrintConnections() middleman.Middleware {
+	return func(res http.ResponseWriter, req *http.Request,
+		store middleman.Store, end middleman.End) error {
+		log.Println("[Connection Creation]:", req.Host)
 		return nil
 	}
 }

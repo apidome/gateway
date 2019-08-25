@@ -31,54 +31,84 @@ func Start() {
 		os.Exit(2)
 	}
 
-	// Create a middleman webserver
-	mm := middleman.NewMiddleman(middleman.Config{
-		Addr:     ":" + config.Out.Port,
-		CertFile: config.Out.CertificatePath,
-		KeyFile:  config.Out.KeyPath,
-	}, func(err error) bool {
-		log.Println("[Middleman Error]: " + err.Error())
+	// Allocate a new middleman struct for the proxy
+	var mmProxy middleman.Middleman
 
-		return false
-	})
+	// Create a new middleman webserver for the proxy
+	middleman.NewMiddleman(&mmProxy,
+		":"+config.Out.Port,
+		func(err error) bool {
+			log.Println("[Middleman Proxy Error]: " + err.Error())
+
+			return false
+		})
 
 	// Create a new proxy server
-	proxy := proxy.NewProxy()
+	pr := proxy.NewProxy()
+
+	urlWithNoProto :=
+		config.In.Targets[0].Host + ":" + config.In.Targets[0].Port
+
+	urlWithNoProto = "localhost:30000"
+
+	mmProxy.Connect("", proxymiddlewares.PrintConnections())
+
+	mmProxy.Connect("",
+		proxymiddlewares.TunnelConnection(&pr, urlWithNoProto))
+
+	// Allocate a new midleman struct for the intercepter
+	var mmIntercepter middleman.Middleman
+
+	// Create a middleman webserver
+	middleman.NewMiddleman(&mmIntercepter,
+		":"+config.Out.Port+"0",
+		func(err error) bool {
+			log.Println("[Middleman Error]: " + err.Error())
+
+			return false
+		})
 
 	// ================ Web server request handling begins here ===============
 
-	mm.All("/.*", middleman.RouteLogger())
+	mmIntercepter.All("*", middleman.RouteLogger())
 
-	mm.All("/.*", middleman.BodyReader())
+	mmIntercepter.All("/.*", middleman.BodyReader())
 
 	// ==================== Request proxy code begins here ====================
 
 	// ===================== Request proxy code ends here =====================
 
-	mm.All("/.*",
-		proxymiddlewares.CreateTargetRequest(&proxy,
+	mmIntercepter.All("/.*",
+		proxymiddlewares.CreateTargetRequest(&pr,
 			config.In.Targets[0].GetURL()))
 
-	mm.All("/.*", proxymiddlewares.SendTargetRequest(&proxy))
+	mmIntercepter.All("/.*", proxymiddlewares.SendTargetRequest(&pr))
 
-	mm.All("/.*", proxymiddlewares.ReadTargetResponseBody(&proxy))
+	mmIntercepter.All("/.*", proxymiddlewares.ReadTargetResponseBody(&pr))
 
 	// =================== Response proxy code begins here ====================
 
 	// =================== Response proxy code ends here ======================
 
-	mm.All("/.*", proxymiddlewares.SendTargetResponse(&proxy))
+	mmIntercepter.All("/.*", proxymiddlewares.SendTargetResponse(&pr))
 
 	// ================ Web server request handling ends here =================
 
-	log.Println("[Middleman is listening on]:", config.Out.Port)
-	log.Println("[Proxy is fowrarding to]:", config.In.Targets[0].GetURL())
+	go func() {
+		log.Println("[Proxy is listening on]:", config.Out.Port)
+		err := mmProxy.ListenAndServe()
 
-	// Begin listening
-	err = mm.ListenAndServeTLS()
+		if err != nil {
+			log.Fatal("[Failed creating the proxy server]:", err)
+		}
+	}()
+
+	log.Println("[Intercepter is listening on]:", config.Out.Port+"0")
+	err = mmIntercepter.ListenAndServeTLS(config.Out.CertificatePath,
+		config.Out.KeyPath)
 
 	// If an error occured, print a message
 	if err != nil {
-		log.Fatalln("[Failed creating a server]:", err)
+		log.Fatalln("[Failed creating the intercepter server]:", err)
 	}
 }

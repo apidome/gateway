@@ -1,36 +1,22 @@
 package middleman
 
 import (
+	"crypto/tls"
 	"errors"
 	"log"
 	"net/http"
 	"regexp"
 )
 
-// Config holds the configurations for the underlying web server
-type Config struct {
-	Addr     string
-	CertFile string
-	KeyFile  string
-}
-
 // Store is a struct that holds data between middlewares
 type Store map[string]interface{}
-
-// type Store struct {
-// 	RequestBody        []byte
-// 	TargetRequest      *http.Request
-// 	TargetResponse     *http.Response
-// 	TargetResponseBody []byte
-// 	Generics           map[string]interface{}
-// }
 
 // Middleware is the function needed to implement as a middleware
 type Middleware func(res http.ResponseWriter, req *http.Request,
 	store Store, end End) error
 
 // handler is a struct that hold middleware information
-type handler struct {
+type middlewareHandler struct {
 	middleware Middleware
 	path       string
 	method     string
@@ -38,9 +24,9 @@ type handler struct {
 
 // Middleman is a struct that holds all middlewares
 type Middleman struct {
-	config       Config
-	handlers     []handler
+	handlers     []middlewareHandler
 	errorHandler func(error) bool
+	httpServer   http.Server
 }
 
 // End is the function that will be called to break
@@ -62,28 +48,35 @@ var (
 )
 
 // NewMiddleman returns a new instance of a middleman
-func NewMiddleman(config Config, errorHandler func(error) bool) Middleman {
-	return Middleman{
-		config:       config,
+func NewMiddleman(mm *Middleman,
+	addr string,
+	errorHandler func(error) bool) {
+
+	// Disable HTTP/2
+	tlsNextProto := make(map[string]func(*http.Server, *tls.Conn, http.Handler))
+
+	*mm = Middleman{
 		errorHandler: errorHandler,
+		httpServer: http.Server{
+			Addr:         addr,
+			Handler:      http.HandlerFunc(mm.mainHandler),
+			TLSNextProto: tlsNextProto,
+		},
 	}
 }
 
 // ListenAndServeTLS starts the https server
-func (mm *Middleman) ListenAndServeTLS() error {
-	http.HandleFunc("/", mm.mainHandler)
-
+func (mm *Middleman) ListenAndServeTLS(certFile, keyFile string) error {
 	// Start the listener, and if an error occures, pass it up to the caller
-	err := http.ListenAndServeTLS(mm.config.Addr, mm.config.CertFile, mm.config.KeyFile, nil)
+	err :=
+		mm.httpServer.ListenAndServeTLS(certFile, keyFile)
 
 	return err
 }
 
 // ListenAndServe starts the http server
 func (mm *Middleman) ListenAndServe() error {
-	http.HandleFunc("/", mm.mainHandler)
-
-	err := http.ListenAndServe(mm.config.Addr, nil)
+	err := mm.httpServer.ListenAndServe()
 
 	return err
 }
@@ -109,14 +102,12 @@ func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Println("[mainHandler error]:", err.Error())
 	}
-
-	res.Write([]byte{0})
 }
 
 // addMiddleware adds a middleware to the middleware store
 func (mm *Middleman) addMiddleware(path string, method string,
 	middleware Middleware) {
-	mm.handlers = append(mm.handlers, handler{
+	mm.handlers = append(mm.handlers, middlewareHandler{
 		middleware,
 		path,
 		method,
@@ -146,7 +137,7 @@ func (mm *Middleman) runMiddlewares(res http.ResponseWriter, req *http.Request,
 
 		// Match the regex of the handler to the request's uri path
 		regexMatch, err := regexp.MatchString("^"+handler.path+"$",
-			req.RequestURI)
+			req.URL.Path)
 
 		if err != nil {
 			continueAfterError :=
