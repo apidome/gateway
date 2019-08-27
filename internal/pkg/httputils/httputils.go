@@ -2,7 +2,6 @@ package httputils
 
 import (
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 )
@@ -23,9 +22,7 @@ func GetContentLength(header http.Header) int {
 	if contentLength != "" {
 		contentLengthNum, err := strconv.Atoi(contentLength)
 
-		if err != nil {
-			log.Println("[ContentLength conversion error]:", err.Error())
-		} else {
+		if err == nil {
 			return contentLengthNum
 		}
 	}

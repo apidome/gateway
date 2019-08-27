@@ -68,18 +68,12 @@ func NewMiddleman(mm *Middleman,
 
 // ListenAndServeTLS starts the https server
 func (mm *Middleman) ListenAndServeTLS(certFile, keyFile string) error {
-	// Start the listener, and if an error occures, pass it up to the caller
-	err :=
-		mm.httpServer.ListenAndServeTLS(certFile, keyFile)
-
-	return err
+	return mm.httpServer.ListenAndServeTLS(certFile, keyFile)
 }
 
 // ListenAndServe starts the http server
 func (mm *Middleman) ListenAndServe() error {
-	err := mm.httpServer.ListenAndServe()
-
-	return err
+	return mm.httpServer.ListenAndServe()
 }
 
 // emitError calls the error handler callback to inform the user of an error
@@ -108,7 +102,12 @@ func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 // addMiddleware adds a middleware to the middleware store
 func (mm *Middleman) addMiddleware(path string, method string,
 	middleware Middleware) error {
+	// We are using the path argument as a regular expression, so in order
+	// to fit our needs we surround it with ^ and $ to avoid regex matching
+	// anything that contains this path, rather than beginning with it or
+	// being equal to it
 	regexPath := "^" + path + "$"
+
 	_, err := regexp.Compile(regexPath)
 
 	if err != nil {
@@ -129,7 +128,7 @@ func (mm *Middleman) addMiddleware(path string, method string,
 // Returns an error if any occured
 func (mm *Middleman) runMiddlewares(res http.ResponseWriter, req *http.Request,
 	store Store) (bool, error) {
-	// Indication weather execution should be stopped
+	// Indication wether execution should be stopped
 	cont := true
 
 	// Define the end function
