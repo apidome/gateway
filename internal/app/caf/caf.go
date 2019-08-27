@@ -66,8 +66,10 @@ func initReverseProxy(reverseProxy *middleman.Middleman,
 	// Middleman is the underlying webserver/middleware manager for our reverse proxy
 	middleman.NewMiddleman(reverseProxy,
 		":"+listeningPort,
-		func(err error) bool {
-			log.Println("[Middleman Error]: " + err.Error())
+		func(path, method string, err error) bool {
+			log.Println("[Middleman Error]:", "\n",
+				"[Path]:", path, "\n",
+				"[Method]:", method)
 
 			return false
 		})

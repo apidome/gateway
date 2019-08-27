@@ -2,7 +2,6 @@ package middleman
 
 import (
 	"crypto/tls"
-	"errors"
 	"log"
 	"net/http"
 	"regexp"
@@ -15,6 +14,8 @@ type Store map[string]interface{}
 type Middleware func(res http.ResponseWriter, req *http.Request,
 	store Store, end End) error
 
+type errorHandler func(path, method string, err error) bool
+
 // handler is a struct that hold middleware information
 type middlewareHandler struct {
 	middleware Middleware
@@ -25,7 +26,7 @@ type middlewareHandler struct {
 // Middleman is a struct that holds all middlewares
 type Middleman struct {
 	handlers     []middlewareHandler
-	errorHandler func(error) bool
+	errorHandler errorHandler
 	httpServer   http.Server
 }
 
@@ -50,7 +51,7 @@ var (
 // NewMiddleman returns a new instance of a middleman
 func NewMiddleman(mm *Middleman,
 	addr string,
-	errorHandler func(error) bool) {
+	errorHandler errorHandler) {
 
 	// Disable HTTP/2
 	tlsNextProto := make(map[string]func(*http.Server, *tls.Conn, http.Handler))
@@ -83,9 +84,9 @@ func (mm *Middleman) ListenAndServe() error {
 
 // emitError calls the error handler callback to inform the user of an error
 // and returns if execution should continue
-func (mm *Middleman) emitError(err error) bool {
+func (mm *Middleman) emitError(path, method string, err error) bool {
 	if mm.errorHandler != nil {
-		return mm.errorHandler(err)
+		return mm.errorHandler(path, method, err)
 	}
 
 	return true
@@ -100,18 +101,27 @@ func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 	_, err := mm.runMiddlewares(res, req, store)
 
 	if err != nil {
-		log.Println("[mainHandler error]:", err.Error())
+		log.Println("middleman:", err.Error())
 	}
 }
 
 // addMiddleware adds a middleware to the middleware store
 func (mm *Middleman) addMiddleware(path string, method string,
-	middleware Middleware) {
+	middleware Middleware) error {
+	regexPath := "^" + path + "$"
+	_, err := regexp.Compile(regexPath)
+
+	if err != nil {
+		return err
+	}
+
 	mm.handlers = append(mm.handlers, middlewareHandler{
 		middleware,
-		path,
+		regexPath,
 		method,
 	})
+
+	return nil
 }
 
 // runMiddlewares runs middlewares on a request
@@ -135,31 +145,18 @@ func (mm *Middleman) runMiddlewares(res http.ResponseWriter, req *http.Request,
 		}
 
 		// Match the regex of the handler to the request's uri path
-		regexMatch, err := regexp.MatchString("^"+handler.path+"$",
+		regexMatch, _ := regexp.MatchString(handler.path,
 			req.URL.Path)
-
-		if err != nil {
-			continueAfterError :=
-				mm.emitError(errors.New("[Regex matching error]: " +
-					err.Error()))
-
-			return continueAfterError,
-				errors.New("[Regex matching error]: " + err.Error())
-		}
 
 		if regexMatch && handler.method == req.Method {
 			err := handler.middleware(res, req, store, end)
 
 			// If an error occured in the middleware, emit the error
 			if err != nil {
-				errMsg := "[Method: " + req.Method +
-					" Path: " + req.RequestURI + "]: "
-
 				// Raise error emitter and decide to continue or break
 				continueAfterError :=
-					mm.emitError(errors.New(errMsg + err.Error()))
+					mm.emitError(req.URL.Path, req.Method, err)
 
-				// If emitError returns false, break execution
 				if !continueAfterError {
 					break
 				}
