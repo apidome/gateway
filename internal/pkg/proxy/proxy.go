@@ -1,134 +1,102 @@
 package proxy
 
 import (
+	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/Creespye/caf/internal/pkg/httputils"
 )
 
+var (
+	// ErrHijackingNotOk is returned when hijacking a request is not supported
+	ErrHijackingNotOk = errors.New("Hijacking not supported")
+)
+
 // Proxy is a struct that holds the proxy information
 type Proxy struct {
+	target string
 	Client http.Client
 }
 
 // NewProxy creates a new default proxy
-func NewProxy() Proxy {
+func NewProxy(target string) Proxy {
 	return Proxy{
 		Client: http.Client{},
+		target: target,
 	}
 }
 
-// CreateTargetRequest creates a new request as a copy
-// of the request from the client
-func (pr *Proxy) CreateTargetRequest(method,
-	target,
+// CreateRequest creates a new request
+func (pr *Proxy) CreateRequest(method,
 	path,
-	query string,
-	body io.Reader,
-	header http.Header) (*http.Request, error) {
-	// Create a target request
-	tReq, err := http.NewRequest(method,
-		target,
-		body)
+	rawQuery string,
+	headers http.Header,
+	body []byte) (*http.Request, error) {
+
+	bodyReader := bytes.NewReader(body)
+
+	req, err := http.NewRequest(method,
+		pr.target,
+		bodyReader)
 
 	if err != nil {
-		return nil, errors.New("Target request creation error:" + err.Error())
+		return nil, err
 	}
 
-	tReq.URL.Path = path
-	tReq.URL.RawQuery = query
+	req.URL.Path = path
+	req.URL.RawQuery = rawQuery
 
-	// Copy headers from the request to the target request
-	httputils.CopyHeaders(header, tReq.Header)
+	httputils.CopyHeaders(headers, req.Header)
 
-	return tReq, nil
+	return req, nil
 }
 
-// SendTargetRequest forwards the target request to the target
+// SendRequest forwards the target request to the target
 // and returnes the response
-func (pr *Proxy) SendTargetRequest(req *http.Request) (*http.Response, error) {
+func (pr *Proxy) SendRequest(req *http.Request) (*http.Response, error) {
 	// Send the target request
-	tRes, err := pr.Client.Do(req)
+	res, err := pr.Client.Do(req)
 
 	if err != nil {
-		return nil, errors.New("Target request send error:" + err.Error())
+		return nil, err
 	}
 
-	return tRes, nil
+	return res, nil
 }
 
-// ReadTargetResponseBody will read the target response body and return it
-func (pr *Proxy) ReadTargetResponseBody(tRes *http.Response) ([]byte, error) {
-	// Read the target response body
-	targetResBody, err :=
-		ioutil.ReadAll(tRes.Body)
-
-	if err != nil {
-		errMsg := "Target response body read error: " + err.Error()
-		return nil, errors.New(errMsg)
-	}
-
-	// Close the target response body
-	err = tRes.Body.Close()
-
-	if err != nil {
-		errMsg := "Target response body close error: " + err.Error()
-		return nil, errors.New(errMsg)
-	}
-
-	return targetResBody, nil
-}
-
-// SendTargetResponse sends the target response to the client
-func (pr *Proxy) SendTargetResponse(res http.ResponseWriter,
+// CopyResponseToClient sends the target response to the client
+func CopyResponseToClient(res http.ResponseWriter,
 	targetRes *http.Response,
 	body []byte) error {
-	// Copy headers from target response
+
 	httputils.CopyHeaders(targetRes.Header, res.Header())
 
-	// Write the header of the target response
 	res.WriteHeader(targetRes.StatusCode)
 
-	// Write target response body to response
 	_, err := res.Write(body)
 
 	// If the response status code does not support body it will not
 	// be written and can be ignored
 	if err != nil {
-		if !strings.HasSuffix(err.Error(),
-			"request method or response status code does not allow body") {
-			return errors.New("Send response error: " + err.Error())
+		if err != http.ErrBodyNotAllowed {
+			return err
 		}
 	}
 
 	return nil
 }
 
-// PrintRequestBody prints the request body
-func (pr *Proxy) PrintRequestBody(body []byte) {
-	log.Println("[RequestBody]:", body)
-}
-
-// PrintTargetResponseBody prints the request body
-func (pr *Proxy) PrintTargetResponseBody(body []byte) {
-	log.Println("[TargetResponseBody]:", body)
-}
-
 // TunnelConnection tunnels a connection to the target server
-func (pr *Proxy) TunnelConnection(res http.ResponseWriter,
+func TunnelConnection(res http.ResponseWriter,
 	req *http.Request,
 	target string) error {
 	destConn, err := net.DialTimeout("tcp", target, 10*time.Second)
 
 	if err != nil {
-		http.Error(res, "Service unavailable", http.StatusServiceUnavailable)
 		return err
 	}
 
@@ -137,25 +105,23 @@ func (pr *Proxy) TunnelConnection(res http.ResponseWriter,
 	hijacker, ok := res.(http.Hijacker)
 
 	if !ok {
-		http.Error(res, "Service unavailable", http.StatusInternalServerError)
-		return errors.New("Hijacking not supported")
+		return ErrHijackingNotOk
 	}
 
 	clientCon, _, err := hijacker.Hijack()
 
 	if err != nil {
-		http.Error(res, "Service unavailable", http.StatusServiceUnavailable)
 		return err
 	}
 
-	go tunnelConnection(destConn, clientCon)
-	go tunnelConnection(clientCon, destConn)
+	go connectPipes(destConn, clientCon)
+	go connectPipes(clientCon, destConn)
 
 	return nil
 }
 
-// tunnelConnection copies data from a socket to another
-func tunnelConnection(dst io.WriteCloser, src io.ReadCloser) {
+// connectPipes copies data from a socket to another
+func connectPipes(dst io.WriteCloser, src io.ReadCloser) {
 	defer dst.Close()
 	defer src.Close()
 

@@ -127,7 +127,6 @@ func (mm *Middleman) runMiddlewares(res http.ResponseWriter, req *http.Request,
 		cont = false
 	}
 
-	// Iterate over all handlers
 	for _, handler := range mm.handlers {
 		// If the middleware called the end function, middleware execution
 		// should be stopped

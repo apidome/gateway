@@ -4,11 +4,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/Creespye/caf/internal/pkg/configs"
 	"github.com/Creespye/caf/internal/pkg/middleman"
 	"github.com/Creespye/caf/internal/pkg/proxy"
 	"github.com/Creespye/caf/internal/pkg/proxymiddlewares"
-
-	"github.com/Creespye/caf/internal/pkg/configs"
 )
 
 // Start starts CAF
@@ -21,94 +20,66 @@ func Start() {
 
 	settingsFolder := args[1]
 
-	// Create a new configuration struct.
 	config := configs.NewConfiguration(settingsFolder)
 
-	// Populate the configuration struct.
 	err := configs.GetConf(&config)
 	if err != nil {
 		log.Panicln("Could not load configuration correctly:", err)
 		os.Exit(2)
 	}
 
-	// Allocate a new middleman struct for the proxy
-	var mmProxy middleman.Middleman
+	var reverseProxy middleman.Middleman
 
-	// Create a new middleman webserver for the proxy
-	middleman.NewMiddleman(&mmProxy,
-		":"+config.Out.Port,
-		func(err error) bool {
-			log.Println("[Middleman Proxy Error]: " + err.Error())
+	initReverseProxy(&reverseProxy,
+		config.Out.Port,
+		config.In.Targets[0].GetURL())
 
-			return false
-		})
+	log.Println("[Reverse proxy is listening on]:", config.Out.Port)
 
-	// Create a new proxy server
-	pr := proxy.NewProxy()
+	if config.Out.SSL {
+		err = reverseProxy.ListenAndServeTLS(config.Out.CertificatePath,
+			config.Out.KeyPath)
+	} else {
+		err = reverseProxy.ListenAndServe()
+	}
 
-	urlWithNoProto :=
-		config.In.Targets[0].Host + ":" + config.In.Targets[0].Port
+	// If an error occured, print a message
+	if err != nil {
+		log.Fatalln("[Reverse proxy set up failed]:", err)
+	}
+}
 
-	urlWithNoProto = "localhost:30000"
+func requestProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
+	reverseProxy.All("/.*", proxymiddlewares.CreateRequest(pr))
+	reverseProxy.All("/.*", proxymiddlewares.SendRequest(pr))
+}
 
-	mmProxy.Connect("", proxymiddlewares.PrintConnections())
+func responseProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
 
-	mmProxy.Connect("",
-		proxymiddlewares.TunnelConnection(&pr, urlWithNoProto))
+	reverseProxy.All("/.*", proxymiddlewares.ReadResponseBody())
+	reverseProxy.All("/.*", proxymiddlewares.SendResponse())
+}
 
-	// Allocate a new midleman struct for the intercepter
-	var mmIntercepter middleman.Middleman
-
-	// Create a middleman webserver
-	middleman.NewMiddleman(&mmIntercepter,
-		":"+config.Out.Port+"0",
+func initReverseProxy(reverseProxy *middleman.Middleman,
+	listeningPort,
+	target string) {
+	// Middleman is the underlying webserver/middleware manager for our reverse proxy
+	middleman.NewMiddleman(reverseProxy,
+		":"+listeningPort,
 		func(err error) bool {
 			log.Println("[Middleman Error]: " + err.Error())
 
 			return false
 		})
 
-	// ================ Web server request handling begins here ===============
+	reverseProxy.All("*", middleman.RouteLogger())
 
-	mmIntercepter.All("*", middleman.RouteLogger())
+	// Read the request body and store it in store["reqeustBody"]
+	// for all middlewares to use
+	reverseProxy.All("/.*", middleman.BodyReader())
 
-	mmIntercepter.All("/.*", middleman.BodyReader())
+	pr := proxy.NewProxy(target)
 
-	// ==================== Request proxy code begins here ====================
-
-	// ===================== Request proxy code ends here =====================
-
-	mmIntercepter.All("/.*",
-		proxymiddlewares.CreateTargetRequest(&pr,
-			config.In.Targets[0].GetURL()))
-
-	mmIntercepter.All("/.*", proxymiddlewares.SendTargetRequest(&pr))
-
-	mmIntercepter.All("/.*", proxymiddlewares.ReadTargetResponseBody(&pr))
-
-	// =================== Response proxy code begins here ====================
-
-	// =================== Response proxy code ends here ======================
-
-	mmIntercepter.All("/.*", proxymiddlewares.SendTargetResponse(&pr))
-
-	// ================ Web server request handling ends here =================
-
-	go func() {
-		log.Println("[Proxy is listening on]:", config.Out.Port)
-		err := mmProxy.ListenAndServe()
-
-		if err != nil {
-			log.Fatal("[Failed creating the proxy server]:", err)
-		}
-	}()
-
-	log.Println("[Intercepter is listening on]:", config.Out.Port+"0")
-	err = mmIntercepter.ListenAndServeTLS(config.Out.CertificatePath,
-		config.Out.KeyPath)
-
-	// If an error occured, print a message
-	if err != nil {
-		log.Fatalln("[Failed creating the intercepter server]:", err)
-	}
+	requestProxying(reverseProxy, &pr)
+	responseProxying(reverseProxy, &pr)
 }

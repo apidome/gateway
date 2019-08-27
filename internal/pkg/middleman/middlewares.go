@@ -18,22 +18,19 @@ func RouteLogger() Middleware {
 }
 
 // BodyReader reads the body of a request as a []byte and stores it
-// in the store argument under 'body'
+// in store["body"]
 func BodyReader() Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store Store, end End) error {
-		// Read the body of the request
+
 		body, err := ioutil.ReadAll(req.Body)
 
 		if err != nil {
 			return errors.New("Request body read error: " + err.Error())
 		}
 
-		// Close the request body
 		req.Body.Close()
 
-		// Store the body data in the store for future
-		// middlewares to use freely
 		store["requestBody"] = body
 
 		return nil

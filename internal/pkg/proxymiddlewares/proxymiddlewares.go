@@ -1,29 +1,27 @@
 package proxymiddlewares
 
 import (
-	"bytes"
 	"log"
 	"net/http"
+
+	"github.com/Creespye/caf/internal/pkg/httputils"
 
 	"github.com/Creespye/caf/internal/pkg/proxy"
 
 	"github.com/Creespye/caf/internal/pkg/middleman"
 )
 
-// CreateTargetRequest creates a new request as a copy
+// CreateRequest creates a new request as a copy
 // of the request from the client
-func CreateTargetRequest(pr *proxy.Proxy, target string) middleman.Middleware {
+func CreateRequest(pr *proxy.Proxy) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
 
-		bodyReader := bytes.NewReader(store["requestBody"].([]byte))
-
-		tReq, err := pr.CreateTargetRequest(req.Method,
-			req.Host,
+		tReq, err := pr.CreateRequest(req.Method,
 			req.URL.Path,
 			req.URL.RawQuery,
-			bodyReader,
-			req.Header)
+			req.Header,
+			store["requestBody"].([]byte))
 
 		store["targetRequest"] = tReq
 
@@ -31,14 +29,14 @@ func CreateTargetRequest(pr *proxy.Proxy, target string) middleman.Middleware {
 	}
 }
 
-// SendTargetRequest forwards the target request to the target
+// SendRequest forwards the target request to the target
 // and stores the target response in store.TargetResponse
-func SendTargetRequest(pr *proxy.Proxy) middleman.Middleware {
+func SendRequest(pr *proxy.Proxy) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
 
 		tRes, err :=
-			pr.SendTargetRequest(store["targetRequest"].(*http.Request))
+			pr.SendRequest(store["targetRequest"].(*http.Request))
 
 		store["targetResponse"] = tRes
 
@@ -46,13 +44,13 @@ func SendTargetRequest(pr *proxy.Proxy) middleman.Middleware {
 	}
 }
 
-// ReadTargetResponseBody will read the target response body and store it in
+// ReadResponseBody will read the target response body and store it in
 // store.TargetResponseBody
-func ReadTargetResponseBody(pr *proxy.Proxy) middleman.Middleware {
+func ReadResponseBody() middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
 		body, err :=
-			pr.ReadTargetResponseBody(store["targetResponse"].(*http.Response))
+			httputils.ReadResponseBody(store["targetResponse"].(*http.Response))
 
 		store["targetResponseBody"] = body
 
@@ -60,11 +58,11 @@ func ReadTargetResponseBody(pr *proxy.Proxy) middleman.Middleware {
 	}
 }
 
-// SendTargetResponse sends the target response to the client
-func SendTargetResponse(pr *proxy.Proxy) middleman.Middleware {
+// SendResponse sends the target response to the client
+func SendResponse() middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
-		err := pr.SendTargetResponse(res,
+		err := proxy.CopyResponseToClient(res,
 			store["targetResponse"].(*http.Response),
 			store["targetResponseBody"].([]byte))
 
@@ -73,40 +71,21 @@ func SendTargetResponse(pr *proxy.Proxy) middleman.Middleware {
 }
 
 // PrintRequestBody prints the request body
-func PrintRequestBody(pr *proxy.Proxy) middleman.Middleware {
+func PrintRequestBody() middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
-		pr.PrintRequestBody(store["requestBody"].([]byte))
+		log.Println(store["requestBody"].([]byte))
 
 		return nil
 	}
 }
 
 // PrintTargetResponseBody prints the request body
-func PrintTargetResponseBody(pr *proxy.Proxy) middleman.Middleware {
+func PrintTargetResponseBody() middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
-		pr.PrintTargetResponseBody(store["targetResponseBody"].([]byte))
+		log.Println(store["targetResponseBody"].([]byte))
 
-		return nil
-	}
-}
-
-// TunnelConnection is a middleware to handle proxy tunneling
-func TunnelConnection(pr *proxy.Proxy, target string) middleman.Middleware {
-	return func(res http.ResponseWriter, req *http.Request,
-		store middleman.Store, end middleman.End) error {
-		err := pr.TunnelConnection(res, req, target)
-		//end()
-		return err
-	}
-}
-
-// PrintConnections is a middleware to print anytime a CONNECTion is made
-func PrintConnections() middleman.Middleware {
-	return func(res http.ResponseWriter, req *http.Request,
-		store middleman.Store, end middleman.End) error {
-		log.Println("[Connection Creation]:", req.Host)
 		return nil
 	}
 }
