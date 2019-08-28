@@ -10,10 +10,14 @@ import (
 	"net/http"
 )
 
+var config *configs.Configuration
+
 // Start starts CAF
 func Start() {
+	var err error
+
 	// Initialize and Populate the configuration struct.
-	config, err := configs.GetConfiguration()
+	config, err = configs.GetConfiguration()
 	if err != nil {
 		log.Panicln("Could not load configuration correctly:", err)
 	}
@@ -40,6 +44,7 @@ func Start() {
 }
 
 func requestProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
+	AddValidationMiddlewares(reverseProxy, config.In.Targets)
 	reverseProxy.All("/.*", proxymiddlewares.CreateRequest(pr))
 	reverseProxy.All("/.*", proxymiddlewares.SendRequest(pr))
 }
@@ -105,15 +110,15 @@ func AddValidationMiddlewares(mm *middleman.Middleman, targets []configs.Target)
 				// Creating a new ValidateRequest middleware with the appropriate HTTP method.
 				switch endpoint.Method {
 				case http.MethodGet:
-					mm.Get(endpoint.Path, ValidateRequest(&validator))
+					mm.Get(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
 				case http.MethodPost:
-					mm.Post(endpoint.Path, ValidateRequest(&validator))
+					mm.Post(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
 				case http.MethodPut:
-					mm.Put(endpoint.Path, ValidateRequest(&validator))
+					mm.Put(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
 				case http.MethodDelete:
-					mm.Delete(endpoint.Path, ValidateRequest(&validator))
+					mm.Delete(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
 				case "ALL":
-					mm.All(endpoint.Path, ValidateRequest(&validator))
+					mm.All(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
 				default:
 					log.Print("[Proxy WARNING]: Invalid method - " + endpoint.Method + " for endpoint - " + endpoint.Path)
 				}

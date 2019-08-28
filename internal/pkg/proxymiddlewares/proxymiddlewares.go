@@ -1,10 +1,10 @@
 package proxymiddlewares
 
 import (
+	"github.com/Creespye/caf/internal/pkg/httputils"
+	"github.com/Creespye/caf/internal/pkg/validators"
 	"log"
 	"net/http"
-
-	"github.com/Creespye/caf/internal/pkg/httputils"
 
 	"github.com/Creespye/caf/internal/pkg/proxy"
 
@@ -93,7 +93,7 @@ func PrintTargetResponseBody() middleman.Middleware {
 // ValidateRequest is a middleware that handles validation of an HTTP request.
 func ValidateRequest(validator *validators.Validator) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
-		store *middleman.Store, end middleman.End) error {
+		store middleman.Store, end middleman.End) error {
 		//validator.Validate()
 		return nil
 	}

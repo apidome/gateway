@@ -2,18 +2,45 @@
     "out": {
         "port": "3000",
         "ssl": true,
-        "certPath": "certs/localhost/ca/all.crt",
-        "keyPath": "certs/localhost/ca/all.key"
+        "certPath": "certs/localhost/localhost.crt",
+        "keyPath": "certs/localhost/localhost.key"
     },
     "in": {
         "targets": [
             {
-                "host": "youtube.com",
+                "host": "ksp.co.il",
                 "port": "443",
                 "ssl": true,
                 "clientAuth": false,
-                "validators": [
-                    
+                "apis": [
+                    {
+                        "type": "REST",
+                        "endpoints": [
+                            {
+                                "path": "/api/v1/person",
+                                "method": "POST",
+                                "schema": "<path to person schema>"
+                            },
+                            {
+                                "path": "/api/v1/person/:id",
+                                "method": "PUT",
+                                "schema": "<path to person schema>"
+                            },
+                            {
+                                "path": "/api/v1/product",
+                                "method": "POST",
+                                "schema": "<path to product schema>"
+                            },
+                            {
+                                "path": "/api/v1/store",
+                                "method": "POST",
+                                "schema": "<path to store schema>"
+                            }
+                        ],
+                        "validator": {
+                            "monitor": true
+                        }
+                    }
                 ]
             }
         ]

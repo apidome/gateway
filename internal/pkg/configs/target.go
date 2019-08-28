@@ -2,11 +2,11 @@ package configs
 
 // Target is a struct that represents a Target json object.
 type Target struct {
-	Host       string      `json:"host"`
-	Port       string      `json:"port"`
-	SSL        bool        `json:"ssl"`
-	ClientAuth bool        `json:"clientAuth"`
-	Validators []Validator `json:"validators"`
+	Host       string `json:"host"`
+	Port       string `json:"port"`
+	SSL        bool   `json:"ssl"`
+	ClientAuth bool   `json:"clientAuth"`
+	Apis       []Api  `json:"apis"`
 }
 
 //GetURL is a function that returns a string of the URL of the target.

@@ -26,7 +26,6 @@ GetConf function gets a pointer to a Configuration struct and populates it
 with configuration from a JSON file.
 */
 func GetConfiguration() (*Configuration, error) {
-
 	// if first time GetConfiguration called
 	if config == nil {
 		args := os.Args
@@ -38,11 +37,11 @@ func GetConfiguration() (*Configuration, error) {
 		config = &Configuration{
 			SettingsFilePath: args[1],
 		}
-	}
 
-	err := readConf(config)
-	if err != nil {
-		return nil, err
+		err := readConf(config)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return config, nil
