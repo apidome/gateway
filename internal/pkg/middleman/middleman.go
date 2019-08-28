@@ -68,6 +68,7 @@ func NewMiddleman(mm *Middleman,
 
 // ListenAndServeTLS starts the https server
 func (mm *Middleman) ListenAndServeTLS(certFile, keyFile string) error {
+
 	return mm.httpServer.ListenAndServeTLS(certFile, keyFile)
 }
 
