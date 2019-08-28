@@ -89,3 +89,12 @@ func PrintTargetResponseBody() middleman.Middleware {
 		return nil
 	}
 }
+
+// ValidateRequest is a middleware that handles validation of an HTTP request.
+func ValidateRequest(validator *validators.Validator) middleman.Middleware {
+	return func(res http.ResponseWriter, req *http.Request,
+		store *middleman.Store, end middleman.End) error {
+		//validator.Validate()
+		return nil
+	}
+}
