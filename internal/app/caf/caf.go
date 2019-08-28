@@ -1,13 +1,14 @@
 package caf
 
 import (
+	"log"
+	"net/http"
+
 	"github.com/Creespye/caf/internal/pkg/configs"
 	"github.com/Creespye/caf/internal/pkg/middleman"
 	"github.com/Creespye/caf/internal/pkg/proxy"
 	"github.com/Creespye/caf/internal/pkg/proxymiddlewares"
 	"github.com/Creespye/caf/internal/pkg/validators"
-	"log"
-	"net/http"
 )
 
 var config *configs.Configuration
@@ -61,12 +62,6 @@ func initReverseProxy(reverseProxy *middleman.Middleman,
 	middleman.NewMiddleman(reverseProxy,
 		":"+listeningPort,
 		middlewareErrorHandler)
-
-	err := middleman.Err()
-
-	if err != nil {
-		log.Println(err.(middleman.ListenerError).Error())
-	}
 
 	reverseProxy.All("*", middleman.RouteLogger())
 
