@@ -27,10 +27,27 @@ type ListenerError struct {
 }
 
 // NewListenerError creates a new ListenerError
-func NewListenerError(err error, errString string) ListenerError {
+func NewListenerError(innerError error, errString string) error {
 	return ListenerError{
 		middlemanError: middlemanError{
-			innerError:  err,
+			innerError:  innerError,
+			errorString: errString,
+		},
+	}
+}
+
+// RegexCompilationError is returned when the path of a middleware
+// failed regex compilation
+type RegexCompilationError struct {
+	middlemanError
+}
+
+// NewRegexCompilationError creates a new RegexCompilationError
+func NewRegexCompilationError(innerError error,
+	errString string) error {
+	return RegexCompilationError{
+		middlemanError: middlemanError{
+			innerError:  innerError,
 			errorString: errString,
 		},
 	}

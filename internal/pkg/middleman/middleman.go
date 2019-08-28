@@ -2,7 +2,6 @@ package middleman
 
 import (
 	"crypto/tls"
-	"log"
 	"net/http"
 	"regexp"
 )
@@ -68,35 +67,39 @@ func NewMiddleman(mm *Middleman,
 
 // ListenAndServeTLS starts the https server
 func (mm *Middleman) ListenAndServeTLS(certFile, keyFile string) error {
+	err := mm.httpServer.ListenAndServeTLS(certFile, keyFile)
 
-	return mm.httpServer.ListenAndServeTLS(certFile, keyFile)
+	return NewListenerError(err, "middleman: failed to set up the listener")
 }
 
 // ListenAndServe starts the http server
 func (mm *Middleman) ListenAndServe() error {
-	return mm.httpServer.ListenAndServe()
+	err := mm.httpServer.ListenAndServe()
+
+	return NewListenerError(err, "middleman: failed to set up the listener")
 }
 
 // emitError calls the error handler callback to inform the user of an error
 // and returns if execution should continue
-func (mm *Middleman) emitError(path, method string, err error) bool {
+func (mm *Middleman) emitError(path, method string, merr error) bool {
 	if mm.errorHandler != nil {
-		return mm.errorHandler(path, method, err)
+		return mm.errorHandler(path, method, merr)
 	}
 
+	// If no error handler was configured, do not stop execution
 	return true
 }
 
 // mainHandler is the main function that receives all
 // requests and calls the correct middlewares
 func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
-	// Create a store to hold information between middlewares
+	// Store holds data between middlewares
 	store := Store{}
 
-	_, err := mm.runMiddlewares(res, req, store)
+	_, merr := mm.runMiddlewares(res, req, store)
 
-	if err != nil {
-		log.Println("middleman:", err.Error())
+	if merr != nil {
+		mm.emitError(req.URL.Path, req.Method, merr)
 	}
 }
 
@@ -112,7 +115,8 @@ func (mm *Middleman) addMiddleware(path string, method string,
 	_, err := regexp.Compile(regexPath)
 
 	if err != nil {
-		return err
+		return NewRegexCompilationError(err,
+			"middleman: middleware path failed regex compilation")
 	}
 
 	mm.handlers = append(mm.handlers, middlewareHandler{
