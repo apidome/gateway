@@ -96,7 +96,7 @@ func AddValidationMiddlewares(mm *middleman.Middleman, targets []configs.Target)
 			// Here we decide which validator to create according to the api's type.
 			switch api.Type {
 			case configs.TypeRest:
-				validator = validators.NewJsonValidator([]byte{})
+				validator = validators.NewJsonValidator()
 			default:
 				log.Print("[Proxy WARNING]: Invalid API Type - " + api.Type)
 			}
@@ -104,9 +104,9 @@ func AddValidationMiddlewares(mm *middleman.Middleman, targets []configs.Target)
 			// For each api loop over its endpoints
 			for _, endpoint := range api.Endpoints {
 				// Add the endpoint's schema to the api's validator.
-				err := validator.LoadSchema([]byte(endpoint.Schema))
+				err := validator.LoadSchema(endpoint.Path, endpoint.Schema)
 				if err != nil {
-					log.Print("[Proxy ERROR]: Failed to load schema for endpoint - " + endpoint.Path)
+					log.Print("[Proxy ERROR]: Failed to load schema for endpoint - " + endpoint.Path + ", Error: " + err.Error())
 					return err
 				}
 

@@ -2,7 +2,7 @@ package validators
 
 type Validator interface {
 	// LoadSchema Gets a new schema and verifies that the schema is correct.
-	LoadSchema(s string) error
+	LoadSchema(path string, s string) error
 
 	// Parser verifies that a piece of data fits to the validator's format.
 	Parse(b string) (bool, error)

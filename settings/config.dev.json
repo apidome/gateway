@@ -19,22 +19,22 @@
                             {
                                 "path": "/api/v1/person",
                                 "method": "POST",
-                                "schema": "<path to person schema>"
+                                "schema": "{\"type\":\"string\"}"
                             },
                             {
                                 "path": "/api/v1/person/:id",
                                 "method": "PUT",
-                                "schema": "<path to person schema>"
+                                "schema": "{\"type\":\"string\"}"
                             },
                             {
                                 "path": "/api/v1/product",
                                 "method": "POST",
-                                "schema": "<path to product schema>"
+                                "schema": "{\"type\":\"string\"}"
                             },
                             {
                                 "path": "/api/v1/store",
                                 "method": "POST",
-                                "schema": "<path to store schema>"
+                                "schema": "{\"type\":\"string\"}"
                             }
                         ],
                         "validator": {

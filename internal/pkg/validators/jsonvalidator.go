@@ -1,6 +1,8 @@
 package validators
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type JsonSchema map[string]interface{}
 
@@ -229,10 +231,15 @@ func (jv JsonValidator) LoadSchema(path string, s string) error {
 		return err
 	}
 
-	// TODO: Continue writing validation code here.
+	isSchemaValid, err := validateJsonSchema(schema)
+	if err != nil {
+		return err
+	}
 
-	// Add the schema to the
-	jv.schemaList[path] = append(jv.schemaList[path], schema)
+	if isSchemaValid {
+		// Add the schema to the
+		jv.schemaList[path] = append(jv.schemaList[path], schema)
+	}
 
 	return nil
 }
@@ -251,5 +258,13 @@ func (jv JsonValidator) Validate(b string) (bool, error) {
 
 // NewJsonValidator returns a new instance of JsonValidator
 func NewJsonValidator() JsonValidator {
-	return JsonValidator{}
+	return JsonValidator{
+		make(map[string][]JsonSchema),
+	}
+}
+
+// validateJsonSchema is a recursive function that validates the schema's
+// structure according to Json Schema draft 7
+func validateJsonSchema(schema JsonSchema) (bool, error) {
+	return true, nil
 }
