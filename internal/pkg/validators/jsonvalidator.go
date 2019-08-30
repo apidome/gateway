@@ -28,7 +28,8 @@ var jsonSchemaKeywords = [...]string{
 	// to the JSON schema source. Its value must always be a string.
 	"$comment",
 
-	// Title and Description used to describe the schema and not used for validation.
+	// Title and Description used to describe the schema and not used for
+	// validation.
 	"title",
 	"description",
 
@@ -40,13 +41,15 @@ var jsonSchemaKeywords = [...]string{
 	"examples",
 
 	// The enum keyword is used to restrict a value to a fixed set of values.
-	// It must be an array with at least one element, where each element is unique.
+	// It must be an array with at least one element, where each element
+	// is unique.
 	"enum",
 
 	// The const keyword is used to restrict a value to a single value.
 	"const",
 
-	// The definitions keyword is used to create entities that we recognize as repetitive.
+	// The definitions keyword is used to create entities that we recognize as
+	// repetitive entities.
 	// This ability maintains reuse in out Json Schema.
 	"definitions",
 
@@ -58,12 +61,13 @@ var jsonSchemaKeywords = [...]string{
 	// property and each value is a JSON schema used to validate that property.
 	"properties",
 
-	// The additionalProperties keyword is used to control the handling of extra
-	// stuff, that is, properties whose names are not listed in the properties keyword.
+	// The additionalProperties keyword is used to control the handling of
+	// extra stuff, that is, properties whose names are not listed in the
+	// properties keyword.
 	// By default any additional properties are allowed.
 	// The additionalProperties keyword may be either a boolean or an object.
-	// If additionalProperties is a boolean and set to false, no additional properties
-	// will be allowed.
+	// If additionalProperties is a boolean and set to false, no additional
+	// properties will be allowed.
 	// If additionalProperties is an object, that object is a schema that will be
 	// used to validate any additional properties not listed in properties.
 	"additionalProperties",
@@ -72,13 +76,15 @@ var jsonSchemaKeywords = [...]string{
 	// Each of these strings must be unique.
 	"required",
 
-	// The names of properties can be validated against a schema, irrespective of their values.
-	// This can be useful if you don’t want to enforce specific properties, but you want to
-	// make sure that the names of those properties follow a specific convention.
+	// The names of properties can be validated against a schema, irrespective
+	// of their values.
+	// This can be useful if you don’t want to enforce specific properties,
+	// but you want to make sure that the names of those properties follow
+	// a specific convention.
 	"propertyNames",
 
-	// The dependencies keyword allows the schema of the object to change based on the
-	// presence of certain special properties.
+	// The dependencies keyword allows the schema of the object to change
+	// based on the presence of certain special properties.
 	"dependencies",
 
 	// TODO: Learn more about this keyword.
@@ -88,19 +94,20 @@ var jsonSchemaKeywords = [...]string{
 	/** ARRAY DESCRIPTORS **/
 	/***********************/
 
-	// Items can be either an object or an array. If it is an object, it will represent a schema
-	// that all the items in the array should match.
-	// If it is an array, each item in that array is a different json schema that should match
-	// the corresponding item in the inspected array (In this case the index of each item is very
-	// important).
+	// Items can be either an object or an array. If it is an object, it will
+	// represent a schema that all the items in the array should match.
+	// If it is an array, each item in that array is a different json schema
+	// that should match the corresponding item in the inspected array
+	// (In this case the index of each item is very important).
 	"items",
 
 	// While the items schema must be valid for every item in the array,
-	// the contains schema only needs to validate against one or more items in the array.
+	// the contains schema only needs to validate against one or more
+	// items in the array.
 	"contains",
 
-	// The additionalItems keyword controls whether it’s valid to have additional
-	// items in the array beyond what is defined in items.
+	// The additionalItems keyword controls whether it’s valid to have
+	// additional items in the array beyond what is defined in items.
 	"additionalItems",
 
 	/*****************/
@@ -133,10 +140,12 @@ var jsonSchemaKeywords = [...]string{
 	/** MEDIA TYPES **/
 	/*****************/
 
-	// The contentMediaType keyword specifies the MIME type of the contents of a string.
+	// The contentMediaType keyword specifies the MIME type of the contents
+	// of a string.
 	"contentMediaType",
 
-	// The contentEncoding keyword specifies the encoding used to store the contents.
+	// The contentEncoding keyword specifies the encoding used to store
+	// the contents.
 	"contentEncoding",
 
 	/*************************/
