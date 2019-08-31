@@ -72,6 +72,12 @@ func (em exclusiveMaximum) validate(path string, jsonData interface{}) (bool, er
 /** Object Keywords **/
 /*********************/
 
+type properties map[string]*JsonSchema
+
+func (p properties) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 /********************/
 /** Array Keywords **/
 /********************/
