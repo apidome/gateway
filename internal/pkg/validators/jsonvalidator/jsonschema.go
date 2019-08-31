@@ -145,41 +145,41 @@ type JsonSchema struct {
 
 // Valid Json Schema types
 const (
-	OBJECT  = "object"
-	ARRAY   = "array"
-	STRING  = "string"
-	NUMBER  = "number"
-	INTEGER = "integer"
-	BOOLEAN = "boolean"
-	NULL    = "null"
+	TYPE_OBJECT  = "object"
+	TYPE_ARRAY   = "array"
+	TYPE_STRING  = "string"
+	TYPE_NUMBER  = "number"
+	TYPE_INTEGER = "integer"
+	TYPE_BOOLEAN = "boolean"
+	TYPE_NULL    = "null"
 )
 
 // Valid values for "format" fields
 const (
-	DATE_TIME             = "date-time"
-	TIME                  = "time"
-	DATE                  = "date"
-	EMAIL                 = "email"
-	IDN_EMAIL             = "idn-email"
-	HOSTNAME              = "hostname"
-	IDN_HOSTNAME          = "idn-hostname"
-	IPV4                  = "ipv4"
-	IPV6                  = "ipv6"
-	URI                   = "uri"
-	URI_REFERENCE         = "uri-reference"
-	IRI                   = "iri"
-	IRI_REFERENCE         = "iri-reference"
-	URI_TEMPLATE          = "uri-template"
-	JSON_POINTER          = "json-pointer"
-	RELATIVE_JSON_POINTER = "relative-json-pointer"
-	REGEX                 = "regex"
+	FORMAT_DATE_TIME             = "date-time"
+	FORMAT_TIME                  = "time"
+	FORMAT_DATE                  = "date"
+	FORMAT_EMAIL                 = "email"
+	FORMAT_IDN_EMAIL             = "idn-email"
+	FORMAT_HOSTNAME              = "hostname"
+	FORMAT_IDN_HOSTNAME          = "idn-hostname"
+	FORMAT_IPV4                  = "ipv4"
+	FORMAT_IPV6                  = "ipv6"
+	FORMAT_URI                   = "uri"
+	FORMAT_URI_REFERENCE         = "uri-reference"
+	FORMAT_IRI                   = "iri"
+	FORMAT_IRI_REFERENCE         = "iri-reference"
+	FORMAT_URI_TEMPLATE          = "uri-template"
+	FORMAT_JSON_POINTER          = "json-pointer"
+	FORMAT_RELATIVE_JSON_POINTER = "relative-json-pointer"
+	FORMAT_REGEX                 = "regex"
 )
 
 // Valid values for "contentEncoding" field
-var jsonSchemaContentEncodings = [...]string{
-	"7bit",
-	"8bit",
-	"binary",
-	"quoted-printable",
-	"base64",
-}
+const (
+	ENCODING_7BIT             = "7bit"
+	ENCODING_8bit             = "8bit"
+	ENCODING_BINARY           = "binary"
+	ENCODING_QUOTED_PRINTABLE = "quited-printable"
+	ENCODING_BASE64           = "base64"
+)
