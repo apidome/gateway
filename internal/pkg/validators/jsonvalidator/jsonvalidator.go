@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 )
 
-type JsonSchema map[string]interface{}
+//type JsonSchema map[string]interface{}
 
 // Valid keywords in Json Schema (draft 7)
 var jsonSchemaKeywords = [...]string{
@@ -163,7 +163,7 @@ var jsonSchemaKeywords = [...]string{
 	// Must be valid against exactly one of the sub-schemas.
 	"oneOf",
 
-	// Must not be valid against the given schema
+	// Must not be valid against the given schema.
 	"not",
 
 	// The if, then and else keywords allow the application of a sub-schema
