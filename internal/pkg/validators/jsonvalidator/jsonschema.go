@@ -142,3 +142,43 @@ type JsonSchema struct {
 	_then *JsonSchema
 	_else *JsonSchema
 }
+
+const (
+	OBJECT  = "object"
+	ARRAY   = "array"
+	STRING  = "string"
+	NUMBER  = "number"
+	INTEGER = "integer"
+	BOOLEAN = "boolean"
+	NULL    = "null"
+)
+
+// Valid values for "format" field
+var jsonSchemaBuiltInFormats = [...]string{
+	"date-time",
+	"time",
+	"date",
+	"email",
+	"idn-email",
+	"hostname",
+	"idn-hostname",
+	"ipv4",
+	"ipv6",
+	"uri",
+	"uri-reference",
+	"iri",
+	"iri-reference",
+	"uri-template",
+	"json-pointer",
+	"relative-json-pointer",
+	"regex",
+}
+
+// Valid values for "contentEncoding" field
+var jsonSchemaContentEncodings = [...]string{
+	"7bit",
+	"8bit",
+	"binary",
+	"quoted-printable",
+	"base64",
+}
