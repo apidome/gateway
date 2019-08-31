@@ -143,6 +143,7 @@ type JsonSchema struct {
 	_else *JsonSchema
 }
 
+// Valid Json Schema types
 const (
 	OBJECT  = "object"
 	ARRAY   = "array"
@@ -153,26 +154,26 @@ const (
 	NULL    = "null"
 )
 
-// Valid values for "format" field
-var jsonSchemaBuiltInFormats = [...]string{
-	"date-time",
-	"time",
-	"date",
-	"email",
-	"idn-email",
-	"hostname",
-	"idn-hostname",
-	"ipv4",
-	"ipv6",
-	"uri",
-	"uri-reference",
-	"iri",
-	"iri-reference",
-	"uri-template",
-	"json-pointer",
-	"relative-json-pointer",
-	"regex",
-}
+// Valid values for "format" fields
+const (
+	DATE_TIME             = "date-time"
+	TIME                  = "time"
+	DATE                  = "date"
+	EMAIL                 = "email"
+	IDN_EMAIL             = "idn-email"
+	HOSTNAME              = "hostname"
+	IDN_HOSTNAME          = "idn-hostname"
+	IPV4                  = "ipv4"
+	IPV6                  = "ipv6"
+	URI                   = "uri"
+	URI_REFERENCE         = "uri-reference"
+	IRI                   = "iri"
+	IRI_REFERENCE         = "iri-reference"
+	URI_TEMPLATE          = "uri-template"
+	JSON_POINTER          = "json-pointer"
+	RELATIVE_JSON_POINTER = "relative-json-pointer"
+	REGEX                 = "regex"
+)
 
 // Valid values for "contentEncoding" field
 var jsonSchemaContentEncodings = [...]string{
