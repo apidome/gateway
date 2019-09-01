@@ -9,6 +9,7 @@ import (
 	"github.com/Creespye/caf/internal/pkg/proxy"
 	"github.com/Creespye/caf/internal/pkg/proxymiddlewares"
 	"github.com/Creespye/caf/internal/pkg/validators"
+	"github.com/Creespye/caf/internal/pkg/validators/jsonvalidator"
 )
 
 var config *configs.Configuration
@@ -96,7 +97,7 @@ func AddValidationMiddlewares(mm *middleman.Middleman, targets []configs.Target)
 			// Here we decide which validator to create according to the api's type.
 			switch api.Type {
 			case configs.TypeRest:
-				validator = validators.NewJsonValidator()
+				validator = jsonvalidator.NewJsonValidator()
 			default:
 				log.Print("[Proxy WARNING]: Invalid API Type - " + api.Type)
 			}

@@ -1,4 +1,4 @@
-package validators
+package jsonvalidator
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ type JsonValidator struct {
 
 // LoadSchema is a function that handles addition of new schema to the
 // JsonValidator's schemas list
-func (jv JsonValidator) LoadSchema(path string, s string) error {
+func (jv JsonValidator) LoadSchema(path, s string) error {
 	var schema JsonSchema
 
 	// Check if the string s is a valid json.
@@ -42,7 +42,7 @@ func (jv JsonValidator) Parse(b string) (bool, error) {
 
 // Validate is the function that actually perform validation of json value
 // according to a specific json schema
-func (jv JsonValidator) Validate(b string) (bool, error) {
+func (jv JsonValidator) Validate(path, b string) (bool, error) {
 	return false, nil
 }
 

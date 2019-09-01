@@ -8,5 +8,5 @@ type Validator interface {
 	Parse(b string) (bool, error)
 
 	// Validate enforces the schema's rules on a piece of data.
-	Validate(b string) (bool, error)
+	Validate(path, b string) (bool, error)
 }
