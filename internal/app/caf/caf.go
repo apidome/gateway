@@ -116,23 +116,23 @@ func AddValidationMiddlewares(mm *middleman.Middleman, targets []configs.Target)
 				case http.MethodGet:
 					mm.Get(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
 						endpoint.Method,
-						&validator))
+						validator))
 				case http.MethodPost:
 					mm.Post(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
 						endpoint.Method,
-						&validator))
+						validator))
 				case http.MethodPut:
 					mm.Put(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
 						endpoint.Method,
-						&validator))
+						validator))
 				case http.MethodDelete:
 					mm.Delete(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
 						endpoint.Method,
-						&validator))
+						validator))
 				case "ALL":
 					mm.All(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
 						endpoint.Method,
-						&validator))
+						validator))
 				default:
 					log.Print("[Proxy WARNING]: Invalid method - " + endpoint.Method + " for endpoint - " + endpoint.Path)
 				}
