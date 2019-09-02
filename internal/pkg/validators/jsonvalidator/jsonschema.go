@@ -1,7 +1,6 @@
 package jsonvalidator
 
 import (
-	"fmt"
 	"reflect"
 )
 
@@ -188,13 +187,26 @@ type JsonSchema struct {
 }
 
 func (js *JsonSchema) validateJsonData(jsonPath, jsonData string) (bool, error) {
-	v := reflect.ValueOf(js)
+	// Reflect the value of js into v
+	v := reflect.ValueOf(js).Elem()
+
+	// Create a slice of empty interface to store js's fields.
 	values := make([]interface{}, v.NumField())
+
+	// For each field in js's reflection, put it in the empty interface slice.
 	for i := 0; i < v.NumField(); i++ {
 		values[i] = v.Field(i).Interface()
 	}
 
-	fmt.Println("JsonSchema values", values)
+	// Call all the keywordValidators' validate function
+	for _, keyword := range values {
+		if keywordVal, ok := keyword.(keywordValidator); ok {
+			valid, err := keywordVal.validate(jsonPath, jsonData)
+			if err != nil {
+				return valid, err
+			}
+		}
+	}
 
-	return false, nil
+	return true, nil
 }

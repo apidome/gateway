@@ -18,7 +18,7 @@
                         "endpoints": [
                             {
                                 "path": "/api/v1/person",
-                                "method": "POST",
+                                "method": "GET",
                                 "schema": "schemas/schema1.json"
                             },
                             {
