@@ -205,6 +205,9 @@ func (js *JsonSchema) validateJsonData(jsonPath, jsonData string) (bool, error) 
 			if err != nil {
 				return valid, err
 			}
+		} else {
+			// TODO: In production we should panic here due to JsonSchema field
+			// TODO: that does not implement the keywordValidator interface.
 		}
 	}
 
