@@ -1,148 +1,5 @@
 package jsonvalidator
 
-import "regexp"
-
-type JsonSchema struct {
-	// The $schema keyword is used to declare that a JSON fragment is
-	// actually a piece of JSON Schema.
-	_schema string
-
-	// The value of $ref is a URI, and the part after # sign is in a format
-	// called JSON Pointer.
-	_ref string
-
-	// The $id property is a URI that serves two purposes:
-	// It declares a unique identifier for the schema
-	// It declares a base URI against which $ref URIs are resolved.
-	_id string
-
-	// The $comment keyword is strictly intended for adding comments
-	// to the JSON schema source. Its value must always be a string.
-	_comment string
-
-	// Title and Description used to describe the schema and not used for
-	// validation.
-	_title       string
-	_description string
-
-	// The default keyword specifies a default value for an item.
-	_default interface{}
-
-	// The examples keyword is a place to provide an array of examples
-	// that validate against the schema.
-	_examples []interface{}
-
-	// The enum keyword is used to restrict a value to a fixed set of values.
-	// It must be an array with at least one element, where each element
-	// is unique.
-	_enum []interface{}
-
-	// The const keyword is used to restrict a value to a single value.
-	_const interface{}
-
-	// The definitions keyword is used to create entities that we recognize as
-	// repetitive entities.
-	// This ability maintains reuse in out Json Schema.
-	_definitions map[string]*JsonSchema
-
-	// The value of properties is an object, where each key is the name of a
-	// property and each value is a JSON schema used to validate that property.
-	_properties map[string]*JsonSchema
-
-	// The additionalProperties keyword is used to control the handling of
-	// extra stuff, that is, properties whose names are not listed in the
-	// properties keyword.
-	// By default any additional properties are allowed.
-	// The additionalProperties keyword may be either a boolean or an object.
-	// If additionalProperties is a boolean and set to false, no additional
-	// properties will be allowed.
-	// If additionalProperties is an object, that object is a schema that will be
-	// used to validate any additional properties not listed in properties.
-	_additionalProperties interface{}
-
-	// The required keyword takes an array of zero or more strings.
-	// Each of these strings must be unique.
-	_required []string
-
-	// The names of properties can be validated against a schema, irrespective
-	// of their values.
-	// This can be useful if you don’t want to enforce specific properties,
-	// but you want to make sure that the names of those properties follow
-	// a specific convention.
-	_propertyNames map[string]interface{}
-
-	// The dependencies keyword allows the schema of the object to change
-	// based on the presence of certain special properties.
-	_dependencies map[string]interface{}
-
-	// TODO: Learn more about this keyword.
-	_patternProperties map[string]interface{}
-
-	// Items can be either an object or an array. If it is an object, it will
-	// represent a schema that all the items in the array should match.
-	// If it is an array, each item in that array is a different json schema
-	// that should match the corresponding item in the inspected array
-	// (In this case the index of each item is very important).
-	_items interface{}
-
-	// While the items schema must be valid for every item in the array,
-	// the contains schema only needs to validate against one or more
-	// items in the array.
-	_contains interface{}
-
-	// The additionalItems keyword controls whether it’s valid to have
-	// additional items in the array beyond what is defined in items.
-	_additionalItems interface{}
-
-	// array limitations
-	_minItems    int
-	_maxItems    int
-	_uniqueItems bool
-
-	// string limitations
-	_minLength int
-	_maxLength int
-	_pattern   regexp.Regexp
-	_format    string
-
-	// integer/number limitations
-	_multipleOf       int
-	_minimum          float64
-	_maximum          float64
-	_exclusiveMinimum float64
-	_exclusiveMaximum float64
-
-	// object size limitations
-	_minProperties int
-	_maxProperties int
-
-	// The contentMediaType keyword specifies the MIME type of the contents
-	// of a string.
-	_contentMediaType string
-
-	// The contentEncoding keyword specifies the encoding used to store
-	// the contents.
-	_contentEncoding string
-
-	// Must be valid against any of the sub-schemas.
-	_anyOf []*JsonSchema
-
-	// Must be valid against all of the sub-schemas.
-	_allOf []*JsonSchema
-
-	// Must be valid against exactly one of the sub-schemas.
-	_oneOf []*JsonSchema
-
-	// Must not be valid against the given schema.
-	_not *JsonSchema
-
-	// The if, then and else keywords allow the application of a sub-schema
-	// based on the outcome of another schema.
-	_if   *JsonSchema
-	_then *JsonSchema
-	_else *JsonSchema
-}
-
 // Valid Json Schema types
 const (
 	TYPE_OBJECT  = "object"
@@ -183,3 +40,144 @@ const (
 	ENCODING_QUOTED_PRINTABLE = "quited-printable"
 	ENCODING_BASE64           = "base64"
 )
+
+type JsonSchema struct {
+	// The $schema keyword is used to declare that a JSON fragment is
+	// actually a piece of JSON Schema.
+	Schema *string `json:"$schema"`
+
+	// The value of $ref is a URI, and the part after # sign is in a format
+	// called JSON Pointer.
+	Ref *string `json:"$ref"`
+
+	// The $id property is a URI that serves two purposes:
+	// It declares a unique identifier for the schema
+	// It declares a base URI against which $ref URIs are resolved.
+	Id *string `json:"$id"`
+
+	// The $comment keyword is strictly intended for adding comments
+	// to the JSON schema source. Its value must always be a string.
+	Comment *string `json:"$comment"`
+
+	// Title and Description used to describe the schema and not used for
+	// validation.
+	Title       *string `json:"title"`
+	Description *string `json:"description"`
+
+	// The default keyword specifies a default value for an item.
+	Default interface{} `json:"default"`
+
+	// The examples keyword is a place to provide an array of examples
+	// that validate against the schema.
+	Examples []interface{} `json:"examples"`
+
+	// The enum keyword is used to restrict a value to a fixed set of values.
+	// It must be an array with at least one element, where each element
+	// is unique.
+	Enum []interface{} `json:"enum"`
+
+	// The const keyword is used to restrict a value to a single value.
+	Const interface{} `json:"const"`
+
+	// The definitions keyword is used to create entities that we recognize as
+	// repetitive entities.
+	// This ability maintains reuse in out Json Schema.
+	Definitions map[string]*JsonSchema `json:"definitions"`
+
+	// The value of properties is an object, where each key is the name of a
+	// property and each value is a JSON schema used to validate that property.
+	Properties map[string]*JsonSchema `json:"properties"`
+
+	// The additionalProperties keyword is used to control the handling of
+	// extra stuff, that is, properties whose names are not listed in the
+	// properties keyword.
+	// By default any additional properties are allowed.
+	// The additionalProperties keyword may be either a boolean or an object.
+	// If additionalProperties is a boolean and set to false, no additional
+	// properties will be allowed.
+	// If additionalProperties is an object, that object is a schema that will be
+	// used to validate any additional properties not listed in properties.
+	AdditionalProperties interface{} `json:"additionalProperties"`
+
+	// The required keyword takes an array of zero or more strings.
+	// Each of these strings must be unique.
+	Required []string `json:"required"`
+
+	// The names of properties can be validated against a schema, irrespective
+	// of their values.
+	// This can be useful if you don’t want to enforce specific properties,
+	// but you want to make sure that the names of those properties follow
+	// a specific convention.
+	PropertyNames map[string]interface{} `json:"propertyNames"`
+
+	// The dependencies keyword allows the schema of the object to change
+	// based on the presence of certain special properties.
+	Dependencies map[string]interface{} `json:"dependencies"`
+
+	// TODO: Learn more about this keyword.
+	PatternProperties map[string]interface{} `json:"patternProperties"`
+
+	// Items can be either an object or an array. If it is an object, it will
+	// represent a schema that all the items in the array should match.
+	// If it is an array, each item in that array is a different json schema
+	// that should match the corresponding item in the inspected array
+	// (In this case the index of each item is very important).
+	Items interface{} `json:"items"`
+
+	// While the items schema must be valid for every item in the array,
+	// the contains schema only needs to validate against one or more
+	// items in the array.
+	Contains interface{} `json:"contains"`
+
+	// The additionalItems keyword controls whether it’s valid to have
+	// additional items in the array beyond what is defined in items.
+	AdditionalItems interface{} `json:"additionalItems"`
+
+	// array limitations
+	MinItems    *int  `json:"minItems"`
+	MaxItems    *int  `json:"maxItems"`
+	UniqueItems *bool `json:"uniqueItems"`
+
+	// string limitations
+	MinLength *int    `json:"minLength,omitempty"`
+	MaxLength *int    `json:"maxLength"`
+	Pattern   *string `json:"pattern"`
+	Format    *string `json:"format"`
+
+	// integer/number limitations
+	MultipleOf       *int     `json:"multipleOf"`
+	Minimum          *float64 `json:"minimum"`
+	Maximum          *float64 `json:"maximum"`
+	ExclusiveMinimum *float64 `json:"exclusiveMinimum"`
+	ExclusiveMaximum *float64 `json:"exclusiveMaximum"`
+
+	// object size limitations
+	MinProperties *int `json:"minProperties"`
+	MaxProperties *int `json:"maxProperties"`
+
+	// The contentMediaType keyword specifies the MIME type of the contents
+	// of a string.
+	ContentMediaType *string `json:"contentMediaType"`
+
+	// The contentEncoding keyword specifies the encoding used to store
+	// the contents.
+	ContentEncoding *string `json:"contentEncoding"`
+
+	// Must be valid against any of the sub-schemas.
+	AnyOf []*JsonSchema `json:"anyOf"`
+
+	// Must be valid against all of the sub-schemas.
+	AllOf []*JsonSchema `json:"allOf"`
+
+	// Must be valid against exactly one of the sub-schemas.
+	OneOf []*JsonSchema `json:"oneOf"`
+
+	// Must not be valid against the given schema.
+	Not *JsonSchema `json:"not"`
+
+	// The if, then and else keywords allow the application of a sub-schema
+	// based on the outcome of another schema.
+	If   *JsonSchema `json:"if"`
+	Then *JsonSchema `json:"then"`
+	Else *JsonSchema `json:"else"`
+}

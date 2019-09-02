@@ -104,8 +104,8 @@ func AddValidationMiddlewares(mm *middleman.Middleman, targets []configs.Target)
 
 			// For each api loop over its endpoints
 			for _, endpoint := range api.Endpoints {
-				// Add the endpoint's schema to the api's validator.
-				err := validator.LoadSchema(endpoint.Path, endpoint.Schema)
+				//Add the endpoint's schema to the api's validator.
+				err := validator.LoadSchema(endpoint.Path, endpoint.Method, endpoint.Schema)
 				if err != nil {
 					log.Print("[Proxy ERROR]: Failed to load schema for endpoint - " + endpoint.Path + ", Error: " + err.Error())
 					return err
