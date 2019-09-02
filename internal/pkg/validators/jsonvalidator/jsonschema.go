@@ -1,5 +1,10 @@
 package jsonvalidator
 
+import (
+	"fmt"
+	"reflect"
+)
+
 // Valid Json Schema types
 const (
 	TYPE_OBJECT  = "object"
@@ -180,4 +185,16 @@ type JsonSchema struct {
 	If   *JsonSchema `json:"if"`
 	Then *JsonSchema `json:"then"`
 	Else *JsonSchema `json:"else"`
+}
+
+func (js *JsonSchema) validateJsonData(jsonPath, jsonData string) (bool, error) {
+	v := reflect.ValueOf(js)
+	values := make([]interface{}, v.NumField())
+	for i := 0; i < v.NumField(); i++ {
+		values[i] = v.Field(i).Interface()
+	}
+
+	fmt.Println("JsonSchema values", values)
+
+	return false, nil
 }

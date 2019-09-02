@@ -7,7 +7,7 @@ import (
 // JsonValidator is a struct that implements the Validator interface
 // and validates json objects according to a json schema
 type JsonValidator struct {
-	schemaDict map[string]map[string]JsonSchema
+	schemaDict map[string]map[string]*JsonSchema
 }
 
 // LoadSchema is a function that handles addition of new schema to the
@@ -28,11 +28,11 @@ func (jv JsonValidator) LoadSchema(path, method, s string) error {
 
 	if isSchemaValid {
 		// Create a new empty method-JsonSchema map for the current path.
-		jv.schemaDict[path] = make(map[string]JsonSchema)
+		jv.schemaDict[path] = make(map[string]*JsonSchema)
 
 		// Add the schema to the appropriate map according to its path and
 		// method.
-		jv.schemaDict[path][method] = schema
+		jv.schemaDict[path][method] = &schema
 	}
 
 	return nil
@@ -47,13 +47,13 @@ func (jv JsonValidator) Parse(b string) (bool, error) {
 // Validate is the function that actually perform validation of json value
 // according to a specific json schema
 func (jv JsonValidator) Validate(path, method, b string) (bool, error) {
-	return false, nil
+	return jv.schemaDict[path][method].validateJsonData("/", b)
 }
 
 // NewJsonValidator returns a new instance of JsonValidator
 func NewJsonValidator() JsonValidator {
 	return JsonValidator{
-		make(map[string]map[string]JsonSchema),
+		make(map[string]map[string]*JsonSchema),
 	}
 }
 

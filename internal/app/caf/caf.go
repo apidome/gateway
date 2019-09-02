@@ -114,15 +114,25 @@ func AddValidationMiddlewares(mm *middleman.Middleman, targets []configs.Target)
 				// Creating a new ValidateRequest middleware with the appropriate HTTP method.
 				switch endpoint.Method {
 				case http.MethodGet:
-					mm.Get(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
+					mm.Get(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
+						endpoint.Method,
+						&validator))
 				case http.MethodPost:
-					mm.Post(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
+					mm.Post(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
+						endpoint.Method,
+						&validator))
 				case http.MethodPut:
-					mm.Put(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
+					mm.Put(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
+						endpoint.Method,
+						&validator))
 				case http.MethodDelete:
-					mm.Delete(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
+					mm.Delete(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
+						endpoint.Method,
+						&validator))
 				case "ALL":
-					mm.All(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
+					mm.All(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
+						endpoint.Method,
+						&validator))
 				default:
 					log.Print("[Proxy WARNING]: Invalid method - " + endpoint.Method + " for endpoint - " + endpoint.Path)
 				}
