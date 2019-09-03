@@ -4,6 +4,46 @@ type keywordValidator interface {
 	validate(string, interface{}) (bool, error)
 }
 
+/**********************/
+/** Generic Keywords **/
+/**********************/
+
+type schema string
+
+func (s schema) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+type ref string
+
+func (r ref) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+type id string
+
+func (i id) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+type comment string
+
+func (c comment) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+type title string
+
+func (t title) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+type description string
+
+func (d description) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 /*********************/
 /** String Keywords **/
 /*********************/

@@ -48,25 +48,25 @@ const (
 type JsonSchema struct {
 	// The $schema keyword is used to declare that a JSON fragment is
 	// actually a piece of JSON Schema.
-	Schema *string `json:"$schema"`
+	Schema *schema `json:"$schema"`
 
 	// The value of $ref is a URI, and the part after # sign is in a format
 	// called JSON Pointer.
-	Ref *string `json:"$ref"`
+	Ref *ref `json:"$ref"`
 
 	// The $id property is a URI that serves two purposes:
 	// It declares a unique identifier for the schema
 	// It declares a base URI against which $ref URIs are resolved.
-	Id *string `json:"$id"`
+	Id *id `json:"$id"`
 
 	// The $comment keyword is strictly intended for adding comments
 	// to the JSON schema source. Its value must always be a string.
-	Comment *string `json:"$comment"`
+	Comment *comment `json:"$comment"`
 
 	// Title and Description used to describe the schema and not used for
 	// validation.
-	Title       *string `json:"title"`
-	Description *string `json:"description"`
+	Title       *title       `json:"title"`
+	Description *description `json:"description"`
 
 	// The default keyword specifies a default value for an item.
 	Default interface{} `json:"default"`
