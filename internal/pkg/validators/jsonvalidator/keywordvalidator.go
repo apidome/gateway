@@ -45,10 +45,34 @@ func (d description) validate(path string, jsonData interface{}) (bool, error) {
 }
 
 type _default interface{}
+
+func (d _default) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type examples []interface{}
+
+func (e examples) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type enum []interface{}
+
+func (e enum) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type _const interface{}
+
+func (c _const) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type definitions map[string]*JsonSchema
+
+func (d definitions) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
 
 /*********************/
 /** String Keywords **/
@@ -123,39 +147,145 @@ func (p properties) validate(path string, jsonData interface{}) (bool, error) {
 }
 
 type additionalProperties interface{}
+
+func (ap additionalProperties) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type required []string
+
+func (r required) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type propertyNames map[string]interface{}
+
+func (pn propertyNames) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type dependencies map[string]interface{}
+
+func (d dependencies) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type patternProperties map[string]interface{}
+
+func (pp patternProperties) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type minProperties int
+
+func (mp minProperties) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type maxProperties int
+
+func (mp maxProperties) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
 
 /********************/
 /** Array Keywords **/
 /********************/
 
 type items interface{}
+
+func (i items) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type contains interface{}
+
+func (c contains) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type additionalItems interface{}
+
+func (ai additionalItems) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type minItems int
+
+func (mi minItems) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type maxItems int
+
+func (mi maxItems) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type uniqueItems bool
+
+func (ui uniqueItems) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
 
 /********************/
 /** Other Keywords **/
 /********************/
 
 type contentMediaType string
+
+func (cm contentMediaType) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type contentEncoding string
+
+func (ce contentEncoding) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
 
 /**************************/
 /** Conditional Keywords **/
 /**************************/
 
 type anyOf []*JsonSchema
+
+func (af anyOf) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type allOf []*JsonSchema
+
+func (af allOf) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type oneOf []*JsonSchema
-type not *JsonSchema
-type _if *JsonSchema
-type _then *JsonSchema
-type _else *JsonSchema
+
+func (of oneOf) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+type not JsonSchema
+
+func (n not) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+type _if JsonSchema
+
+func (i _if) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+type _then JsonSchema
+
+func (t _then) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+type _else JsonSchema
+
+func (e _else) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}

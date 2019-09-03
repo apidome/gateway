@@ -181,40 +181,53 @@ type JsonSchema struct {
 
 	// The if, then and else keywords allow the application of a sub-schema
 	// based on the outcome of another schema.
-	If   _if `json:"if"`
-	Then _then `json:"then"`
-	Else _else `json:"else"`
+	If   *_if   `json:"if"`
+	Then *_then `json:"then"`
+	Else *_else `json:"else"`
 }
 
+//func (js *JsonSchema) validateJsonData(jsonPath, jsonData string) (bool, error) {
+//	// Reflect the value of js into v
+//	v := reflect.ValueOf(js).Elem()
+//
+//	// Create a slice of empty interface to store js's fields.
+//	values := make([]interface{}, v.NumField())
+//
+//	// For each field in js's reflection, put it in the empty interface slice.
+//	for i := 0; i < v.NumField(); i++ {
+//		values[i] = v.Field(i).Interface()
+//	}
+//
+//	// Call all the keywordValidators' validate function
+//	for _, keyword := range values {
+//		if keywordVal, ok := keyword.(keywordValidator); ok {
+//			valid, err := keywordVal.validate(jsonPath, jsonData)
+//			if err != nil {
+//				return valid, err
+//			}
+//		} else {
+//			// TODO: In production we should panic here due to JsonSchema field
+//			// TODO: that does not implement the keywordValidator interface.
+//		}
+//	}
+//
+//	return true, nil
+//}
+
 func (js *JsonSchema) validateJsonData(jsonPath, jsonData string) (bool, error) {
-	// Reflect the value of js into v
-	v := reflect.ValueOf(js).Elem()
+	keywordValidators := getKeywordsSlice(js)
 
-	// Create a slice of empty interface to store js's fields.
-	values := make([]interface{}, v.NumField())
-
-	// For each field in js's reflection, put it in the empty interface slice.
-	for i := 0; i < v.NumField(); i++ {
-		values[i] = v.Field(i).Interface()
-	}
-
-	// Call all the keywordValidators' validate function
-	for _, keyword := range values {
-		if keywordVal, ok := keyword.(keywordValidator); ok {
-			valid, err := keywordVal.validate(jsonPath, jsonData)
-			if err != nil {
-				return valid, err
-			}
-		} else {
-			// TODO: In production we should panic here due to JsonSchema field
-			// TODO: that does not implement the keywordValidator interface.
+	for _, keyword := range keywordValidators {
+		valid, err := keyword.validate(jsonPath, jsonData)
+		if err != nil {
+			return valid, err
 		}
 	}
 
 	return true, nil
 }
 
-func (js *JsonSchema) getKeywordsSlice() []keywordValidator {
+func getKeywordsSlice(js *JsonSchema) []keywordValidator {
 	return []keywordValidator{
 		js.Schema,
 		js.Ref,
@@ -258,6 +271,6 @@ func (js *JsonSchema) getKeywordsSlice() []keywordValidator {
 		js.Not,
 		js.If,
 		js.Then,
-		js.Else
+		js.Else,
 	}
 }
