@@ -64,6 +64,9 @@ type JsonSchema struct {
 	Title       *title       `json:"title"`
 	Description *description `json:"description"`
 
+	// Type specifies the acceptable value type of the schema.
+	Type *_type `json:"type"`
+
 	// The default keyword specifies a default value for an item.
 	Default _default `json:"default"`
 
@@ -182,34 +185,6 @@ type JsonSchema struct {
 	Else *_else `json:"else"`
 }
 
-//func (js *JsonSchema) validateJsonData(jsonPath, jsonData string) (bool, error) {
-//	// Reflect the value of js into v
-//	v := reflect.ValueOf(js).Elem()
-//
-//	// Create a slice of empty interface to store js's fields.
-//	values := make([]interface{}, v.NumField())
-//
-//	// For each field in js's reflection, put it in the empty interface slice.
-//	for i := 0; i < v.NumField(); i++ {
-//		values[i] = v.Field(i).Interface()
-//	}
-//
-//	// Call all the keywordValidators' validate function
-//	for _, keyword := range values {
-//		if keywordVal, ok := keyword.(keywordValidator); ok {
-//			valid, err := keywordVal.validate(jsonPath, jsonData)
-//			if err != nil {
-//				return valid, err
-//			}
-//		} else {
-//			// TODO: In production we should panic here due to JsonSchema field
-//			// TODO: that does not implement the keywordValidator interface.
-//		}
-//	}
-//
-//	return true, nil
-//}
-
 func (js *JsonSchema) validateJsonData(jsonPath, jsonData string) (bool, error) {
 	keywordValidators := getKeywordsSlice(js)
 
@@ -228,6 +203,7 @@ func getKeywordsSlice(js *JsonSchema) []keywordValidator {
 		js.Schema,
 		js.Ref,
 		js.Id,
+		js.Type,
 		js.Comment,
 		js.Title,
 		js.Description,

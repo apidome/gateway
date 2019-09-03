@@ -8,7 +8,7 @@
     "in": {
         "targets": [
             {
-                "host": "ksp.co.il",
+                "host": "rapidapi.com",
                 "port": "443",
                 "ssl": true,
                 "clientAuth": false,
@@ -17,7 +17,7 @@
                         "type": "REST",
                         "endpoints": [
                             {
-                                "path": "/api/v1/person",
+                                "path": "/apidojo/api/yahoo-finance1/details",
                                 "method": "GET",
                                 "schema": "schemas/schema1.json"
                             },

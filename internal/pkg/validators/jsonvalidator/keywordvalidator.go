@@ -12,37 +12,37 @@ type keywordValidator interface {
 
 type schema string
 
-func (s schema) validate(path string, jsonData interface{}) (bool, error) {
+func (s *schema) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type ref string
 
-func (r ref) validate(path string, jsonData interface{}) (bool, error) {
+func (r *ref) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type id string
 
-func (i id) validate(path string, jsonData interface{}) (bool, error) {
+func (i *id) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type comment string
 
-func (c comment) validate(path string, jsonData interface{}) (bool, error) {
+func (c *comment) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type title string
 
-func (t title) validate(path string, jsonData interface{}) (bool, error) {
+func (t *title) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type description string
 
-func (d description) validate(path string, jsonData interface{}) (bool, error) {
+func (d *description) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -64,6 +64,11 @@ func (d _default) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
+func (d *_default) UnmarshalJSON(data []byte) error {
+	*d = data
+	return nil
+}
+
 type _const json.RawMessage
 
 func (c _const) validate(path string, jsonData interface{}) (bool, error) {
@@ -76,31 +81,42 @@ func (d definitions) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
+type _type json.RawMessage
+
+func (t *_type) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+func (t *_type) UnmarshalJSON(data []byte) error {
+	*t = data
+	return nil
+}
+
 /*********************/
 /** String Keywords **/
 /*********************/
 
 type minLength int
 
-func (ml minLength) validate(path string, jsonData interface{}) (bool, error) {
+func (ml *minLength) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type maxLength int
 
-func (ml maxLength) validate(path string, jsonData interface{}) (bool, error) {
+func (ml *maxLength) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type pattern string
 
-func (p pattern) validate(path string, jsonData interface{}) (bool, error) {
+func (p *pattern) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type format string
 
-func (f format) validate(path string, jsonData interface{}) (bool, error) {
+func (f *format) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -110,31 +126,31 @@ func (f format) validate(path string, jsonData interface{}) (bool, error) {
 
 type multipleOf int
 
-func (mo multipleOf) validate(path string, jsonData interface{}) (bool, error) {
+func (mo *multipleOf) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type minimum float64
 
-func (m minimum) validate(path string, jsonData interface{}) (bool, error) {
+func (m *minimum) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type maximum float64
 
-func (m maximum) validate(path string, jsonData interface{}) (bool, error) {
+func (m *maximum) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type exclusiveMinimum float64
 
-func (em exclusiveMinimum) validate(path string, jsonData interface{}) (bool, error) {
+func (em *exclusiveMinimum) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type exclusiveMaximum float64
 
-func (em exclusiveMaximum) validate(path string, jsonData interface{}) (bool, error) {
+func (em *exclusiveMaximum) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -152,6 +168,11 @@ type additionalProperties json.RawMessage
 
 func (ap additionalProperties) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
+}
+
+func (ap *additionalProperties) UnmarshalJSON(data []byte) error {
+	*ap = data
+	return nil
 }
 
 type required []string
@@ -180,13 +201,13 @@ func (pp patternProperties) validate(path string, jsonData interface{}) (bool, e
 
 type minProperties int
 
-func (mp minProperties) validate(path string, jsonData interface{}) (bool, error) {
+func (mp *minProperties) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type maxProperties int
 
-func (mp maxProperties) validate(path string, jsonData interface{}) (bool, error) {
+func (mp *maxProperties) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -200,10 +221,20 @@ func (i items) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
+func (i *items) UnmarshalJSON(data []byte) error {
+	*i = data
+	return nil
+}
+
 type contains json.RawMessage
 
 func (c contains) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
+}
+
+func (c *contains) UnmarshalJSON(data []byte) error {
+	*c = data
+	return nil
 }
 
 type additionalItems json.RawMessage
@@ -212,21 +243,26 @@ func (ai additionalItems) validate(path string, jsonData interface{}) (bool, err
 	return true, nil
 }
 
+func (ai *additionalItems) UnmarshalJSON(data []byte) error {
+	*ai = data
+	return nil
+}
+
 type minItems int
 
-func (mi minItems) validate(path string, jsonData interface{}) (bool, error) {
+func (mi *minItems) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type maxItems int
 
-func (mi maxItems) validate(path string, jsonData interface{}) (bool, error) {
+func (mi *maxItems) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type uniqueItems bool
 
-func (ui uniqueItems) validate(path string, jsonData interface{}) (bool, error) {
+func (ui *uniqueItems) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -236,13 +272,13 @@ func (ui uniqueItems) validate(path string, jsonData interface{}) (bool, error) 
 
 type contentMediaType string
 
-func (cm contentMediaType) validate(path string, jsonData interface{}) (bool, error) {
+func (cm *contentMediaType) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type contentEncoding string
 
-func (ce contentEncoding) validate(path string, jsonData interface{}) (bool, error) {
+func (ce *contentEncoding) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -270,24 +306,24 @@ func (of oneOf) validate(path string, jsonData interface{}) (bool, error) {
 
 type not JsonSchema
 
-func (n not) validate(path string, jsonData interface{}) (bool, error) {
+func (n *not) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type _if JsonSchema
 
-func (i _if) validate(path string, jsonData interface{}) (bool, error) {
+func (i *_if) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type _then JsonSchema
 
-func (t _then) validate(path string, jsonData interface{}) (bool, error) {
+func (t *_then) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type _else JsonSchema
 
-func (e _else) validate(path string, jsonData interface{}) (bool, error) {
+func (e *_else) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
