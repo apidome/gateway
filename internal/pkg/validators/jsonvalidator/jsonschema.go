@@ -213,3 +213,17 @@ func (js *JsonSchema) validateJsonData(jsonPath, jsonData string) (bool, error) 
 
 	return true, nil
 }
+
+func (js *JsonSchema) getKeywordsSlice() []keywordValidator {
+	return []keywordValidator{
+		js.MinLength,
+		js.MaxLength,
+		js.Pattern,
+		js.Format,
+		js.MultipleOf,
+		js.Minimum,
+		js.Maximum,
+		js.ExclusiveMinimum,
+		js.ExclusiveMinimum,
+	}
+}
