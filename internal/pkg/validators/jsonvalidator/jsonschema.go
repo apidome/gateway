@@ -69,28 +69,28 @@ type JsonSchema struct {
 	Description *description `json:"description"`
 
 	// The default keyword specifies a default value for an item.
-	Default interface{} `json:"default"`
+	Default _default `json:"default"`
 
 	// The examples keyword is a place to provide an array of examples
 	// that validate against the schema.
-	Examples []interface{} `json:"examples"`
+	Examples examples `json:"examples"`
 
 	// The enum keyword is used to restrict a value to a fixed set of values.
 	// It must be an array with at least one element, where each element
 	// is unique.
-	Enum []interface{} `json:"enum"`
+	Enum enum `json:"enum"`
 
 	// The const keyword is used to restrict a value to a single value.
-	Const interface{} `json:"const"`
+	Const _const `json:"const"`
 
 	// The definitions keyword is used to create entities that we recognize as
 	// repetitive entities.
 	// This ability maintains reuse in out Json Schema.
-	Definitions map[string]*JsonSchema `json:"definitions"`
+	Definitions definitions `json:"definitions"`
 
 	// The value of properties is an object, where each key is the name of a
 	// property and each value is a JSON schema used to validate that property.
-	Properties map[string]*JsonSchema `json:"properties"`
+	Properties properties `json:"properties"`
 
 	// The additionalProperties keyword is used to control the handling of
 	// extra stuff, that is, properties whose names are not listed in the
@@ -101,46 +101,46 @@ type JsonSchema struct {
 	// properties will be allowed.
 	// If additionalProperties is an object, that object is a schema that will be
 	// used to validate any additional properties not listed in properties.
-	AdditionalProperties interface{} `json:"additionalProperties"`
+	AdditionalProperties additionalProperties `json:"additionalProperties"`
 
 	// The required keyword takes an array of zero or more strings.
 	// Each of these strings must be unique.
-	Required []string `json:"required"`
+	Required required `json:"required"`
 
 	// The names of properties can be validated against a schema, irrespective
 	// of their values.
 	// This can be useful if you don’t want to enforce specific properties,
 	// but you want to make sure that the names of those properties follow
 	// a specific convention.
-	PropertyNames map[string]interface{} `json:"propertyNames"`
+	PropertyNames propertyNames `json:"propertyNames"`
 
 	// The dependencies keyword allows the schema of the object to change
 	// based on the presence of certain special properties.
-	Dependencies map[string]interface{} `json:"dependencies"`
+	Dependencies dependencies `json:"dependencies"`
 
 	// TODO: Learn more about this keyword.
-	PatternProperties map[string]interface{} `json:"patternProperties"`
+	PatternProperties patternProperties `json:"patternProperties"`
 
 	// Items can be either an object or an array. If it is an object, it will
 	// represent a schema that all the items in the array should match.
 	// If it is an array, each item in that array is a different json schema
 	// that should match the corresponding item in the inspected array
 	// (In this case the index of each item is very important).
-	Items interface{} `json:"items"`
+	Items items `json:"items"`
 
 	// While the items schema must be valid for every item in the array,
 	// the contains schema only needs to validate against one or more
 	// items in the array.
-	Contains interface{} `json:"contains"`
+	Contains contains `json:"contains"`
 
 	// The additionalItems keyword controls whether it’s valid to have
 	// additional items in the array beyond what is defined in items.
-	AdditionalItems interface{} `json:"additionalItems"`
+	AdditionalItems additionalItems `json:"additionalItems"`
 
 	// array limitations
-	MinItems    *int  `json:"minItems"`
-	MaxItems    *int  `json:"maxItems"`
-	UniqueItems *bool `json:"uniqueItems"`
+	MinItems    *minItems    `json:"minItems"`
+	MaxItems    *maxItems    `json:"maxItems"`
+	UniqueItems *uniqueItems `json:"uniqueItems"`
 
 	// string limitations
 	MinLength *minLength `json:"minLength,omitempty"`
@@ -156,34 +156,34 @@ type JsonSchema struct {
 	ExclusiveMaximum *exclusiveMaximum `json:"exclusiveMaximum"`
 
 	// object size limitations
-	MinProperties *int `json:"minProperties"`
-	MaxProperties *int `json:"maxProperties"`
+	MinProperties *minProperties `json:"minProperties"`
+	MaxProperties *maxProperties `json:"maxProperties"`
 
 	// The contentMediaType keyword specifies the MIME type of the contents
 	// of a string.
-	ContentMediaType *string `json:"contentMediaType"`
+	ContentMediaType *contentMediaType `json:"contentMediaType"`
 
 	// The contentEncoding keyword specifies the encoding used to store
 	// the contents.
-	ContentEncoding *string `json:"contentEncoding"`
+	ContentEncoding *contentEncoding `json:"contentEncoding"`
 
 	// Must be valid against any of the sub-schemas.
-	AnyOf []*JsonSchema `json:"anyOf"`
+	AnyOf anyOf `json:"anyOf"`
 
 	// Must be valid against all of the sub-schemas.
-	AllOf []*JsonSchema `json:"allOf"`
+	AllOf allOf `json:"allOf"`
 
 	// Must be valid against exactly one of the sub-schemas.
-	OneOf []*JsonSchema `json:"oneOf"`
+	OneOf oneOf `json:"oneOf"`
 
 	// Must not be valid against the given schema.
-	Not *JsonSchema `json:"not"`
+	Not not `json:"not"`
 
 	// The if, then and else keywords allow the application of a sub-schema
 	// based on the outcome of another schema.
-	If   *JsonSchema `json:"if"`
-	Then *JsonSchema `json:"then"`
-	Else *JsonSchema `json:"else"`
+	If   _if `json:"if"`
+	Then _then `json:"then"`
+	Else _else `json:"else"`
 }
 
 func (js *JsonSchema) validateJsonData(jsonPath, jsonData string) (bool, error) {
@@ -216,6 +216,17 @@ func (js *JsonSchema) validateJsonData(jsonPath, jsonData string) (bool, error) 
 
 func (js *JsonSchema) getKeywordsSlice() []keywordValidator {
 	return []keywordValidator{
+		js.Schema,
+		js.Ref,
+		js.Id,
+		js.Comment,
+		js.Title,
+		js.Description,
+		js.Default,
+		js.Examples,
+		js.Enum,
+		js.Const,
+		js.Definitions,
 		js.MinLength,
 		js.MaxLength,
 		js.Pattern,
@@ -225,5 +236,28 @@ func (js *JsonSchema) getKeywordsSlice() []keywordValidator {
 		js.Maximum,
 		js.ExclusiveMinimum,
 		js.ExclusiveMinimum,
+		js.Properties,
+		js.AdditionalProperties,
+		js.Required,
+		js.PropertyNames,
+		js.Dependencies,
+		js.PatternProperties,
+		js.MinProperties,
+		js.MaxProperties,
+		js.Items,
+		js.Contains,
+		js.AdditionalItems,
+		js.MinItems,
+		js.MaxItems,
+		js.UniqueItems,
+		js.ContentMediaType,
+		js.ContentEncoding,
+		js.AnyOf,
+		js.AllOf,
+		js.OneOf,
+		js.Not,
+		js.If,
+		js.Then,
+		js.Else
 	}
 }

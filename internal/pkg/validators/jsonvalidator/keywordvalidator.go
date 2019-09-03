@@ -127,6 +127,8 @@ type required []string
 type propertyNames map[string]interface{}
 type dependencies map[string]interface{}
 type patternProperties map[string]interface{}
+type minProperties int
+type maxProperties int
 
 /********************/
 /** Array Keywords **/
@@ -134,7 +136,26 @@ type patternProperties map[string]interface{}
 
 type items interface{}
 type contains interface{}
-type additionslItems interface{}
+type additionalItems interface{}
 type minItems int
 type maxItems int
 type uniqueItems bool
+
+/********************/
+/** Other Keywords **/
+/********************/
+
+type contentMediaType string
+type contentEncoding string
+
+/**************************/
+/** Conditional Keywords **/
+/**************************/
+
+type anyOf []*JsonSchema
+type allOf []*JsonSchema
+type oneOf []*JsonSchema
+type not *JsonSchema
+type _if *JsonSchema
+type _then *JsonSchema
+type _else *JsonSchema
