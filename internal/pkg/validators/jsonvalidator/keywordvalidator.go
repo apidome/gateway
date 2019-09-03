@@ -1,5 +1,7 @@
 package jsonvalidator
 
+import "encoding/json"
+
 type keywordValidator interface {
 	validate(string, interface{}) (bool, error)
 }
@@ -44,12 +46,6 @@ func (d description) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type _default interface{}
-
-func (d _default) validate(path string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
-
 type examples []interface{}
 
 func (e examples) validate(path string, jsonData interface{}) (bool, error) {
@@ -62,7 +58,13 @@ func (e enum) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type _const interface{}
+type _default json.RawMessage
+
+func (d _default) validate(path string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+type _const json.RawMessage
 
 func (c _const) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
@@ -146,7 +148,7 @@ func (p properties) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type additionalProperties interface{}
+type additionalProperties json.RawMessage
 
 func (ap additionalProperties) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
@@ -192,19 +194,19 @@ func (mp maxProperties) validate(path string, jsonData interface{}) (bool, error
 /** Array Keywords **/
 /********************/
 
-type items interface{}
+type items json.RawMessage
 
 func (i items) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type contains interface{}
+type contains json.RawMessage
 
 func (c contains) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type additionalItems interface{}
+type additionalItems json.RawMessage
 
 func (ai additionalItems) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil

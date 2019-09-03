@@ -1,9 +1,5 @@
 package jsonvalidator
 
-import (
-	"reflect"
-)
-
 // Valid Json Schema types
 const (
 	TYPE_OBJECT  = "object"
@@ -177,7 +173,7 @@ type JsonSchema struct {
 	OneOf oneOf `json:"oneOf"`
 
 	// Must not be valid against the given schema.
-	Not not `json:"not"`
+	Not *not `json:"not"`
 
 	// The if, then and else keywords allow the application of a sub-schema
 	// based on the outcome of another schema.
@@ -235,9 +231,9 @@ func getKeywordsSlice(js *JsonSchema) []keywordValidator {
 		js.Comment,
 		js.Title,
 		js.Description,
-		js.Default,
 		js.Examples,
 		js.Enum,
+		js.Default,
 		js.Const,
 		js.Definitions,
 		js.MinLength,
