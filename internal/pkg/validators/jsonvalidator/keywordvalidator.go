@@ -44,6 +44,12 @@ func (d description) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
+type _default interface{}
+type examples []interface{}
+type enum []interface{}
+type _const interface{}
+type definitions map[string]*JsonSchema
+
 /*********************/
 /** String Keywords **/
 /*********************/
@@ -116,6 +122,19 @@ func (p properties) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
+type additionalProperties interface{}
+type required []string
+type propertyNames map[string]interface{}
+type dependencies map[string]interface{}
+type patternProperties map[string]interface{}
+
 /********************/
 /** Array Keywords **/
 /********************/
+
+type items interface{}
+type contains interface{}
+type additionslItems interface{}
+type minItems int
+type maxItems int
+type uniqueItems bool
