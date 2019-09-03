@@ -143,17 +143,17 @@ type JsonSchema struct {
 	UniqueItems *bool `json:"uniqueItems"`
 
 	// string limitations
-	MinLength *int    `json:"minLength,omitempty"`
-	MaxLength *int    `json:"maxLength"`
-	Pattern   *string `json:"pattern"`
-	Format    *string `json:"format"`
+	MinLength *minLength `json:"minLength,omitempty"`
+	MaxLength *maxLength `json:"maxLength"`
+	Pattern   *pattern   `json:"pattern"`
+	Format    *format    `json:"format"`
 
 	// integer/number limitations
-	MultipleOf       *int     `json:"multipleOf"`
-	Minimum          *float64 `json:"minimum"`
-	Maximum          *float64 `json:"maximum"`
-	ExclusiveMinimum *float64 `json:"exclusiveMinimum"`
-	ExclusiveMaximum *float64 `json:"exclusiveMaximum"`
+	MultipleOf       *multipleOf       `json:"multipleOf"`
+	Minimum          *minimum          `json:"minimum"`
+	Maximum          *maximum          `json:"maximum"`
+	ExclusiveMinimum *exclusiveMinimum `json:"exclusiveMinimum"`
+	ExclusiveMaximum *exclusiveMaximum `json:"exclusiveMaximum"`
 
 	// object size limitations
 	MinProperties *int `json:"minProperties"`

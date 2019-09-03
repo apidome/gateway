@@ -1,7 +1,5 @@
 package jsonvalidator
 
-import "regexp"
-
 type keywordValidator interface {
 	validate(string, interface{}) (bool, error)
 }
@@ -22,7 +20,7 @@ func (ml maxLength) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type pattern regexp.Regexp
+type pattern string
 
 func (p pattern) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
