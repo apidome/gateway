@@ -9,6 +9,7 @@ import (
 	"github.com/Creespye/caf/internal/pkg/proxy"
 	"github.com/Creespye/caf/internal/pkg/proxymiddlewares"
 	"github.com/Creespye/caf/internal/pkg/validators"
+	"github.com/Creespye/caf/internal/pkg/validators/jsonvalidator"
 )
 
 var config *configs.Configuration
@@ -96,32 +97,42 @@ func AddValidationMiddlewares(mm *middleman.Middleman, targets []configs.Target)
 			// Here we decide which validator to create according to the api's type.
 			switch api.Type {
 			case configs.TypeRest:
-				validator = validators.NewJsonValidator([]byte{})
+				validator = jsonvalidator.NewJsonValidator()
 			default:
 				log.Print("[Proxy WARNING]: Invalid API Type - " + api.Type)
 			}
 
 			// For each api loop over its endpoints
 			for _, endpoint := range api.Endpoints {
-				// Add the endpoint's schema to the api's validator.
-				err := validator.LoadSchema([]byte(endpoint.Schema))
+				//Add the endpoint's schema to the api's validator.
+				err := validator.LoadSchema(endpoint.Path, endpoint.Method, endpoint.Schema)
 				if err != nil {
-					log.Print("[Proxy ERROR]: Failed to load schema for endpoint - " + endpoint.Path)
+					log.Print("[Proxy ERROR]: Failed to load schema for endpoint - " + endpoint.Path + ", Error: " + err.Error())
 					return err
 				}
 
 				// Creating a new ValidateRequest middleware with the appropriate HTTP method.
 				switch endpoint.Method {
 				case http.MethodGet:
-					mm.Get(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
+					mm.Get(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
+						endpoint.Method,
+						validator))
 				case http.MethodPost:
-					mm.Post(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
+					mm.Post(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
+						endpoint.Method,
+						validator))
 				case http.MethodPut:
-					mm.Put(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
+					mm.Put(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
+						endpoint.Method,
+						validator))
 				case http.MethodDelete:
-					mm.Delete(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
+					mm.Delete(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
+						endpoint.Method,
+						validator))
 				case "ALL":
-					mm.All(endpoint.Path, proxymiddlewares.ValidateRequest(&validator))
+					mm.All(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
+						endpoint.Method,
+						validator))
 				default:
 					log.Print("[Proxy WARNING]: Invalid method - " + endpoint.Method + " for endpoint - " + endpoint.Path)
 				}
