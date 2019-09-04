@@ -115,7 +115,7 @@ type JsonSchema struct {
 	// This can be useful if you don’t want to enforce specific properties,
 	// but you want to make sure that the names of those properties follow
 	// a specific convention.
-	PropertyNames propertyNames `json:"propertyNames"`
+	PropertyNames *propertyNames `json:"propertyNames"`
 
 	// The dependencies keyword allows the schema of the object to change
 	// based on the presence of certain special properties.

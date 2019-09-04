@@ -183,19 +183,19 @@ func (r required) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type propertyNames map[string]interface{}
+type propertyNames JsonSchema
 
 func (pn propertyNames) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type dependencies map[string]interface{}
+type dependencies map[string]json.RawMessage
 
 func (d dependencies) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type patternProperties map[string]interface{}
+type patternProperties map[string]*JsonSchema
 
 func (pp patternProperties) validate(path string, jsonData interface{}) (bool, error) {
 	return true, nil
