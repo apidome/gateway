@@ -1,224 +1,175 @@
 package jsonwalker
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 /*****************/
 /** Json Object **/
 /*****************/
 
-type JsonObject struct {
-	data map[string]json.RawMessage
-}
+// JsonObject is a type that represents a json object by keeping key-value
+// pairs of string and json.RawMessage
+type JsonObject map[string]json.RawMessage
 
+// NewJsonObject initialize and returns a pointer to a new JsonObject
 func NewJsonObject(data []byte) (*JsonObject, error) {
-	object := JsonObject{
-		make(map[string]json.RawMessage),
-	}
+	object := new(JsonObject)
 
-	err := json.Unmarshal(data, &object.data)
+	err := json.Unmarshal(data, object)
 	if err != nil {
 		return nil, err
 	}
 
-	return &object, nil
+	return object, nil
 }
 
-func (jo *JsonObject) GetObject(key string) (*JsonObject, error) {
-	var object JsonObject
-
-	err := json.Unmarshal(jo.data[key], &object.data)
+// GetObject returns the value of an object property that holds an object.
+func (jo JsonObject) GetObject(key string) (*JsonObject, error) {
+	object, err := NewJsonObject([]byte{})
 	if err != nil {
 		return nil, err
 	}
 
-	return &object, nil
+	err = json.Unmarshal(jo[key], &object)
+	if err != nil {
+		return nil, err
+	}
+
+	return object, nil
 }
 
-func (jo *JsonObject) GetString(key string) (*string, error) {
-	var _string string
+// GetString returns the value of an object property that holds a string.
+func (jo JsonObject) GetString(key string) (*string, error) {
+	var _string *string
 
-	err := json.Unmarshal(jo.data[key], &_string)
+	err := json.Unmarshal(jo[key], _string)
 	if err != nil {
 		return nil, err
 	}
 
-	return &_string, nil
+	return _string, nil
 }
 
-func (jo *JsonObject) GetInteger(key string) (*int, error) {
-	var integer int
+// GetInteger returns the value of an object property that holds a number.
+func (jo JsonObject) GetNumber(key string) (*float64, error) {
+	var number *float64
 
-	err := json.Unmarshal(jo.data[key], &integer)
+	err := json.Unmarshal(jo[key], number)
 	if err != nil {
 		return nil, err
 	}
 
-	return &integer, nil
+	return number, nil
 }
 
-func (jo *JsonObject) GetBoolean(key string) (*bool, error) {
-	var boolean bool
+// GetBoolean returns the value of an object property that holds a boolean.
+func (jo JsonObject) GetBoolean(key string) (*bool, error) {
+	var boolean *bool
 
-	err := json.Unmarshal(jo.data[key], &boolean)
+	err := json.Unmarshal(jo[key], boolean)
 	if err != nil {
 		return nil, err
 	}
 
-	return &boolean, nil
+	return boolean, nil
 }
 
-func (jo *JsonObject) GetArray(key string) (*JsonArray, error) {
-	var array JsonArray
+// GetArray returns the value of an object property that holds an array.
+func (jo JsonObject) GetArray(key string) (*JsonArray, error) {
+	var array *JsonArray
 
-	err := json.Unmarshal(jo.data[key], &array)
+	err := json.Unmarshal(jo[key], array)
 	if err != nil {
 		return nil, err
 	}
 
-	return &array, nil
+	return array, nil
 }
 
 /*****************/
 /** Json Array **/
 /*****************/
 
-type JsonArray struct {
-	data []json.RawMessage
-}
+// JsonObject is a type that represents a json object by keeping a slice
+// of json.RawMessages
+type JsonArray []json.RawMessage
 
+// NewJsonArray initializes and returns a pointer to JsonArray.
 func NewJsonArray(data []byte) (*JsonArray, error) {
-	var array JsonArray
+	var array *JsonArray
 
-	err := json.Unmarshal(data, &array.data)
+	err := json.Unmarshal(data, array)
 	if err != nil {
 		return nil, err
 	}
 
-	return &array, nil
+	return array, nil
 }
 
-func (ja *JsonArray) GetObject(index int) (*JsonObject, error) {
-	var object JsonObject
-
-	err := json.Unmarshal(ja.data[index], &object.data)
+// GetObject returns the value of an object array item.
+func (ja JsonArray) GetObject(index int) (*JsonObject, error) {
+	object, err := NewJsonObject([]byte{})
 	if err != nil {
 		return nil, err
 	}
 
-	return &object, nil
-}
-
-func (ja *JsonArray) GetString(index int) (*string, error) {
-	var _string string
-
-	err := json.Unmarshal(ja.data[index], &_string)
+	err = json.Unmarshal(ja[index], object)
 	if err != nil {
 		return nil, err
 	}
 
-	return &_string, nil
+	return object, nil
 }
 
-func (ja *JsonArray) GetInteger(index int) (*int, error) {
-	var integer int
+// GetString returns the value of a string array item.
+func (ja JsonArray) GetString(index int) (*string, error) {
+	var _string *string
 
-	err := json.Unmarshal(ja.data[index], &integer)
+	err := json.Unmarshal(ja[index], _string)
 	if err != nil {
 		return nil, err
 	}
 
-	return &integer, nil
+	return _string, nil
 }
 
-func (ja *JsonArray) GetBoolean(index int) (*bool, error) {
-	var boolean bool
+// GetNumber returns the value of a numeric array item.
+func (ja JsonArray) GetNumber(index int) (*float64, error) {
+	var number *float64
 
-	err := json.Unmarshal(ja.data[index], &boolean)
+	err := json.Unmarshal(ja[index], number)
 	if err != nil {
 		return nil, err
 	}
 
-	return &boolean, nil
+	return number, nil
 }
 
-func (ja *JsonArray) GetArray(index int) (*JsonArray, error) {
-	var array JsonArray
+// GetBoolean returns the value of a boolean array item.
+func (ja JsonArray) GetBoolean(index int) (*bool, error) {
+	var boolean *bool
 
-	err := json.Unmarshal(ja.data[index], &array)
+	err := json.Unmarshal(ja[index], boolean)
 	if err != nil {
 		return nil, err
 	}
 
-	return &array, nil
+	return boolean, nil
 }
 
-//
-//
-///*****************/
-///** Json Number **/
-///*****************/
-//
-//type JsonNumber struct {
-//	data json.RawMessage
-//}
-//
-//func NewJsonNumber(data []byte) (interface{}, error) {
-//	// TODO: Unmarshal here
-//	return nil, nil
-//}
-//
-//
-///******************/
-///** Json Boolean **/
-///******************/
-//
-//type JsonBoolean struct {
-//	data json.RawMessage
-//}
-//
-//func NewJsonBoolean(data []byte) (interface{}, error) {
-//	// TODO: Unmarshal here
-//	return nil, nil
-//}
-//
-//
-///*****************/
-///** Json String **/
-///*****************/
-//
-//type JsonString struct {
-//	data json.RawMessage
-//}
-//
-//func NewJsonString(data []byte) (interface{}, error) {
-//	// TODO: Unmarshal here
-//	return nil, nil
-//}
-//
-//
-///******************/
-///** Json Integer **/
-///******************/
-//
-//type JsonInteger struct {
-//	data json.RawMessage
-//}
-//
-//func NewJsonInteger(data []byte) (interface{}, error) {
-//	// TODO: Unmarshal here
-//	return nil, nil
-//}
-//
-//
-///***************/
-///** Json Null **/
-///***************/
-//
-//type JsonNull struct {
-//	data json.RawMessage
-//}
-//
-//func NewJsonNull(data []byte) (interface{}, error) {
-//	// TODO: Unmarshal here
-//	return nil, nil
-//}
+// GetArray returns the value of an array array item.
+func (ja JsonArray) GetArray(index int) (*JsonArray, error) {
+	var array *JsonArray
+
+	err := json.Unmarshal(ja[index], array)
+	if err != nil {
+		return nil, err
+	}
+
+	return array, nil
+}
+
+func (ja JsonArray) GetItemByIndex(index int) (interface{}, error) {
+	return ja[index], nil
+}
