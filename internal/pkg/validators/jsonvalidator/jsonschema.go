@@ -1,5 +1,9 @@
 package jsonvalidator
 
+import (
+	"log"
+)
+
 // Valid Json Schema types
 const (
 	TYPE_OBJECT  = "object"
@@ -191,10 +195,12 @@ func (js *JsonSchema) validateJsonData(jsonPath, jsonData string) (bool, error) 
 	for _, keyword := range keywordValidators {
 		valid, err := keyword.validate(jsonPath, jsonData)
 		if err != nil {
+			log.Print("[JsonSchema DEBUG]: validation failed in path: " + jsonPath)
 			return valid, err
 		}
 	}
 
+	log.Print("[JsonSchema DEBUG]: validation succeeded")
 	return true, nil
 }
 

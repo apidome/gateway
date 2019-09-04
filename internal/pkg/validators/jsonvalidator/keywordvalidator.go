@@ -1,6 +1,8 @@
 package jsonvalidator
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type keywordValidator interface {
 	validate(string, interface{}) (bool, error)
