@@ -189,7 +189,7 @@ type JsonSchema struct {
 	Else *_else `json:"else"`
 }
 
-func (js *JsonSchema) validateJsonData(jsonPath, jsonData string) (bool, error) {
+func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, error) {
 	keywordValidators := getKeywordsSlice(js)
 
 	for _, keyword := range keywordValidators {

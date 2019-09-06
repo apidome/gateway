@@ -12,11 +12,11 @@ type JsonValidator struct {
 
 // LoadSchema is a function that handles addition of new schema to the
 // JsonValidator's schemas list
-func (jv JsonValidator) LoadSchema(path, method, s string) error {
+func (jv JsonValidator) LoadSchema(path string, method string, s []byte) error {
 	var schema JsonSchema
 
 	// Check if the string s is a valid json.
-	err := json.Unmarshal([]byte(s), &schema)
+	err := json.Unmarshal(s, &schema)
 	if err != nil {
 		return err
 	}
@@ -38,16 +38,10 @@ func (jv JsonValidator) LoadSchema(path, method, s string) error {
 	return nil
 }
 
-// Parse converts a string that represents a json value to a known
-// data structure
-func (jv JsonValidator) Parse(b string) (bool, error) {
-	return false, nil
-}
-
 // Validate is the function that actually perform validation of json value
 // according to a specific json schema
-func (jv JsonValidator) Validate(path, method, b string) (bool, error) {
-	return jv.schemaDict[path][method].validateJsonData("/", b)
+func (jv JsonValidator) Validate(path string, method string, body []byte) (bool, error) {
+	return jv.schemaDict[path][method].validateJsonData("/", body)
 }
 
 // NewJsonValidator returns a new instance of JsonValidator

@@ -2,11 +2,8 @@ package validators
 
 type Validator interface {
 	// LoadSchema Gets a new schema and verifies that the schema is correct.
-	LoadSchema(path, method, schema string) error
-
-	// Parser verifies that a piece of data fits to the validator's format.
-	Parse(b string) (bool, error)
+	LoadSchema(path string, method string, schema []byte) error
 
 	// Validate enforces the schema's rules on a piece of data.
-	Validate(path, method, b string) (bool, error)
+	Validate(path string, method string, body []byte) (bool, error)
 }
