@@ -2,6 +2,8 @@ package jsonvalidator
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/Creespye/caf/internal/pkg/jsonwalker"
 )
 
 type keywordValidator interface {
@@ -15,6 +17,18 @@ type keywordValidator interface {
 type schema string
 
 func (s *schema) validate(path string, jsonData interface{}) (bool, error) {
+	jsonPointer, err := jsonwalker.NewJsonPointer("/name")
+	if err != nil {
+		return false, err
+	}
+
+	data, err := jsonPointer.Evaluate(jsonData.([]byte))
+	if err != nil {
+		return false, err
+	}
+
+	fmt.Println(data)
+
 	return true, nil
 }
 

@@ -110,7 +110,7 @@ func NewJsonArray(data []byte) (*JsonArray, error) {
 // GetObject returns the value of an object array item.
 func (ja JsonArray) GetObject(index int) (*JsonObject, error) {
 	if index > len(ja)-1 || index < 0 {
-		return nil, jsonArrayIndexError{
+		return nil, JsonArrayIndexError{
 			"Out of range",
 			index,
 		}
@@ -132,7 +132,7 @@ func (ja JsonArray) GetObject(index int) (*JsonObject, error) {
 // GetString returns the value of a string array item.
 func (ja JsonArray) GetString(index int) (*string, error) {
 	if index > len(ja)-1 || index < 0 {
-		return nil, jsonArrayIndexError{
+		return nil, JsonArrayIndexError{
 			"Out of range",
 			index,
 		}
@@ -151,7 +151,7 @@ func (ja JsonArray) GetString(index int) (*string, error) {
 // GetNumber returns the value of a numeric array item.
 func (ja JsonArray) GetNumber(index int) (*float64, error) {
 	if index > len(ja)-1 || index < 0 {
-		return nil, jsonArrayIndexError{
+		return nil, JsonArrayIndexError{
 			"Out of range",
 			index,
 		}
@@ -170,7 +170,7 @@ func (ja JsonArray) GetNumber(index int) (*float64, error) {
 // GetBoolean returns the value of a boolean array item.
 func (ja JsonArray) GetBoolean(index int) (*bool, error) {
 	if index > len(ja)-1 || index < 0 {
-		return nil, jsonArrayIndexError{
+		return nil, JsonArrayIndexError{
 			"Out of range",
 			index,
 		}
@@ -189,7 +189,7 @@ func (ja JsonArray) GetBoolean(index int) (*bool, error) {
 // GetArray returns the value of an array array item.
 func (ja JsonArray) GetArray(index int) (*JsonArray, error) {
 	if index > len(ja)-1 || index < 0 {
-		return nil, jsonArrayIndexError{
+		return nil, JsonArrayIndexError{
 			"Out of range",
 			index,
 		}
