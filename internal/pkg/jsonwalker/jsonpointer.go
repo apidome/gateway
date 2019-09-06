@@ -3,7 +3,6 @@ package jsonwalker
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -22,7 +21,7 @@ func NewJsonPointer(path string) (JsonPointer, error) {
 
 	tokens := strings.Split(path, "/")
 
-	return JsonPointer(tokens), nil
+	return JsonPointer(tokens[1:]), nil
 }
 
 func (jp JsonPointer) Evaluate(jsonData json.RawMessage) (interface{}, error) {
@@ -33,54 +32,41 @@ func (jp JsonPointer) Evaluate(jsonData json.RawMessage) (interface{}, error) {
 
 	var data interface{}
 
-	//
-	for i, token := range jp {
-		if i == 0 {
-			err := json.Unmarshal(jsonData, &data)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			switch v := data.(type) {
-			case bool, string, float64:
-				{
-					if len(jp) > i {
-						// TODO: Create new error type.
-						return nil, errors.New("json data does not contain the location the JsonPointer points to")
-					}
-				}
-			case map[string]interface{}:
-				{
-					if len(jp) > i {
-						err := json.Unmarshal(v[token].([]byte), &data)
-						if err != nil {
-							return nil, err
-						}
-					}
-				}
-			case []interface{}:
-				{
-					if len(jp) > i {
-						index, err := strconv.Atoi(token)
-						if err != nil {
-							return nil, err
-						}
+	err := json.Unmarshal(jsonData, &data)
+	if err != nil {
+		return nil, err
+	}
 
-						err = json.Unmarshal(v[index].([]byte), &data)
-						if err != nil {
-							return nil, err
-						}
-					}
-				}
-			default:
-				{
-					log.Print("[JsonPointer WARNING] Unexpected use case")
-					// TODO: Create new error type.
-					return nil, errors.New("unexpected possible data type in json data")
-				}
-			}
+	//
+	for _, token := range jp {
+		data, err = jp.evaluateToken(token, data)
+		if err != nil {
+			return nil, errors.New("invalid json pointer - " + strings.Join(jp, "/") + ": " + err.Error())
 		}
 	}
 
 	return data, nil
+}
+
+func (jp JsonPointer) evaluateToken(token string, jsonData interface{}) (interface{}, error) {
+	switch v := jsonData.(type) {
+	case map[string]interface{}:
+		{
+			return v[token], nil
+		}
+	case []interface{}:
+		{
+			index, err := strconv.Atoi(token)
+			if err != nil {
+				return nil, err
+			}
+
+			return v[index], nil
+		}
+	default:
+		{
+			// TODO: Create new error type.
+			return nil, errors.New("json token - " + token + " does not exist in data")
+		}
+	}
 }

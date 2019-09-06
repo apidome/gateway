@@ -17,7 +17,7 @@ type keywordValidator interface {
 type schema string
 
 func (s *schema) validate(path string, jsonData interface{}) (bool, error) {
-	jsonPointer, err := jsonwalker.NewJsonPointer("/name")
+	jsonPointer, err := jsonwalker.NewJsonPointer("/name/a")
 	if err != nil {
 		return false, err
 	}
