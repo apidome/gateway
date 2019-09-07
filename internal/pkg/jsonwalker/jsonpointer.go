@@ -15,8 +15,11 @@ func NewJsonPointer(path string) (JsonPointer, error) {
 	}
 
 	if path[0] != '/' {
-		// TODO: Create new error type.
-		return nil, errors.New("first character of non-empty reference must be '/'")
+		return nil, JsonPointerSyntaxError{
+			"first character of non-empty reference must be '/'",
+			path,
+		}
+		//return nil, errors.New("first character of non-empty reference must be '/'")
 	}
 
 	tokens := strings.Split(path, "/")
