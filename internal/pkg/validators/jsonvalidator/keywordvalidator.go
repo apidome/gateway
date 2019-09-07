@@ -2,12 +2,11 @@ package jsonvalidator
 
 import (
 	"encoding/json"
-	"github.com/Creespye/caf/internal/pkg/jsonwalker"
 	"strconv"
 )
 
 type keywordValidator interface {
-	validate(string, []byte) (bool, error)
+	validate(interface{}) (bool, error)
 }
 
 /**********************/
@@ -16,55 +15,55 @@ type keywordValidator interface {
 
 type schema string
 
-func (s *schema) validate(path string, jsonData []byte) (bool, error) {
+func (s *schema) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type ref string
 
-func (r *ref) validate(path string, jsonData []byte) (bool, error) {
+func (r *ref) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type id string
 
-func (i *id) validate(path string, jsonData []byte) (bool, error) {
+func (i *id) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type comment string
 
-func (c *comment) validate(path string, jsonData []byte) (bool, error) {
+func (c *comment) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type title string
 
-func (t *title) validate(path string, jsonData []byte) (bool, error) {
+func (t *title) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type description string
 
-func (d *description) validate(path string, jsonData []byte) (bool, error) {
+func (d *description) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type examples []interface{}
 
-func (e examples) validate(path string, jsonData []byte) (bool, error) {
+func (e examples) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type enum []interface{}
 
-func (e enum) validate(path string, jsonData []byte) (bool, error) {
+func (e enum) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type _default json.RawMessage
 
-func (d _default) validate(path string, jsonData []byte) (bool, error) {
+func (d _default) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -75,19 +74,19 @@ func (d *_default) UnmarshalJSON(data []byte) error {
 
 type _const json.RawMessage
 
-func (c _const) validate(path string, jsonData []byte) (bool, error) {
+func (c _const) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type definitions map[string]*JsonSchema
 
-func (d definitions) validate(path string, jsonData []byte) (bool, error) {
+func (d definitions) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type _type json.RawMessage
 
-func (t *_type) validate(path string, jsonData []byte) (bool, error) {
+func (t *_type) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -102,35 +101,23 @@ func (t *_type) UnmarshalJSON(data []byte) error {
 
 type minLength int
 
-func (ml *minLength) validate(path string, jsonData []byte) (bool, error) {
+func (ml *minLength) validate(jsonData interface{}) (bool, error) {
 	if ml == nil {
 		return true, nil
 	}
 
-	jsonPointer, err := jsonwalker.NewJsonPointer(path)
-	if err != nil {
-		return false, err
-	}
-
-	value, err := jsonPointer.Evaluate(jsonData)
-	if err != nil {
-		return false, nil
-	}
-
-	if v, ok := value.(string); ok {
+	if v, ok := jsonData.(string); ok {
 		if len(v) >= int(*ml) {
 			return true, nil
 		} else {
 			return false, KeywordValidationError{
 				"minLength",
-				path,
 				"inspected string shorter than " + string(*ml),
 			}
 		}
 	} else {
 		return false, KeywordValidationError{
 			"minLength",
-			path,
 			"inspected value is not a string",
 		}
 	}
@@ -138,19 +125,19 @@ func (ml *minLength) validate(path string, jsonData []byte) (bool, error) {
 
 type maxLength int
 
-func (ml *maxLength) validate(path string, jsonData []byte) (bool, error) {
+func (ml *maxLength) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type pattern string
 
-func (p *pattern) validate(path string, jsonData []byte) (bool, error) {
+func (p *pattern) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type format string
 
-func (f *format) validate(path string, jsonData []byte) (bool, error) {
+func (f *format) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -160,35 +147,23 @@ func (f *format) validate(path string, jsonData []byte) (bool, error) {
 
 type multipleOf int
 
-func (mo *multipleOf) validate(path string, jsonData []byte) (bool, error) {
+func (mo *multipleOf) validate(jsonData interface{}) (bool, error) {
 	if mo == nil {
 		return true, nil
 	}
 
-	jsonPointer, err := jsonwalker.NewJsonPointer(path)
-	if err != nil {
-		return false, err
-	}
-
-	value, err := jsonPointer.Evaluate(jsonData)
-	if err != nil {
-		return false, nil
-	}
-
-	if v, ok := value.(int); ok {
+	if v, ok := jsonData.(int); ok {
 		if v%int(*mo) == 0 {
 			return true, nil
 		} else {
 			return false, KeywordValidationError{
 				"multipleOf",
-				path,
 				"inspected value is not a multiple of " + string(*mo),
 			}
 		}
 	} else {
 		return false, KeywordValidationError{
 			"multipleOf",
-			path,
 			"inspected value is not an integer",
 		}
 	}
@@ -196,28 +171,17 @@ func (mo *multipleOf) validate(path string, jsonData []byte) (bool, error) {
 
 type minimum float64
 
-func (m *minimum) validate(path string, jsonData []byte) (bool, error) {
+func (m *minimum) validate(jsonData interface{}) (bool, error) {
 	if m == nil {
 		return true, nil
 	}
 
-	jsonPointer, err := jsonwalker.NewJsonPointer(path)
-	if err != nil {
-		return false, err
-	}
-
-	value, err := jsonPointer.Evaluate(jsonData)
-	if err != nil {
-		return false, nil
-	}
-
-	if v, ok := value.(float64); ok {
+	if v, ok := jsonData.(float64); ok {
 		if v >= float64(*m) {
 			return true, nil
 		} else {
 			return false, KeywordValidationError{
 				"minimum",
-				path,
 				"inspected value is less than " + strconv.FormatFloat(float64(*m),
 					'f',
 					6,
@@ -227,7 +191,6 @@ func (m *minimum) validate(path string, jsonData []byte) (bool, error) {
 	} else {
 		return false, KeywordValidationError{
 			"minimum",
-			path,
 			"inspected value is not a number",
 		}
 	}
@@ -235,35 +198,24 @@ func (m *minimum) validate(path string, jsonData []byte) (bool, error) {
 
 type maximum float64
 
-func (m *maximum) validate(path string, jsonData []byte) (bool, error) {
+func (m *maximum) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type exclusiveMinimum float64
 
-func (em *exclusiveMinimum) validate(path string, jsonData []byte) (bool, error) {
+func (em *exclusiveMinimum) validate(jsonData interface{}) (bool, error) {
 	if em == nil {
 		return true, nil
 	}
 
-	jsonPointer, err := jsonwalker.NewJsonPointer(path)
-	if err != nil {
-		return false, err
-	}
-
-	value, err := jsonPointer.Evaluate(jsonData)
-	if err != nil {
-		return false, nil
-	}
-
-	if v, ok := value.(float64); ok {
+	if v, ok := jsonData.(float64); ok {
 		if v > float64(*em) {
 			return true, nil
 		} else {
 			return false, KeywordValidationError{
 				"exclusiveMinimum",
-				path,
-				"inspectd value is not greater than " + strconv.FormatFloat(float64(*em),
+				"inspected value is not greater than " + strconv.FormatFloat(float64(*em),
 					'f',
 					6,
 					64),
@@ -272,7 +224,6 @@ func (em *exclusiveMinimum) validate(path string, jsonData []byte) (bool, error)
 	} else {
 		return false, KeywordValidationError{
 			"exclusiveMinimum",
-			path,
 			"",
 		}
 	}
@@ -280,7 +231,7 @@ func (em *exclusiveMinimum) validate(path string, jsonData []byte) (bool, error)
 
 type exclusiveMaximum float64
 
-func (em *exclusiveMaximum) validate(path string, jsonData []byte) (bool, error) {
+func (em *exclusiveMaximum) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -290,9 +241,27 @@ func (em *exclusiveMaximum) validate(path string, jsonData []byte) (bool, error)
 
 type properties map[string]*JsonSchema
 
-func (p properties) validate(path string, jsonData []byte) (bool, error) {
+func (p properties) validate(jsonData interface{}) (bool, error) {
+	if p == nil {
+		return true, nil
+	}
+
+	var rawData json.RawMessage
+	var err error
+
+	// If the jsonData is already json.RawMessage, use it.
+	// Else, Marshal it back to []byte (which is similar to json.RawMessage)
+	if v, ok := jsonData.(json.RawMessage); ok {
+		rawData = v
+	} else {
+		rawData, err = json.Marshal(jsonData)
+		if err != nil {
+			return false, err
+		}
+	}
+
 	for key, value := range p {
-		valid, err := value.validateJsonData(path+"/"+key, jsonData)
+		valid, err := value.validateJsonData("/"+key, rawData)
 		if err != nil {
 			return valid, err
 		}
@@ -303,7 +272,7 @@ func (p properties) validate(path string, jsonData []byte) (bool, error) {
 
 type additionalProperties json.RawMessage
 
-func (ap additionalProperties) validate(path string, jsonData []byte) (bool, error) {
+func (ap additionalProperties) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -314,37 +283,37 @@ func (ap *additionalProperties) UnmarshalJSON(data []byte) error {
 
 type required []string
 
-func (r required) validate(path string, jsonData []byte) (bool, error) {
+func (r required) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type propertyNames JsonSchema
 
-func (pn *propertyNames) validate(path string, jsonData []byte) (bool, error) {
+func (pn *propertyNames) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type dependencies map[string]json.RawMessage
 
-func (d dependencies) validate(path string, jsonData []byte) (bool, error) {
+func (d dependencies) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type patternProperties map[string]*JsonSchema
 
-func (pp patternProperties) validate(path string, jsonData []byte) (bool, error) {
+func (pp patternProperties) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type minProperties int
 
-func (mp *minProperties) validate(path string, jsonData []byte) (bool, error) {
+func (mp *minProperties) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type maxProperties int
 
-func (mp *maxProperties) validate(path string, jsonData []byte) (bool, error) {
+func (mp *maxProperties) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -354,7 +323,7 @@ func (mp *maxProperties) validate(path string, jsonData []byte) (bool, error) {
 
 type items json.RawMessage
 
-func (i items) validate(path string, jsonData []byte) (bool, error) {
+func (i items) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -365,7 +334,7 @@ func (i *items) UnmarshalJSON(data []byte) error {
 
 type contains json.RawMessage
 
-func (c contains) validate(path string, jsonData []byte) (bool, error) {
+func (c contains) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -376,7 +345,7 @@ func (c *contains) UnmarshalJSON(data []byte) error {
 
 type additionalItems json.RawMessage
 
-func (ai additionalItems) validate(path string, jsonData []byte) (bool, error) {
+func (ai additionalItems) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -387,19 +356,19 @@ func (ai *additionalItems) UnmarshalJSON(data []byte) error {
 
 type minItems int
 
-func (mi *minItems) validate(path string, jsonData []byte) (bool, error) {
+func (mi *minItems) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type maxItems int
 
-func (mi *maxItems) validate(path string, jsonData []byte) (bool, error) {
+func (mi *maxItems) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type uniqueItems bool
 
-func (ui *uniqueItems) validate(path string, jsonData []byte) (bool, error) {
+func (ui *uniqueItems) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -409,13 +378,13 @@ func (ui *uniqueItems) validate(path string, jsonData []byte) (bool, error) {
 
 type contentMediaType string
 
-func (cm *contentMediaType) validate(path string, jsonData []byte) (bool, error) {
+func (cm *contentMediaType) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type contentEncoding string
 
-func (ce *contentEncoding) validate(path string, jsonData []byte) (bool, error) {
+func (ce *contentEncoding) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -425,42 +394,42 @@ func (ce *contentEncoding) validate(path string, jsonData []byte) (bool, error) 
 
 type anyOf []*JsonSchema
 
-func (af anyOf) validate(path string, jsonData []byte) (bool, error) {
+func (af anyOf) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type allOf []*JsonSchema
 
-func (af allOf) validate(path string, jsonData []byte) (bool, error) {
+func (af allOf) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type oneOf []*JsonSchema
 
-func (of oneOf) validate(path string, jsonData []byte) (bool, error) {
+func (of oneOf) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type not JsonSchema
 
-func (n *not) validate(path string, jsonData []byte) (bool, error) {
+func (n *not) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type _if JsonSchema
 
-func (i *_if) validate(path string, jsonData []byte) (bool, error) {
+func (i *_if) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type _then JsonSchema
 
-func (t *_then) validate(path string, jsonData []byte) (bool, error) {
+func (t *_then) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type _else JsonSchema
 
-func (e *_else) validate(path string, jsonData []byte) (bool, error) {
+func (e *_else) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }

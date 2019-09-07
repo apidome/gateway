@@ -2,6 +2,7 @@ package jsonvalidator
 
 import (
 	"fmt"
+	"github.com/Creespye/caf/internal/pkg/jsonwalker"
 	"log"
 )
 
@@ -192,18 +193,39 @@ type JsonSchema struct {
 
 func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, error) {
 	fmt.Println("[JsonSchema DEBUG] Validating " + jsonPath)
+
+	// Create a new JsonPointer.
+	jsonPointer, err := jsonwalker.NewJsonPointer(jsonPath)
+	if err != nil {
+		fmt.Println("[JsonSchema DEBUG] validateJsonData() failed while trying to create JsonPointer " + jsonPath)
+		return false, err
+	}
+
+	// Get the piece of json that the current schema describes.
+	value, err := jsonPointer.Evaluate(jsonData)
+	if err != nil {
+		fmt.Println("[JsonSchema DEBUG] validateJsonData() failed while trying to evaluate a JsonPointer " + jsonPath)
+		return false, nil
+	}
+
+	// Get a slice of all of JsonSchema's field in order to iterate them
+	// and call each of their validate() functions.
 	keywordValidators := getKeywordsSlice(js)
 
+	// Iterate over the keywords.
 	for _, keyword := range keywordValidators {
 		// TODO: Check if keyword != nil
-		valid, err := keyword.validate(jsonPath, jsonData)
+
+		// Validate the value that we extracted from the jsonData at each
+		// keyword.
+		valid, err := keyword.validate(value)
 		if err != nil {
-			log.Print("[JsonSchema DEBUG] validation failed in path: " + jsonPath)
+			log.Print("[JsonSchema DEBUG] validation failed in path: " + jsonPath + " - " + err.Error())
 			return valid, err
 		}
 	}
 
-	log.Print("[JsonSchema DEBUG] validation succeeded")
+	fmt.Println("[JsonSchema DEBUG] validation succeeded in path " + jsonPath)
 	return true, nil
 }
 

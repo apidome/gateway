@@ -80,7 +80,7 @@
                 "properties": {
                     "name": {
                         "type": "string",
-                        "minLenght": 1,
+                        "minLength": 1,
                         "maxLength": 64
                     },
                     "value": {
