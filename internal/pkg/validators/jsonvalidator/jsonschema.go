@@ -251,7 +251,7 @@ func getKeywordsSlice(js *JsonSchema) []keywordValidator {
 		js.Minimum,
 		js.Maximum,
 		js.ExclusiveMinimum,
-		js.ExclusiveMinimum,
+		js.ExclusiveMaximum,
 		js.Properties,
 		js.AdditionalProperties,
 		js.Required,

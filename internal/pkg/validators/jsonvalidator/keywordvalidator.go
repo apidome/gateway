@@ -222,7 +222,7 @@ func (m *maximum) validate(jsonData interface{}) (bool, error) {
 		} else {
 			return false, KeywordValidationError{
 				"maximum",
-				"inspected value is less than " + strconv.FormatFloat(float64(*m),
+				"inspected value is greater than " + strconv.FormatFloat(float64(*m),
 					'f',
 					6,
 					64),
@@ -280,7 +280,7 @@ func (em *exclusiveMaximum) validate(jsonData interface{}) (bool, error) {
 		} else {
 			return false, KeywordValidationError{
 				"exclusiveMaximum",
-				"inspected value is less than " + strconv.FormatFloat(float64(*em),
+				"inspected value is not less than " + strconv.FormatFloat(float64(*em),
 					'f',
 					6,
 					64),

@@ -21,8 +21,8 @@
         },
         "age": {
             "type": "integer",
-            "minimum": 18,
-            "maximum": 100,
+            "exclusiveMinimum": 18,
+            "exclusiveMaximum": 100,
             "multipleOf": 0.25
         },
         "email": {
