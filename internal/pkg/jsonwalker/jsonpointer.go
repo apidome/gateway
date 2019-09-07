@@ -44,7 +44,10 @@ func (jp JsonPointer) Evaluate(jsonData json.RawMessage) (interface{}, error) {
 	for _, token := range jp {
 		data, err = jp.evaluateToken(token, data)
 		if err != nil {
-			return nil, errors.New("invalid json pointer - " + strings.Join(jp, "/") + ": " + err.Error())
+			return nil, InvalidJsonPointerError{
+				"/" + strings.Join(jp, "/"),
+				token,
+			}
 		}
 	}
 
@@ -68,7 +71,6 @@ func (jp JsonPointer) evaluateToken(token string, jsonData interface{}) (interfa
 		}
 	default:
 		{
-			// TODO: Create new error type.
 			return nil, errors.New("json token - " + token + " does not exist in data")
 		}
 	}
