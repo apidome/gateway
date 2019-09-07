@@ -203,7 +203,28 @@ func (m *minimum) validate(jsonData interface{}) (bool, error) {
 type maximum float64
 
 func (m *maximum) validate(jsonData interface{}) (bool, error) {
-	return true, nil
+	if m == nil {
+		return true, nil
+	}
+
+	if v, ok := jsonData.(float64); ok {
+		if v <= float64(*m) {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"maximum",
+				"inspected value is less than " + strconv.FormatFloat(float64(*m),
+					'f',
+					6,
+					64),
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"maximum",
+			"inspected value is not a number",
+		}
+	}
 }
 
 type exclusiveMinimum float64
@@ -236,7 +257,28 @@ func (em *exclusiveMinimum) validate(jsonData interface{}) (bool, error) {
 type exclusiveMaximum float64
 
 func (em *exclusiveMaximum) validate(jsonData interface{}) (bool, error) {
-	return true, nil
+	if em == nil {
+		return true, nil
+	}
+
+	if v, ok := jsonData.(float64); ok {
+		if v < float64(*em) {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"exclusiveMaximum",
+				"inspected value is less than " + strconv.FormatFloat(float64(*m),
+					'f',
+					6,
+					64),
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"exclusiveMaximum",
+			"inspected value is not a number",
+		}
+	}
 }
 
 /*********************/
