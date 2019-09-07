@@ -18,10 +18,10 @@ func (e JsonPointerSyntaxError) Error() string {
 }
 
 type InvalidJsonPointerError struct {
-	path         string
-	missingToken string
+	path   string
+	reason string
 }
 
 func (e InvalidJsonPointerError) Error() string {
-	return fmt.Sprintf("invalid json pointer \"%s\": missing json token - \"%s\"", e.path, e.missingToken)
+	return fmt.Sprintf("invalid json pointer \"%s\": %s", e.path, e.reason)
 }
