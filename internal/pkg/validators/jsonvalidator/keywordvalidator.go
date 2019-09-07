@@ -2,7 +2,6 @@ package jsonvalidator
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/Creespye/caf/internal/pkg/jsonwalker"
 )
@@ -122,8 +121,10 @@ func (ml *minLength) validate(path string, jsonData []byte) (bool, error) {
 		return len(v) >= int(*ml), nil
 	}
 
-	fmt.Println("[minLength DEBUG] minLength validation failed in path " + path)
-	return false, errors.New("minLength validation failed in path " + path)
+	return false, KeywordValidationError{
+		"minLength",
+		path,
+	}
 }
 
 type maxLength int
@@ -151,7 +152,29 @@ func (f *format) validate(path string, jsonData []byte) (bool, error) {
 type multipleOf int
 
 func (mo *multipleOf) validate(path string, jsonData []byte) (bool, error) {
-	return true, nil
+	if mo == nil {
+		return true, nil
+	}
+
+	jsonPointer, err := jsonwalker.NewJsonPointer(path)
+	if err != nil {
+		return false, err
+	}
+
+	value, err := jsonPointer.Evaluate(jsonData)
+	if err != nil {
+		return false, nil
+	}
+
+	if v, ok := value.(int); ok {
+		return v >= int(*mo), nil
+	}
+
+	fmt.Println("[multipleOf DEBUG] validation failed in path " + path)
+	return false, KeywordValidationError{
+		"multipleOf",
+		path,
+	}
 }
 
 type minimum float64
