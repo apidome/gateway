@@ -29,7 +29,7 @@
                             {
                                 "path": "/api/v1/product",
                                 "method": "POST",
-                                "schema": "schemas/schema2.json"
+                                "schema": "schemas/schema1.json"
                             },
                             {
                                 "path": "/api/v1/store",

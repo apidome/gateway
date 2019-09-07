@@ -1,6 +1,7 @@
 package jsonvalidator
 
 import (
+	"fmt"
 	"log"
 )
 
@@ -190,17 +191,19 @@ type JsonSchema struct {
 }
 
 func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, error) {
+	fmt.Println("[JsonSchema DEBUG] Validating " + jsonPath)
 	keywordValidators := getKeywordsSlice(js)
 
 	for _, keyword := range keywordValidators {
+		// TODO: Check if keyword != nil
 		valid, err := keyword.validate(jsonPath, jsonData)
 		if err != nil {
-			log.Print("[JsonSchema DEBUG]: validation failed in path: " + jsonPath)
+			log.Print("[JsonSchema DEBUG] validation failed in path: " + jsonPath)
 			return valid, err
 		}
 	}
 
-	log.Print("[JsonSchema DEBUG]: validation succeeded")
+	log.Print("[JsonSchema DEBUG] validation succeeded")
 	return true, nil
 }
 
