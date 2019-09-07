@@ -2,8 +2,8 @@ package jsonvalidator
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/Creespye/caf/internal/pkg/jsonwalker"
+	"strconv"
 )
 
 type keywordValidator interface {
@@ -118,12 +118,21 @@ func (ml *minLength) validate(path string, jsonData []byte) (bool, error) {
 	}
 
 	if v, ok := value.(string); ok {
-		return len(v) >= int(*ml), nil
-	}
-
-	return false, KeywordValidationError{
-		"minLength",
-		path,
+		if len(v) >= int(*ml) {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"minLength",
+				path,
+				"inspected string shorter than " + string(*ml),
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"minLength",
+			path,
+			"inspected value is not a string",
+		}
 	}
 }
 
@@ -167,20 +176,61 @@ func (mo *multipleOf) validate(path string, jsonData []byte) (bool, error) {
 	}
 
 	if v, ok := value.(int); ok {
-		return v >= int(*mo), nil
-	}
-
-	fmt.Println("[multipleOf DEBUG] validation failed in path " + path)
-	return false, KeywordValidationError{
-		"multipleOf",
-		path,
+		if v%int(*mo) == 0 {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"multipleOf",
+				path,
+				"inspected value is not a multiple of " + string(*mo),
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"multipleOf",
+			path,
+			"inspected value is not an integer",
+		}
 	}
 }
 
 type minimum float64
 
 func (m *minimum) validate(path string, jsonData []byte) (bool, error) {
-	return true, nil
+	if m == nil {
+		return true, nil
+	}
+
+	jsonPointer, err := jsonwalker.NewJsonPointer(path)
+	if err != nil {
+		return false, err
+	}
+
+	value, err := jsonPointer.Evaluate(jsonData)
+	if err != nil {
+		return false, nil
+	}
+
+	if v, ok := value.(float64); ok {
+		if v >= float64(*m) {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"minimum",
+				path,
+				"inspected value is less than " + strconv.FormatFloat(float64(*m),
+					'f',
+					6,
+					64),
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"minimum",
+			path,
+			"inspected value is not a number",
+		}
+	}
 }
 
 type maximum float64
@@ -192,7 +242,40 @@ func (m *maximum) validate(path string, jsonData []byte) (bool, error) {
 type exclusiveMinimum float64
 
 func (em *exclusiveMinimum) validate(path string, jsonData []byte) (bool, error) {
-	return true, nil
+	if em == nil {
+		return true, nil
+	}
+
+	jsonPointer, err := jsonwalker.NewJsonPointer(path)
+	if err != nil {
+		return false, err
+	}
+
+	value, err := jsonPointer.Evaluate(jsonData)
+	if err != nil {
+		return false, nil
+	}
+
+	if v, ok := value.(float64); ok {
+		if v > float64(*em) {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"exclusiveMinimum",
+				path,
+				"inspectd value is not greater than " + strconv.FormatFloat(float64(*em),
+					'f',
+					6,
+					64),
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"exclusiveMinimum",
+			path,
+			"",
+		}
+	}
 }
 
 type exclusiveMaximum float64
