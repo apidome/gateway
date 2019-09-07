@@ -103,10 +103,13 @@ func (t *_type) UnmarshalJSON(data []byte) error {
 type minLength int
 
 func (ml *minLength) validate(jsonData interface{}) (bool, error) {
+	// If the receiver is nil, dont validate it (return true)
 	if ml == nil {
 		return true, nil
 	}
 
+	// If jsonData is a string, validate its length,
+	// else, return a KeywordValidationError
 	if v, ok := jsonData.(string); ok {
 		if len(v) >= int(*ml) {
 			return true, nil
@@ -149,10 +152,12 @@ func (f *format) validate(jsonData interface{}) (bool, error) {
 type multipleOf float64
 
 func (mo *multipleOf) validate(jsonData interface{}) (bool, error) {
+	// If the receiver is nil, dont validate it (return true)
 	if mo == nil {
 		return true, nil
 	}
 
+	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.(float64); ok {
 		if math.Mod(v, float64(*mo)) == 0 {
 			return true, nil
@@ -176,10 +181,12 @@ func (mo *multipleOf) validate(jsonData interface{}) (bool, error) {
 type minimum float64
 
 func (m *minimum) validate(jsonData interface{}) (bool, error) {
+	// If the receiver is nil, dont validate it (return true)
 	if m == nil {
 		return true, nil
 	}
 
+	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.(float64); ok {
 		if v >= float64(*m) {
 			return true, nil
@@ -203,10 +210,12 @@ func (m *minimum) validate(jsonData interface{}) (bool, error) {
 type maximum float64
 
 func (m *maximum) validate(jsonData interface{}) (bool, error) {
+	// If the receiver is nil, dont validate it (return true)
 	if m == nil {
 		return true, nil
 	}
 
+	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.(float64); ok {
 		if v <= float64(*m) {
 			return true, nil
@@ -230,10 +239,12 @@ func (m *maximum) validate(jsonData interface{}) (bool, error) {
 type exclusiveMinimum float64
 
 func (em *exclusiveMinimum) validate(jsonData interface{}) (bool, error) {
+	// If the receiver is nil, dont validate it (return true)
 	if em == nil {
 		return true, nil
 	}
 
+	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.(float64); ok {
 		if v > float64(*em) {
 			return true, nil
@@ -257,17 +268,19 @@ func (em *exclusiveMinimum) validate(jsonData interface{}) (bool, error) {
 type exclusiveMaximum float64
 
 func (em *exclusiveMaximum) validate(jsonData interface{}) (bool, error) {
+	// If the receiver is nil, dont validate it (return true)
 	if em == nil {
 		return true, nil
 	}
 
+	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.(float64); ok {
 		if v < float64(*em) {
 			return true, nil
 		} else {
 			return false, KeywordValidationError{
 				"exclusiveMaximum",
-				"inspected value is less than " + strconv.FormatFloat(float64(*m),
+				"inspected value is less than " + strconv.FormatFloat(float64(*em),
 					'f',
 					6,
 					64),
@@ -288,6 +301,7 @@ func (em *exclusiveMaximum) validate(jsonData interface{}) (bool, error) {
 type properties map[string]*JsonSchema
 
 func (p properties) validate(jsonData interface{}) (bool, error) {
+	// If the receiver is nil, dont validate it (return true)
 	if p == nil {
 		return true, nil
 	}
@@ -306,6 +320,7 @@ func (p properties) validate(jsonData interface{}) (bool, error) {
 		}
 	}
 
+	// For each "property" validate it according to its JsonSchema.
 	for key, value := range p {
 		valid, err := value.validateJsonData("/"+key, rawData)
 		if err != nil {
