@@ -2,6 +2,7 @@ package jsonvalidator
 
 import (
 	"encoding/json"
+	"math"
 	"strconv"
 )
 
@@ -145,20 +146,23 @@ func (f *format) validate(jsonData interface{}) (bool, error) {
 /** Number Keywords **/
 /*********************/
 
-type multipleOf int
+type multipleOf float64
 
 func (mo *multipleOf) validate(jsonData interface{}) (bool, error) {
 	if mo == nil {
 		return true, nil
 	}
 
-	if v, ok := jsonData.(int); ok {
-		if v%int(*mo) == 0 {
+	if v, ok := jsonData.(float64); ok {
+		if math.Mod(v, float64(*mo)) == 0 {
 			return true, nil
 		} else {
 			return false, KeywordValidationError{
 				"multipleOf",
-				"inspected value is not a multiple of " + string(*mo),
+				"inspected value is not a multiple of " + strconv.FormatFloat(float64(*mo),
+					'f',
+					6,
+					64),
 			}
 		}
 	} else {
