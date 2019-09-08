@@ -331,9 +331,9 @@ func (p properties) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type additionalProperties json.RawMessage
+type additionalProperties JsonSchema
 
-func (ap additionalProperties) validate(jsonData interface{}) (bool, error) {
+func (ap *additionalProperties) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 

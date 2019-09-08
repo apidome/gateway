@@ -106,7 +106,7 @@ type JsonSchema struct {
 	// properties will be allowed.
 	// If additionalProperties is an object, that object is a schema that will be
 	// used to validate any additional properties not listed in properties.
-	AdditionalProperties additionalProperties `json:"additionalProperties"`
+	AdditionalProperties *additionalProperties `json:"additionalProperties"`
 
 	// The required keyword takes an array of zero or more strings.
 	// Each of these strings must be unique.
