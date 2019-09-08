@@ -42,17 +42,17 @@ func NewJsonPointer(path string) (JsonPointer, error) {
 // Evaluate is a receiver function that searches for the JsonPointer's data
 // in a given json value.
 func (jp JsonPointer) Evaluate(jsonData json.RawMessage) (interface{}, error) {
-	// If the JsonPointer is an empty reference, return the whole data.
-	if len(jp) == 0 {
-		return jsonData, nil
-	}
-
 	var data interface{}
 
 	// Unmarshal jsonData (which under the hood is a slice of bytes).
 	err := json.Unmarshal(jsonData, &data)
 	if err != nil {
 		return nil, err
+	}
+
+	// If the JsonPointer is an empty reference, return the whole data.
+	if len(jp) == 0 {
+		return data, nil
 	}
 
 	// Evaluate each token and put the returned value is data in order

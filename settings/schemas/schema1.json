@@ -56,8 +56,7 @@
             "required": [
                 "country",
                 "address"
-            ],
-            "additionalProperties": false
+            ]
         },
         "available_for_hire": {
             "type": "boolean"
@@ -94,8 +93,7 @@
                 "required": [
                     "name",
                     "value"
-                ],
-                "additionalProperties": false
+                ]
             }
         }
     },
@@ -107,6 +105,5 @@
         "available_for_hire",
         "interests",
         "skills"
-    ],
-    "additionalProperties": false
+    ]
 }

@@ -6,13 +6,63 @@ import (
 	"strconv"
 )
 
+/*
+Implemented keywordValidators:
+> schema: 					X
+> ref: 						X
+> id: 						X
+> comment: 					X
+> title: 					X
+> description: 				X
+> examples: 				X
+> enum: 					X
+> _default: 				X
+> _const: 					X
+> definitions: 				X
+> _type: 					V
+> minLength: 				V
+> maxLength: 				X
+> pattern: 					X
+> format: 					X
+> multipleOf: 				V
+> minimum: 					V
+> maximum: 					V
+> exclusiveMinimum: 		V
+> exclusiveMaximum: 		V
+> properties: 				V
+> additionalProperties: 	X
+> required: 				X
+> propertyNames: 			X
+> dependencies: 			X
+> patternProperties: 		X
+> minProperties: 			X
+> maxProperties: 			X
+> items: 					X
+> contains: 				X
+> additionalItems: 			X
+> minItems: 				X
+> maxItems: 				X
+> uniqueItems: 				X
+> contentMediaType: 		X
+> contentEncoding: 			X
+> anyOf: 					X
+> allOf: 					X
+> oneOf: 					X
+> not: 						X
+> _if: 						X
+> _then: 					X
+> _else: 					X
+> readOnly: 				X
+> writeOnly: 				X
+*/
+
 type keywordValidator interface {
 	validate(interface{}) (bool, error)
 }
 
-/**********************/
-/** Generic Keywords **/
-/**********************/
+/*****************/
+/** Annotations **/
+/*****************/
 
 type schema string
 
@@ -56,12 +106,6 @@ func (e examples) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type enum []interface{}
-
-func (e enum) validate(jsonData interface{}) (bool, error) {
-	return true, nil
-}
-
 type _default json.RawMessage
 
 func (d _default) validate(jsonData interface{}) (bool, error) {
@@ -73,27 +117,174 @@ func (d *_default) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type _const json.RawMessage
-
-func (c _const) validate(jsonData interface{}) (bool, error) {
-	return true, nil
-}
-
-type definitions map[string]*JsonSchema
-
-func (d definitions) validate(jsonData interface{}) (bool, error) {
-	return true, nil
-}
+/**********************/
+/** Generic Keywords **/
+/**********************/
 
 type _type json.RawMessage
 
 func (t *_type) validate(jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if t == nil {
+		return true, nil
+	}
+
+	var data interface{}
+
+	// First we need to unmarshal the json data.
+	err := json.Unmarshal(*t, &data)
+	if err != nil {
+		return false, err
+	}
+
+	// The "type" field in json schema can be represented by two different values:
+	// - string - the inspected value can be only one json type.
+	// - array - the inspected value can be a variety of json types.
+	// - default - the schema is incorrect.
+	switch typeFromSchema := data.(type) {
+	case []interface{}:
+		{
+			// If we arrived this loop, it means "type" is an array of types.
+			// We need to go over the existing types and perform
+			// "json type assertion" of jsonData and the current json type.
+			for _, typeFromList := range typeFromSchema {
+				// A json type must be represented by a string.
+				if v, ok := typeFromList.(string); ok {
+					// Perform the "json type assertion"
+					ok, _ := assertJsonType(v, jsonData)
+
+					// If the assertion succeeded, return true
+					if ok {
+						return ok, nil
+					}
+				} else {
+					return false, KeywordValidationError{
+						"type",
+						"type field in schema must be string or array of strings",
+					}
+				}
+			}
+
+			// JsonTypeMismatchError
+			return false, KeywordValidationError{
+				"type",
+				"inspected value does not match any of the valid types in the schema",
+			}
+		}
+	case string:
+		{
+			// In this case, there is only one valid type, so we
+			// perform "json type assertion" of the json type and jsonData.
+			return assertJsonType(typeFromSchema, jsonData)
+		}
+	default:
+		{
+			return false, KeywordValidationError{
+				"type",
+				"type field in schema must be string or array of strings",
+			}
+		}
+	}
+}
+
+// assertJsonType is a function that gets a jsonType and some jsonData and
+// returns true if the value belongs to the type.
+// If it is not, the function will return an appropriate error.
+func assertJsonType(jsonType string, jsonData interface{}) (bool, error) {
+	switch jsonType {
+	case TYPE_OBJECT:
+		{
+			if _, ok := jsonData.(map[string]interface{}); ok {
+				return true, nil
+			} else {
+				return false, KeywordValidationError{
+					"type",
+					"inspected value expected to be a json object",
+				}
+			}
+		}
+	case TYPE_ARRAY:
+		{
+			if _, ok := jsonData.([]interface{}); ok {
+				return true, nil
+			} else {
+				return false, KeywordValidationError{
+					"type",
+					"inspected value expected to be a json array",
+				}
+			}
+		}
+	case TYPE_STRING:
+		{
+			if _, ok := jsonData.(string); ok {
+				return true, nil
+			} else {
+				return false, KeywordValidationError{
+					"type",
+					"inspected value expected to be a json string",
+				}
+			}
+		}
+	case TYPE_NUMBER, TYPE_INTEGER:
+		{
+			if _, ok := jsonData.(float64); ok {
+				return true, nil
+			} else {
+				return false, KeywordValidationError{
+					"type",
+					"inspected value expected to be a json number",
+				}
+			}
+		}
+	case TYPE_BOOLEAN:
+		{
+			if _, ok := jsonData.(bool); ok {
+				return true, nil
+			} else {
+				return false, KeywordValidationError{
+					"type",
+					"inspected value expected to be a json boolean",
+				}
+			}
+		}
+	//case TYPE_NULL:
+	//	{
+	//		if v, ok := jsonData.(string); ok {
+	//			if v == "null" {
+	//				return true, nil
+	//			}
+	//		} else {
+	//			return false, KeywordValidationError{
+	//				"type",
+	//				"inspected value expected to be a json null",
+	//			}
+	//		}
+	//	}
+	default:
+		{
+			return false, KeywordValidationError{
+				"type",
+				"type field in schema must be string or array of strings",
+			}
+		}
+	}
 }
 
 func (t *_type) UnmarshalJSON(data []byte) error {
 	*t = data
 	return nil
+}
+
+type enum []interface{}
+
+func (e enum) validate(jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+type _const json.RawMessage
+
+func (c _const) validate(jsonData interface{}) (bool, error) {
+	return true, nil
 }
 
 /*********************/
@@ -311,6 +502,7 @@ func (p properties) validate(jsonData interface{}) (bool, error) {
 
 	// If the jsonData is already json.RawMessage, use it.
 	// Else, Marshal it back to []byte (which is similar to json.RawMessage)
+	// because JsonSchema.validateJsonData() requires a slice of bytes.
 	if v, ok := jsonData.(json.RawMessage); ok {
 		rawData = v
 	} else {
@@ -375,6 +567,12 @@ func (mp *minProperties) validate(jsonData interface{}) (bool, error) {
 type maxProperties int
 
 func (mp *maxProperties) validate(jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+type definitions map[string]*JsonSchema
+
+func (d definitions) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
