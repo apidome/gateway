@@ -2,6 +2,7 @@ package jsonvalidator
 
 import (
 	"encoding/json"
+	"errors"
 	"math"
 	"strconv"
 )
@@ -31,7 +32,7 @@ Implemented keywordValidators:
 > exclusiveMaximum: 		V
 > properties: 				V
 > additionalProperties: 	X
-> required: 				X
+> required: 				Y
 > propertyNames: 			X
 > dependencies: 			X
 > patternProperties: 		X
@@ -537,6 +538,18 @@ func (ap *additionalProperties) validate(jsonData interface{}) (bool, error) {
 type required []string
 
 func (r required) validate(jsonData interface{}) (bool, error) {
+	if r == nil {
+		return true, nil
+	}
+
+	if v, ok := jsonData.(map[string]interface{}); ok {
+		for _, property := range r {
+			if v[property] == nil {
+				return false, errors.New("Missing required property - " + property)
+			}
+		}
+	}
+
 	return true, nil
 }
 

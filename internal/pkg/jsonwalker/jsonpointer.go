@@ -80,7 +80,11 @@ func evaluateToken(token string, jsonData interface{}) (interface{}, error) {
 	switch v := jsonData.(type) {
 	case map[string]interface{}:
 		{
-			return v[token], nil
+			if v[token] != nil {
+				return v[token], nil
+			}
+
+			return nil, errors.New("json token - \"" + token + "\" does not exist in data")
 		}
 	case []interface{}:
 		{
