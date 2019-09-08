@@ -337,10 +337,10 @@ func (ap *additionalProperties) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-func (ap *additionalProperties) UnmarshalJSON(data []byte) error {
-	*ap = data
-	return nil
-}
+//func (ap *additionalProperties) UnmarshalJSON(data []byte) error {
+//	*ap = data
+//	return nil
+//}
 
 type required []string
 
