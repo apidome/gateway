@@ -189,6 +189,20 @@ type JsonSchema struct {
 	If   *_if   `json:"if"`
 	Then *_then `json:"then"`
 	Else *_else `json:"else"`
+
+	// If "readOnly" has a value of boolean true, it indicates that the value
+	// of the instance is managed exclusively by the owning authority, and
+	// attempts by an application to modify the value of this property are
+	// expected to be ignored or rejected by that owning authority.
+	ReadOnly *readOnly `json:"readOnly"`
+
+	// If "writeOnly" has a value of boolean true, it indicates that the value
+	// is never present when the instance is retrieved from the owning
+	// authority.
+	// It can be present when sent to the owning authority to update or create
+	// the document (or the resource it represents), but it will not be
+	// included in any updated or newly created version of the instance.
+	WriteOnly *writeOnly `json:"writeOnly"`
 }
 
 func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, error) {
@@ -231,14 +245,9 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 
 func getKeywordsSlice(js *JsonSchema) []keywordValidator {
 	return []keywordValidator{
-		js.Schema,
 		js.Ref,
 		js.Id,
 		js.Type,
-		js.Comment,
-		js.Title,
-		js.Description,
-		js.Examples,
 		js.Enum,
 		js.Default,
 		js.Const,
@@ -275,5 +284,7 @@ func getKeywordsSlice(js *JsonSchema) []keywordValidator {
 		js.If,
 		js.Then,
 		js.Else,
+		js.ReadOnly,
+		js.WriteOnly,
 	}
 }

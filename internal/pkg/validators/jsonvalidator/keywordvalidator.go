@@ -494,3 +494,19 @@ type _else JsonSchema
 func (e *_else) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
+
+/****************************/
+/** Authorization Keywords **/
+/****************************/
+
+type readOnly bool
+
+func (ro *readOnly) validate(jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
+type writeOnly bool
+
+func (wo *writeOnly) validate(jsonData interface{}) (bool, error) {
+	return true, nil
+}
