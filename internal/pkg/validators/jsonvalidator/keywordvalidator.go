@@ -36,8 +36,8 @@ Implemented keywordValidators:
 > propertyNames: 			X
 > dependencies: 			X
 > patternProperties: 		X
-> minProperties: 			X
-> maxProperties: 			X
+> minProperties: 			V
+> maxProperties: 			V
 > items: 					X
 > contains: 				X
 > additionalItems: 			X
@@ -521,6 +521,8 @@ func (p properties) validate(jsonData interface{}) (bool, error) {
 		}
 	}
 
+	// If we arrived here, the validation of all the properties
+	// succeeded.
 	return true, nil
 }
 
@@ -719,18 +721,60 @@ func (ce *contentEncoding) validate(jsonData interface{}) (bool, error) {
 type anyOf []*JsonSchema
 
 func (af anyOf) validate(jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if af == nil {
+		return true, nil
+	}
+
+	var rawData json.RawMessage
+	var err error
+
+	// If the jsonData is already json.RawMessage, use it.
+	// Else, Marshal it back to []byte (which is similar to json.RawMessage)
+	// because JsonSchema.validateJsonData() requires a slice of bytes.
+	if v, ok := jsonData.(json.RawMessage); ok {
+		rawData = v
+	} else {
+		rawData, err = json.Marshal(jsonData)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	// Validate rawData against each of the schemas until on of them succeeds.
+	for _, schema := range af {
+		valid, err := schema.validateJsonData("", rawData)
+		if valid {
+			return valid, err
+		}
+	}
+
+	// If we arrived here, the validation of jsonData failed against all schemas.
+	return false, KeywordValidationError{
+		"anyOf",
+		"inspected value could not be validated against any of the given schemas",
+	}
 }
 
 type allOf []*JsonSchema
 
 func (af allOf) validate(jsonData interface{}) (bool, error) {
+	// If the receiver is nil, dont validate it (return true)
+	if af == nil {
+		return true, nil
+	}
+
 	return true, nil
 }
 
 type oneOf []*JsonSchema
 
 func (of oneOf) validate(jsonData interface{}) (bool, error) {
+	// If the receiver is nil, dont validate it (return true)
+	if of == nil {
+		return true, nil
+	}
+
 	return true, nil
 }
 
