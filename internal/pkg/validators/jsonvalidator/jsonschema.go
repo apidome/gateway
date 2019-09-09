@@ -136,11 +136,11 @@ type JsonSchema struct {
 	// While the items schema must be valid for every item in the array,
 	// the contains schema only needs to validate against one or more
 	// items in the array.
-	Contains contains `json:"contains"`
+	Contains *contains `json:"contains"`
 
 	// The additionalItems keyword controls whether it’s valid to have
 	// additional items in the array beyond what is defined in items.
-	AdditionalItems additionalItems `json:"additionalItems"`
+	AdditionalItems *additionalItems `json:"additionalItems"`
 
 	// array limitations
 	MinItems    *minItems    `json:"minItems"`

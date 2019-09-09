@@ -39,10 +39,10 @@ Implemented keywordValidators:
 > minProperties: 			V
 > maxProperties: 			V
 > items: 					X
-> contains: 				X
+> contains: 				V
 > additionalItems: 			X
-> minItems: 				X
-> maxItems: 				X
+> minItems: 				V
+> maxItems: 				V
 > uniqueItems: 				X
 > contentMediaType: 		X
 > contentEncoding: 			X
@@ -652,22 +652,53 @@ func (i *items) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type contains json.RawMessage
-
-func (c contains) validate(jsonData interface{}) (bool, error) {
-	return true, nil
+type contains struct {
+	JsonSchema
 }
 
-func (c *contains) UnmarshalJSON(data []byte) error {
-	*c = data
-	return nil
+func (c *contains) validate(jsonData interface{}) (bool, error) {
+	// If the receiver is nil, dont validate it (return true)
+	if c == nil {
+		return true, nil
+	}
+
+	// First, we need to verify that jsonData is a json array.
+	if array, ok := jsonData.([]interface{}); ok {
+		// Go over all the items in the array in order to inspect them.
+		for _, item := range array {
+			// The item should be marshaled in order to call JsonSchema.validateJsonData()
+			rawItem, err := json.Marshal(item)
+			if err != nil {
+				return false, nil
+			}
+
+			// If the item is valid against the given schema, which means that
+			// the array contains the required value.
+			valid, _ := (*c).validateJsonData("/", rawItem)
+			if valid {
+				return true, nil
+			}
+		}
+	}
+
+	// If we arrived here it means that we could not validate any of the array's
+	// items against the given schema.
+	return false, KeywordValidationError{
+		"contains",
+		"could validate any of the inspected array's items against the given schema",
+	}
 }
+
+//func (c *contains) UnmarshalJSON(data []byte) error {
+//	*c = data
+//	return nil
+//}
 
 type additionalItems struct {
 	JsonSchema
 }
 
-func (ai additionalItems) validate(jsonData interface{}) (bool, error) {
+func (ai *additionalItems) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -693,7 +724,7 @@ func (mi *minItems) validate(jsonData interface{}) (bool, error) {
 		} else {
 			return false, KeywordValidationError{
 				"minItems",
-				"inspected array must contain at least " + string(*mi) + "items",
+				"inspected array must contain at least " + string(*mi) + " items",
 			}
 		}
 	} else {
@@ -721,7 +752,7 @@ func (mi *maxItems) validate(jsonData interface{}) (bool, error) {
 		} else {
 			return false, KeywordValidationError{
 				"maxItems",
-				"inspected array must contain at most " + string(*mi) + "items",
+				"inspected array must contain at most " + string(*mi) + " items",
 			}
 		}
 	} else {

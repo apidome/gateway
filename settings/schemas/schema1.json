@@ -75,8 +75,12 @@
         },
         "skills": {
             "type": "array",
-            "maxItems": 100,
             "uniqueItems": true,
+            "minItems": 2,
+            "maxItems": 2,
+            "contains": {
+                "type": "object"
+            },
             "items": {
                 "type": "object",
                 "properties": {
@@ -98,10 +102,6 @@
                 ]
             }
         }
-    },
-    "not": {
-        "$schema": "sdfsdfsdfdfsfdsdf",
-        "type": "object"
     },
     "required": [
         "name",
