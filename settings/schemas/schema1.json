@@ -101,7 +101,7 @@
     },
     "not": {
         "$schema": "sdfsdfsdfdfsfdsdf",
-        "type": "boolean"
+        "type": "object"
     },
     "required": [
         "name",

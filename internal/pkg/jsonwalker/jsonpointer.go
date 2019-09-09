@@ -17,7 +17,7 @@ type JsonPointer []string
 // a '/' prefix.
 func NewJsonPointer(path string) (JsonPointer, error) {
 	// If path equals to "", return an empty-reference JsonPointer.
-	if len(path) == 0 {
+	if len(path) == 0 || path == "/" {
 		return JsonPointer{}, nil
 	}
 

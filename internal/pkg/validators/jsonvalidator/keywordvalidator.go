@@ -452,7 +452,7 @@ func (em *exclusiveMinimum) validate(jsonData interface{}) (bool, error) {
 	} else {
 		return false, KeywordValidationError{
 			"exclusiveMinimum",
-			"",
+			"inspected value is not a number",
 		}
 	}
 }
@@ -743,7 +743,7 @@ func (af anyOf) validate(jsonData interface{}) (bool, error) {
 
 	// Validate rawData against each of the schemas until on of them succeeds.
 	for _, schema := range af {
-		valid, err := schema.validateJsonData("", rawData)
+		valid, err := schema.validateJsonData("/", rawData)
 		if valid {
 			return valid, err
 		}
@@ -782,7 +782,7 @@ func (af allOf) validate(jsonData interface{}) (bool, error) {
 	// Validate rawData against each of the schemas.
 	// If one of them fails, return error.
 	for _, schema := range af {
-		valid, err := schema.validateJsonData("", rawData)
+		valid, err := schema.validateJsonData("/", rawData)
 		if !valid {
 			return valid, err
 		}
@@ -823,7 +823,7 @@ func (of oneOf) validate(jsonData interface{}) (bool, error) {
 
 	// Validate rawData against each of the schemas until on of them succeeds.
 	for _, schema := range of {
-		valid, _ := schema.validateJsonData("", rawData)
+		valid, _ := schema.validateJsonData("/", rawData)
 		if valid {
 			if oneValidationAlreadySucceeded {
 				return false, KeywordValidationError{
@@ -847,40 +847,40 @@ func (of oneOf) validate(jsonData interface{}) (bool, error) {
 	}
 }
 
-type not JsonSchema
+type not struct {
+	JsonSchema
+}
 
 func (n *not) validate(jsonData interface{}) (bool, error) {
-	//// If the receiver is nil, dont validate it (return true)
-	//if n == nil {
-	//	return true, nil
-	//}
-	//
-	//var rawData json.RawMessage
-	//var err error
-	//
-	//// If the jsonData is already json.RawMessage, use it.
-	//// Else, Marshal it back to []byte (which is similar to json.RawMessage)
-	//// because JsonSchema.validateJsonData() requires a slice of bytes.
-	//if v, ok := jsonData.(json.RawMessage); ok {
-	//	rawData = v
-	//} else {
-	//	rawData, err = json.Marshal(jsonData)
-	//	if err != nil {
-	//		return false, err
-	//	}
-	//}
-	//
-	//valid, err := (*n).validateJsonData("/", rawData)
-	//if !valid {
-	//	return true, nil
-	//} else {
-	//	return false, KeywordValidationError{
-	//		"not",
-	//		"inspected value did not filed to validate against the schema defined by this keyword",
-	//	}
-	//}
+	// If the receiver is nil, dont validate it (return true)
+	if n == nil {
+		return true, nil
+	}
 
-	return true, nil
+	var rawData json.RawMessage
+	var err error
+
+	// If the jsonData is already json.RawMessage, use it.
+	// Else, Marshal it back to []byte (which is similar to json.RawMessage)
+	// because JsonSchema.validateJsonData() requires a slice of bytes.
+	if v, ok := jsonData.(json.RawMessage); ok {
+		rawData = v
+	} else {
+		rawData, err = json.Marshal(jsonData)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	valid, err := (*n).validateJsonData("/", rawData)
+	if !valid {
+		return true, nil
+	} else {
+		return false, KeywordValidationError{
+			"not",
+			"inspected value did not fail on validation against the schema defined by this keyword",
+		}
+	}
 }
 
 type _if JsonSchema
