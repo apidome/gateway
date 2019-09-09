@@ -206,19 +206,19 @@ type JsonSchema struct {
 }
 
 func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, error) {
-	fmt.Println("[JsonSchema DEBUG] Validating /" + jsonPath)
+	fmt.Println("[JsonSchema DEBUG] Validating #" + jsonPath)
 
 	// Create a new JsonPointer.
 	jsonPointer, err := jsonwalker.NewJsonPointer(jsonPath)
 	if err != nil {
-		fmt.Println("[JsonSchema DEBUG] validateJsonData() failed while trying to create JsonPointer /" + jsonPath)
+		fmt.Println("[JsonSchema DEBUG] validateJsonData() failed while trying to create JsonPointer #" + jsonPath)
 		return false, err
 	}
 
 	// Get the piece of json that the current schema describes.
 	value, err := jsonPointer.Evaluate(jsonData)
 	if err != nil {
-		fmt.Println("[JsonSchema DEBUG] validateJsonData() failed while trying to evaluate a JsonPointer /" + jsonPath)
+		fmt.Println("[JsonSchema DEBUG] validateJsonData() failed while trying to evaluate a JsonPointer #" + jsonPath)
 		return false, nil
 	}
 
@@ -234,12 +234,11 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 		// keyword.
 		valid, err := keyword.validate(value)
 		if err != nil {
-			log.Print("[JsonSchema DEBUG] validation failed in path: /" + jsonPath + " - " + err.Error())
+			log.Print("[JsonSchema DEBUG] validation failed in path: #" + jsonPath + " - " + err.Error())
 			return valid, err
 		}
 	}
 
-	fmt.Println("[JsonSchema DEBUG] validation succeeded in path /" + jsonPath)
 	return true, nil
 }
 

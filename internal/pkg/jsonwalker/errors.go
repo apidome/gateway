@@ -25,3 +25,9 @@ type InvalidJsonPointerError struct {
 func (e InvalidJsonPointerError) Error() string {
 	return fmt.Sprintf("invalid json pointer \"%s\": %s", e.path, e.reason)
 }
+
+type MissingJsonTokenError string
+
+func (e MissingJsonTokenError) Error() string {
+	return fmt.Sprintf("token \"" + string(e) + "\" is missing")
+}

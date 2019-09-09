@@ -2,7 +2,6 @@ package jsonwalker
 
 import (
 	"encoding/json"
-	"errors"
 	"strconv"
 	"strings"
 )
@@ -84,7 +83,7 @@ func evaluateToken(token string, jsonData interface{}) (interface{}, error) {
 				return v[token], nil
 			}
 
-			return nil, errors.New("json token - \"" + token + "\" does not exist in data")
+			return nil, MissingJsonTokenError(token)
 		}
 	case []interface{}:
 		{
@@ -97,7 +96,7 @@ func evaluateToken(token string, jsonData interface{}) (interface{}, error) {
 		}
 	default:
 		{
-			return nil, errors.New("json token - \"" + token + "\" does not exist in data")
+			return nil, MissingJsonTokenError(token)
 		}
 	}
 }

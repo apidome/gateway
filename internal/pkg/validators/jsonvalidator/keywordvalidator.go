@@ -806,7 +806,6 @@ func (of oneOf) validate(jsonData interface{}) (bool, error) {
 
 	var rawData json.RawMessage
 	var err error
-	var oneValidationAlreadySucceeded bool
 
 	// If the jsonData is already json.RawMessage, use it.
 	// Else, Marshal it back to []byte (which is similar to json.RawMessage)
@@ -819,6 +818,8 @@ func (of oneOf) validate(jsonData interface{}) (bool, error) {
 			return false, err
 		}
 	}
+
+	var oneValidationAlreadySucceeded bool
 
 	// Validate rawData against each of the schemas until on of them succeeds.
 	for _, schema := range of {
@@ -849,7 +850,34 @@ func (of oneOf) validate(jsonData interface{}) (bool, error) {
 type not JsonSchema
 
 func (n *not) validate(jsonData interface{}) (bool, error) {
-	return true, nil
+	//if n == nil {
+	//	return true, nil
+	//}
+	//
+	//var rawData json.RawMessage
+	//var err error
+	//
+	//// If the jsonData is already json.RawMessage, use it.
+	//// Else, Marshal it back to []byte (which is similar to json.RawMessage)
+	//// because JsonSchema.validateJsonData() requires a slice of bytes.
+	//if v, ok := jsonData.(json.RawMessage); ok {
+	//	rawData = v
+	//} else {
+	//	rawData, err = json.Marshal(jsonData)
+	//	if err != nil {
+	//		return false, err
+	//	}
+	//}
+	//
+	//valid, err := (*n).validateJsonData(rawData)
+	//if !valid {
+	//	return true, nil
+	//} else {
+	//	return false, KeywordValidationError{
+	//		"not",
+	//		"inspected value did not filed to validate against the schema defined by this keyword",
+	//	}
+	//}
 }
 
 type _if JsonSchema

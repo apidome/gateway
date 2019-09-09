@@ -8,5 +8,5 @@ type KeywordValidationError struct {
 }
 
 func (e KeywordValidationError) Error() string {
-	return fmt.Sprintf(e.keyword + " validation failed, reason: " + e.reason)
+	return fmt.Sprintf("\"" + e.keyword + "\" validation failed, reason: " + e.reason)
 }
