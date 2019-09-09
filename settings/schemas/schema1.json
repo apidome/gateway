@@ -99,6 +99,10 @@
             }
         }
     },
+    "not": {
+        "$schema": "sdfsdfsdfdfsfdsdf",
+        "type": "boolean"
+    },
     "required": [
         "name",
         "age",

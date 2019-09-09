@@ -46,9 +46,9 @@ Implemented keywordValidators:
 > uniqueItems: 				X
 > contentMediaType: 		X
 > contentEncoding: 			X
-> anyOf: 					X
-> allOf: 					X
-> oneOf: 					X
+> anyOf: 					V
+> allOf: 					V
+> oneOf: 					V
 > not: 						X
 > _if: 						X
 > _then: 					X
@@ -850,6 +850,7 @@ func (of oneOf) validate(jsonData interface{}) (bool, error) {
 type not JsonSchema
 
 func (n *not) validate(jsonData interface{}) (bool, error) {
+	//// If the receiver is nil, dont validate it (return true)
 	//if n == nil {
 	//	return true, nil
 	//}
@@ -869,7 +870,7 @@ func (n *not) validate(jsonData interface{}) (bool, error) {
 	//	}
 	//}
 	//
-	//valid, err := (*n).validateJsonData(rawData)
+	//valid, err := (*n).validateJsonData("/", rawData)
 	//if !valid {
 	//	return true, nil
 	//} else {
@@ -878,6 +879,8 @@ func (n *not) validate(jsonData interface{}) (bool, error) {
 	//		"inspected value did not filed to validate against the schema defined by this keyword",
 	//	}
 	//}
+
+	return true, nil
 }
 
 type _if JsonSchema
