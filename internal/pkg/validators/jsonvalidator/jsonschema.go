@@ -249,11 +249,8 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 
 func getKeywordsSlice(js *JsonSchema) []keywordValidator {
 	return []keywordValidator{
-		js.Ref,
-		js.Id,
 		js.Type,
 		js.Enum,
-		js.Default,
 		js.Const,
 		js.Definitions,
 		js.MinLength,
@@ -279,8 +276,6 @@ func getKeywordsSlice(js *JsonSchema) []keywordValidator {
 		js.MinItems,
 		js.MaxItems,
 		js.UniqueItems,
-		js.ContentMediaType,
-		js.ContentEncoding,
 		js.AnyOf,
 		js.AllOf,
 		js.OneOf,
@@ -288,7 +283,5 @@ func getKeywordsSlice(js *JsonSchema) []keywordValidator {
 		js.If,
 		js.Then,
 		js.Else,
-		js.ReadOnly,
-		js.WriteOnly,
 	}
 }

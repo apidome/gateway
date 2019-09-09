@@ -9,14 +9,6 @@ import (
 
 /*
 Implemented keywordValidators:
-> schema: 					X
-> ref: 						X
-> id: 						X
-> comment: 					X
-> title: 					X
-> description: 				X
-> examples: 				X
-> _default: 				X
 > enum: 					X
 > _const: 					X
 > definitions: 				X
@@ -44,8 +36,6 @@ Implemented keywordValidators:
 > minItems: 				V
 > maxItems: 				V
 > uniqueItems: 				X
-> contentMediaType: 		X
-> contentEncoding: 			X
 > anyOf: 					V
 > allOf: 					V
 > oneOf: 					V
@@ -53,8 +43,6 @@ Implemented keywordValidators:
 > _if: 						X
 > _then: 					X
 > _else: 					X
-> readOnly: 				X
-> writeOnly: 				X
 */
 
 type keywordValidator interface {
