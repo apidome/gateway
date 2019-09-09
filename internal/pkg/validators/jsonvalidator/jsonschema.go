@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Creespye/caf/internal/pkg/jsonwalker"
 	"log"
+	"strings"
 )
 
 // Valid Json Schema types
@@ -206,19 +207,23 @@ type JsonSchema struct {
 }
 
 func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, error) {
-	fmt.Println("[JsonSchema DEBUG] Validating #" + jsonPath)
+	fmt.Println("[JsonSchema DEBUG] Validating " + jsonPath)
+
+	// Calculate the relative path in order to evaluate the data
+	jsonTokens := strings.Split(jsonPath, "/")
+	relativeJsonPath := "/" + jsonTokens[len(jsonTokens)-1]
 
 	// Create a new JsonPointer.
-	jsonPointer, err := jsonwalker.NewJsonPointer(jsonPath)
+	jsonPointer, err := jsonwalker.NewJsonPointer(relativeJsonPath)
 	if err != nil {
-		fmt.Println("[JsonSchema DEBUG] validateJsonData() failed while trying to create JsonPointer #" + jsonPath)
+		fmt.Println("[JsonSchema DEBUG] validateJsonData() failed while trying to create JsonPointer " + jsonPath)
 		return false, err
 	}
 
 	// Get the piece of json that the current schema describes.
 	value, err := jsonPointer.Evaluate(jsonData)
 	if err != nil {
-		fmt.Println("[JsonSchema DEBUG] validateJsonData() failed while trying to evaluate a JsonPointer #" + jsonPath)
+		fmt.Println("[JsonSchema DEBUG] validateJsonData() failed while trying to evaluate a JsonPointer " + jsonPath)
 		return false, nil
 	}
 
@@ -232,9 +237,9 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 
 		// Validate the value that we extracted from the jsonData at each
 		// keyword.
-		valid, err := keyword.validate(value)
+		valid, err := keyword.validate(jsonPath, value)
 		if err != nil {
-			log.Print("[JsonSchema DEBUG] validation failed in path: #" + jsonPath + " - " + err.Error())
+			log.Print("[JsonSchema DEBUG] validation failed in path: " + jsonPath + " - " + err.Error())
 			return valid, err
 		}
 	}

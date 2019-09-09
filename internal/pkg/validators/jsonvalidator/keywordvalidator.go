@@ -58,7 +58,7 @@ Implemented keywordValidators:
 */
 
 type keywordValidator interface {
-	validate(interface{}) (bool, error)
+	validate(string, interface{}) (bool, error)
 }
 
 /*****************/
@@ -67,49 +67,49 @@ type keywordValidator interface {
 
 type schema string
 
-func (s *schema) validate(jsonData interface{}) (bool, error) {
+func (s *schema) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type ref string
 
-func (r *ref) validate(jsonData interface{}) (bool, error) {
+func (r *ref) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type id string
 
-func (i *id) validate(jsonData interface{}) (bool, error) {
+func (i *id) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type comment string
 
-func (c *comment) validate(jsonData interface{}) (bool, error) {
+func (c *comment) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type title string
 
-func (t *title) validate(jsonData interface{}) (bool, error) {
+func (t *title) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type description string
 
-func (d *description) validate(jsonData interface{}) (bool, error) {
+func (d *description) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type examples []interface{}
 
-func (e examples) validate(jsonData interface{}) (bool, error) {
+func (e examples) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type _default json.RawMessage
 
-func (d _default) validate(jsonData interface{}) (bool, error) {
+func (d _default) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -124,7 +124,7 @@ func (d *_default) UnmarshalJSON(data []byte) error {
 
 type _type json.RawMessage
 
-func (t *_type) validate(jsonData interface{}) (bool, error) {
+func (t *_type) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if t == nil {
 		return true, nil
@@ -278,13 +278,13 @@ func (t *_type) UnmarshalJSON(data []byte) error {
 
 type enum []interface{}
 
-func (e enum) validate(jsonData interface{}) (bool, error) {
+func (e enum) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type _const json.RawMessage
 
-func (c _const) validate(jsonData interface{}) (bool, error) {
+func (c _const) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -294,7 +294,7 @@ func (c _const) validate(jsonData interface{}) (bool, error) {
 
 type minLength int
 
-func (ml *minLength) validate(jsonData interface{}) (bool, error) {
+func (ml *minLength) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if ml == nil {
 		return true, nil
@@ -308,7 +308,7 @@ func (ml *minLength) validate(jsonData interface{}) (bool, error) {
 		} else {
 			return false, KeywordValidationError{
 				"minLength",
-				"inspected string shorter than " + string(*ml),
+				"inspected string shorter than " + strconv.Itoa(int(*ml)),
 			}
 		}
 	} else {
@@ -321,19 +321,19 @@ func (ml *minLength) validate(jsonData interface{}) (bool, error) {
 
 type maxLength int
 
-func (ml *maxLength) validate(jsonData interface{}) (bool, error) {
+func (ml *maxLength) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type pattern string
 
-func (p *pattern) validate(jsonData interface{}) (bool, error) {
+func (p *pattern) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type format string
 
-func (f *format) validate(jsonData interface{}) (bool, error) {
+func (f *format) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -343,7 +343,7 @@ func (f *format) validate(jsonData interface{}) (bool, error) {
 
 type multipleOf float64
 
-func (mo *multipleOf) validate(jsonData interface{}) (bool, error) {
+func (mo *multipleOf) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if mo == nil {
 		return true, nil
@@ -372,7 +372,7 @@ func (mo *multipleOf) validate(jsonData interface{}) (bool, error) {
 
 type minimum float64
 
-func (m *minimum) validate(jsonData interface{}) (bool, error) {
+func (m *minimum) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if m == nil {
 		return true, nil
@@ -401,7 +401,7 @@ func (m *minimum) validate(jsonData interface{}) (bool, error) {
 
 type maximum float64
 
-func (m *maximum) validate(jsonData interface{}) (bool, error) {
+func (m *maximum) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if m == nil {
 		return true, nil
@@ -430,7 +430,7 @@ func (m *maximum) validate(jsonData interface{}) (bool, error) {
 
 type exclusiveMinimum float64
 
-func (em *exclusiveMinimum) validate(jsonData interface{}) (bool, error) {
+func (em *exclusiveMinimum) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if em == nil {
 		return true, nil
@@ -459,7 +459,7 @@ func (em *exclusiveMinimum) validate(jsonData interface{}) (bool, error) {
 
 type exclusiveMaximum float64
 
-func (em *exclusiveMaximum) validate(jsonData interface{}) (bool, error) {
+func (em *exclusiveMaximum) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if em == nil {
 		return true, nil
@@ -492,7 +492,7 @@ func (em *exclusiveMaximum) validate(jsonData interface{}) (bool, error) {
 
 type properties map[string]*JsonSchema
 
-func (p properties) validate(jsonData interface{}) (bool, error) {
+func (p properties) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if p == nil {
 		return true, nil
@@ -507,7 +507,7 @@ func (p properties) validate(jsonData interface{}) (bool, error) {
 
 	// For each "property" validate it according to its JsonSchema.
 	for key, value := range p {
-		valid, err := value.validateJsonData("/"+key, rawData)
+		valid, err := value.validateJsonData(jsonPath+"/"+key, rawData)
 		if err != nil {
 			return valid, err
 		}
@@ -522,7 +522,7 @@ type additionalProperties struct {
 	JsonSchema
 }
 
-func (ap *additionalProperties) validate(jsonData interface{}) (bool, error) {
+func (ap *additionalProperties) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -533,7 +533,7 @@ func (ap *additionalProperties) validate(jsonData interface{}) (bool, error) {
 
 type required []string
 
-func (r required) validate(jsonData interface{}) (bool, error) {
+func (r required) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if r == nil {
 		return true, nil
@@ -555,25 +555,25 @@ func (r required) validate(jsonData interface{}) (bool, error) {
 
 type propertyNames JsonSchema
 
-func (pn *propertyNames) validate(jsonData interface{}) (bool, error) {
+func (pn *propertyNames) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type dependencies map[string]json.RawMessage
 
-func (d dependencies) validate(jsonData interface{}) (bool, error) {
+func (d dependencies) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type patternProperties map[string]*JsonSchema
 
-func (pp patternProperties) validate(jsonData interface{}) (bool, error) {
+func (pp patternProperties) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type minProperties int
 
-func (mp *minProperties) validate(jsonData interface{}) (bool, error) {
+func (mp *minProperties) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if mp == nil {
 		return true, nil
@@ -590,7 +590,7 @@ func (mp *minProperties) validate(jsonData interface{}) (bool, error) {
 		} else {
 			return false, KeywordValidationError{
 				"minProperties",
-				"inspected value must contains at least " + string(*mp) + " properties",
+				"inspected value must contains at least " + strconv.Itoa(int(*mp)) + " properties",
 			}
 		}
 	} else {
@@ -603,7 +603,7 @@ func (mp *minProperties) validate(jsonData interface{}) (bool, error) {
 
 type maxProperties int
 
-func (mp *maxProperties) validate(jsonData interface{}) (bool, error) {
+func (mp *maxProperties) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if mp == nil {
 		return true, nil
@@ -620,7 +620,7 @@ func (mp *maxProperties) validate(jsonData interface{}) (bool, error) {
 		} else {
 			return false, KeywordValidationError{
 				"minProperties",
-				"inspected value may contains at most " + string(*mp) + " properties",
+				"inspected value may contains at most " + strconv.Itoa(int(*mp)) + " properties",
 			}
 		}
 	} else {
@@ -633,7 +633,7 @@ func (mp *maxProperties) validate(jsonData interface{}) (bool, error) {
 
 type definitions map[string]*JsonSchema
 
-func (d definitions) validate(jsonData interface{}) (bool, error) {
+func (d definitions) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -643,7 +643,7 @@ func (d definitions) validate(jsonData interface{}) (bool, error) {
 
 type items json.RawMessage
 
-func (i items) validate(jsonData interface{}) (bool, error) {
+func (i items) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -656,7 +656,7 @@ type contains struct {
 	JsonSchema
 }
 
-func (c *contains) validate(jsonData interface{}) (bool, error) {
+func (c *contains) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if c == nil {
 		return true, nil
@@ -664,17 +664,17 @@ func (c *contains) validate(jsonData interface{}) (bool, error) {
 
 	// First, we need to verify that jsonData is a json array.
 	if array, ok := jsonData.([]interface{}); ok {
-		// Go over all the items in the array in order to inspect them.
-		for _, item := range array {
-			// The item should be marshaled in order to call JsonSchema.validateJsonData()
-			rawItem, err := json.Marshal(item)
-			if err != nil {
-				return false, nil
-			}
+		// The item should be marshaled in order to call JsonSchema.validateJsonData()
+		rawData, err := json.Marshal(array)
+		if err != nil {
+			return false, nil
+		}
 
+		// Go over all the items in the array in order to inspect them.
+		for index := range array {
 			// If the item is valid against the given schema, which means that
 			// the array contains the required value.
-			valid, _ := (*c).validateJsonData("/", rawItem)
+			valid, _ := (*c).validateJsonData(jsonPath+"/"+strconv.Itoa(index), rawData)
 			if valid {
 				return true, nil
 			}
@@ -698,7 +698,7 @@ type additionalItems struct {
 	JsonSchema
 }
 
-func (ai *additionalItems) validate(jsonData interface{}) (bool, error) {
+func (ai *additionalItems) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -709,7 +709,7 @@ func (ai *additionalItems) validate(jsonData interface{}) (bool, error) {
 
 type minItems int
 
-func (mi *minItems) validate(jsonData interface{}) (bool, error) {
+func (mi *minItems) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if mi == nil {
 		return true, nil
@@ -724,7 +724,7 @@ func (mi *minItems) validate(jsonData interface{}) (bool, error) {
 		} else {
 			return false, KeywordValidationError{
 				"minItems",
-				"inspected array must contain at least " + string(*mi) + " items",
+				"inspected array must contain at least " + strconv.Itoa(int(*mi)) + " items",
 			}
 		}
 	} else {
@@ -737,7 +737,7 @@ func (mi *minItems) validate(jsonData interface{}) (bool, error) {
 
 type maxItems int
 
-func (mi *maxItems) validate(jsonData interface{}) (bool, error) {
+func (mi *maxItems) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if mi == nil {
 		return true, nil
@@ -752,7 +752,7 @@ func (mi *maxItems) validate(jsonData interface{}) (bool, error) {
 		} else {
 			return false, KeywordValidationError{
 				"maxItems",
-				"inspected array must contain at most " + string(*mi) + " items",
+				"inspected array must contain at most " + strconv.Itoa(int(*mi)) + " items",
 			}
 		}
 	} else {
@@ -765,7 +765,7 @@ func (mi *maxItems) validate(jsonData interface{}) (bool, error) {
 
 type uniqueItems bool
 
-func (ui *uniqueItems) validate(jsonData interface{}) (bool, error) {
+func (ui *uniqueItems) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -775,13 +775,13 @@ func (ui *uniqueItems) validate(jsonData interface{}) (bool, error) {
 
 type contentMediaType string
 
-func (cm *contentMediaType) validate(jsonData interface{}) (bool, error) {
+func (cm *contentMediaType) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type contentEncoding string
 
-func (ce *contentEncoding) validate(jsonData interface{}) (bool, error) {
+func (ce *contentEncoding) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -791,7 +791,7 @@ func (ce *contentEncoding) validate(jsonData interface{}) (bool, error) {
 
 type anyOf []*JsonSchema
 
-func (af anyOf) validate(jsonData interface{}) (bool, error) {
+func (af anyOf) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if af == nil {
 		return true, nil
@@ -806,7 +806,7 @@ func (af anyOf) validate(jsonData interface{}) (bool, error) {
 
 	// Validate rawData against each of the schemas until on of them succeeds.
 	for _, schema := range af {
-		valid, err := schema.validateJsonData("/", rawData)
+		valid, err := schema.validateJsonData(jsonPath, rawData)
 		if valid {
 			return valid, err
 		}
@@ -821,7 +821,7 @@ func (af anyOf) validate(jsonData interface{}) (bool, error) {
 
 type allOf []*JsonSchema
 
-func (af allOf) validate(jsonData interface{}) (bool, error) {
+func (af allOf) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if af == nil {
 		return true, nil
@@ -837,7 +837,7 @@ func (af allOf) validate(jsonData interface{}) (bool, error) {
 	// Validate rawData against each of the schemas.
 	// If one of them fails, return error.
 	for _, schema := range af {
-		valid, err := schema.validateJsonData("/", rawData)
+		valid, err := schema.validateJsonData(jsonPath, rawData)
 		if !valid {
 			return valid, err
 		}
@@ -853,7 +853,7 @@ func (af allOf) validate(jsonData interface{}) (bool, error) {
 
 type oneOf []*JsonSchema
 
-func (of oneOf) validate(jsonData interface{}) (bool, error) {
+func (of oneOf) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if of == nil {
 		return true, nil
@@ -870,7 +870,7 @@ func (of oneOf) validate(jsonData interface{}) (bool, error) {
 
 	// Validate rawData against each of the schemas until on of them succeeds.
 	for _, schema := range of {
-		valid, _ := schema.validateJsonData("/", rawData)
+		valid, _ := schema.validateJsonData(jsonPath, rawData)
 		if valid {
 			if oneValidationAlreadySucceeded {
 				return false, KeywordValidationError{
@@ -898,7 +898,7 @@ type not struct {
 	JsonSchema
 }
 
-func (n *not) validate(jsonData interface{}) (bool, error) {
+func (n *not) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// If the receiver is nil, dont validate it (return true)
 	if n == nil {
 		return true, nil
@@ -911,7 +911,7 @@ func (n *not) validate(jsonData interface{}) (bool, error) {
 		return false, err
 	}
 
-	valid, err := (*n).validateJsonData("/", rawData)
+	valid, err := (*n).validateJsonData(jsonPath, rawData)
 	if !valid {
 		return true, nil
 	} else {
@@ -926,7 +926,7 @@ type _if struct {
 	JsonSchema
 }
 
-func (i *_if) validate(jsonData interface{}) (bool, error) {
+func (i *_if) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -934,7 +934,7 @@ type _then struct {
 	JsonSchema
 }
 
-func (t *_then) validate(jsonData interface{}) (bool, error) {
+func (t *_then) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -942,7 +942,7 @@ type _else struct {
 	JsonSchema
 }
 
-func (e *_else) validate(jsonData interface{}) (bool, error) {
+func (e *_else) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -952,12 +952,12 @@ func (e *_else) validate(jsonData interface{}) (bool, error) {
 
 type readOnly bool
 
-func (ro *readOnly) validate(jsonData interface{}) (bool, error) {
+func (ro *readOnly) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
 type writeOnly bool
 
-func (wo *writeOnly) validate(jsonData interface{}) (bool, error) {
+func (wo *writeOnly) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
