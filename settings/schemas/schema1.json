@@ -40,6 +40,8 @@
         },
         "location": {
             "type": "object",
+            "minProperties": 2,
+            "maxProperties": 2,
             "properties": {
                 "country": {
                     "enum": [

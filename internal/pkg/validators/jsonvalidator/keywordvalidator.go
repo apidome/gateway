@@ -32,7 +32,7 @@ Implemented keywordValidators:
 > exclusiveMaximum: 		V
 > properties: 				V
 > additionalProperties: 	X
-> required: 				Y
+> required: 				V
 > propertyNames: 			X
 > dependencies: 			X
 > patternProperties: 		X
@@ -538,11 +538,14 @@ func (ap *additionalProperties) validate(jsonData interface{}) (bool, error) {
 type required []string
 
 func (r required) validate(jsonData interface{}) (bool, error) {
+	// If the receiver is nil, dont validate it (return true)
 	if r == nil {
 		return true, nil
 	}
 
+	// First, we must verify that jsonData is a json object.
 	if v, ok := jsonData.(map[string]interface{}); ok {
+		// For each property in the required list, check if it exists.
 		for _, property := range r {
 			if v[property] == nil {
 				return false, errors.New("Missing required property - " + property)
@@ -550,6 +553,7 @@ func (r required) validate(jsonData interface{}) (bool, error) {
 		}
 	}
 
+	// Is we arrived here, all the properties exist.
 	return true, nil
 }
 
@@ -574,13 +578,61 @@ func (pp patternProperties) validate(jsonData interface{}) (bool, error) {
 type minProperties int
 
 func (mp *minProperties) validate(jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if mp == nil {
+		return true, nil
+	}
+
+	// First, we must verify that jsonData is a json object.
+	// If it is not a json object, we return an error.
+	if v, ok := jsonData.(map[string]interface{}); ok {
+		// If the amount of keys in jsonData equals to or greater
+		// than minProperties.
+		// Else, return an error.
+		if len(v) >= int(*mp) {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"minProperties",
+				"inspected value must contains at least " + string(*mp) + " properties",
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"minProperties",
+			"inspected value must be a json object",
+		}
+	}
 }
 
 type maxProperties int
 
 func (mp *maxProperties) validate(jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if mp == nil {
+		return true, nil
+	}
+
+	// First, we must verify that jsonData is a json object.
+	// If it is not a json object, we return an error.
+	if v, ok := jsonData.(map[string]interface{}); ok {
+		// If the amount of keys in jsonData equals to or less
+		// than maxProperties.
+		// Else, return an error.
+		if len(v) <= int(*mp) {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"minProperties",
+				"inspected value may contains at most " + string(*mp) + " properties",
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"minProperties",
+			"inspected value must be a json object",
+		}
+	}
 }
 
 type definitions map[string]*JsonSchema
