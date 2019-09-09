@@ -16,8 +16,8 @@ Implemented keywordValidators:
 > title: 					X
 > description: 				X
 > examples: 				X
-> enum: 					X
 > _default: 				X
+> enum: 					X
 > _const: 					X
 > definitions: 				X
 > _type: 					V
@@ -49,7 +49,7 @@ Implemented keywordValidators:
 > anyOf: 					V
 > allOf: 					V
 > oneOf: 					V
-> not: 						X
+> not: 						V
 > _if: 						X
 > _then: 					X
 > _else: 					X
@@ -498,19 +498,11 @@ func (p properties) validate(jsonData interface{}) (bool, error) {
 		return true, nil
 	}
 
-	var rawData json.RawMessage
-	var err error
-
-	// If the jsonData is already json.RawMessage, use it.
-	// Else, Marshal it back to []byte (which is similar to json.RawMessage)
+	// Marshal jsonData back to []byte (which is similar to json.RawMessage)
 	// because JsonSchema.validateJsonData() requires a slice of bytes.
-	if v, ok := jsonData.(json.RawMessage); ok {
-		rawData = v
-	} else {
-		rawData, err = json.Marshal(jsonData)
-		if err != nil {
-			return false, err
-		}
+	rawData, err := json.Marshal(jsonData)
+	if err != nil {
+		return false, err
 	}
 
 	// For each "property" validate it according to its JsonSchema.
@@ -526,7 +518,9 @@ func (p properties) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type additionalProperties JsonSchema
+type additionalProperties struct {
+	JsonSchema
+}
 
 func (ap *additionalProperties) validate(jsonData interface{}) (bool, error) {
 	return true, nil
@@ -669,27 +663,73 @@ func (c *contains) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type additionalItems json.RawMessage
+type additionalItems struct {
+	JsonSchema
+}
 
 func (ai additionalItems) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-func (ai *additionalItems) UnmarshalJSON(data []byte) error {
-	*ai = data
-	return nil
-}
+//func (ai *additionalItems) UnmarshalJSON(data []byte) error {
+//	*ai = data
+//	return nil
+//}
 
 type minItems int
 
 func (mi *minItems) validate(jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if mi == nil {
+		return true, nil
+	}
+
+	// First, we need to verify that jsonData is an array.
+	if v, ok := jsonData.([]interface{}); ok {
+		// Check that the number of items in the array is equal to
+		// or greater than minItems.
+		if len(v) >= int(*mi) {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"minItems",
+				"inspected array must contain at least " + string(*mi) + "items",
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"minItems",
+			"inspected value expected to be json array",
+		}
+	}
 }
 
 type maxItems int
 
 func (mi *maxItems) validate(jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if mi == nil {
+		return true, nil
+	}
+
+	// First, we need to verify that jsonData is an array.
+	if v, ok := jsonData.([]interface{}); ok {
+		// Check that the number of items in the array is equal to
+		// or less than maxItems.
+		if len(v) <= int(*mi) {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"maxItems",
+				"inspected array must contain at most " + string(*mi) + "items",
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"maxItems",
+			"inspected value expected to be json array",
+		}
+	}
 }
 
 type uniqueItems bool
@@ -726,19 +766,11 @@ func (af anyOf) validate(jsonData interface{}) (bool, error) {
 		return true, nil
 	}
 
-	var rawData json.RawMessage
-	var err error
-
-	// If the jsonData is already json.RawMessage, use it.
-	// Else, Marshal it back to []byte (which is similar to json.RawMessage)
+	// Marshal jsonData back to []byte (which is similar to json.RawMessage)
 	// because JsonSchema.validateJsonData() requires a slice of bytes.
-	if v, ok := jsonData.(json.RawMessage); ok {
-		rawData = v
-	} else {
-		rawData, err = json.Marshal(jsonData)
-		if err != nil {
-			return false, err
-		}
+	rawData, err := json.Marshal(jsonData)
+	if err != nil {
+		return false, err
 	}
 
 	// Validate rawData against each of the schemas until on of them succeeds.
@@ -764,19 +796,11 @@ func (af allOf) validate(jsonData interface{}) (bool, error) {
 		return true, nil
 	}
 
-	var rawData json.RawMessage
-	var err error
-
-	// If the jsonData is already json.RawMessage, use it.
-	// Else, Marshal it back to []byte (which is similar to json.RawMessage)
+	// Marshal jsonData back to []byte (which is similar to json.RawMessage)
 	// because JsonSchema.validateJsonData() requires a slice of bytes.
-	if v, ok := jsonData.(json.RawMessage); ok {
-		rawData = v
-	} else {
-		rawData, err = json.Marshal(jsonData)
-		if err != nil {
-			return false, err
-		}
+	rawData, err := json.Marshal(jsonData)
+	if err != nil {
+		return false, err
 	}
 
 	// Validate rawData against each of the schemas.
@@ -804,19 +828,11 @@ func (of oneOf) validate(jsonData interface{}) (bool, error) {
 		return true, nil
 	}
 
-	var rawData json.RawMessage
-	var err error
-
-	// If the jsonData is already json.RawMessage, use it.
-	// Else, Marshal it back to []byte (which is similar to json.RawMessage)
+	// Marshal jsonData back to []byte (which is similar to json.RawMessage)
 	// because JsonSchema.validateJsonData() requires a slice of bytes.
-	if v, ok := jsonData.(json.RawMessage); ok {
-		rawData = v
-	} else {
-		rawData, err = json.Marshal(jsonData)
-		if err != nil {
-			return false, err
-		}
+	rawData, err := json.Marshal(jsonData)
+	if err != nil {
+		return false, err
 	}
 
 	var oneValidationAlreadySucceeded bool
@@ -857,19 +873,11 @@ func (n *not) validate(jsonData interface{}) (bool, error) {
 		return true, nil
 	}
 
-	var rawData json.RawMessage
-	var err error
-
-	// If the jsonData is already json.RawMessage, use it.
-	// Else, Marshal it back to []byte (which is similar to json.RawMessage)
+	// Marshal jsonData back to []byte (which is similar to json.RawMessage)
 	// because JsonSchema.validateJsonData() requires a slice of bytes.
-	if v, ok := jsonData.(json.RawMessage); ok {
-		rawData = v
-	} else {
-		rawData, err = json.Marshal(jsonData)
-		if err != nil {
-			return false, err
-		}
+	rawData, err := json.Marshal(jsonData)
+	if err != nil {
+		return false, err
 	}
 
 	valid, err := (*n).validateJsonData("/", rawData)
@@ -883,19 +891,25 @@ func (n *not) validate(jsonData interface{}) (bool, error) {
 	}
 }
 
-type _if JsonSchema
+type _if struct {
+	JsonSchema
+}
 
 func (i *_if) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type _then JsonSchema
+type _then struct {
+	JsonSchema
+}
 
 func (t *_then) validate(jsonData interface{}) (bool, error) {
 	return true, nil
 }
 
-type _else JsonSchema
+type _else struct {
+	JsonSchema
+}
 
 func (e *_else) validate(jsonData interface{}) (bool, error) {
 	return true, nil
