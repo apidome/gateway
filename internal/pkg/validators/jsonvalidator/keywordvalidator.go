@@ -764,7 +764,36 @@ func (af allOf) validate(jsonData interface{}) (bool, error) {
 		return true, nil
 	}
 
-	return true, nil
+	var rawData json.RawMessage
+	var err error
+
+	// If the jsonData is already json.RawMessage, use it.
+	// Else, Marshal it back to []byte (which is similar to json.RawMessage)
+	// because JsonSchema.validateJsonData() requires a slice of bytes.
+	if v, ok := jsonData.(json.RawMessage); ok {
+		rawData = v
+	} else {
+		rawData, err = json.Marshal(jsonData)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	// Validate rawData against each of the schemas.
+	// If one of them fails, return error.
+	for _, schema := range af {
+		valid, err := schema.validateJsonData("", rawData)
+		if !valid {
+			return valid, err
+		}
+	}
+
+	// If we arrived here, the validation of jsonData succeeded against all
+	// given schemas.
+	return false, KeywordValidationError{
+		"allOf",
+		"inspected value could not be validated against all of the given schemas",
+	}
 }
 
 type oneOf []*JsonSchema
@@ -775,7 +804,46 @@ func (of oneOf) validate(jsonData interface{}) (bool, error) {
 		return true, nil
 	}
 
-	return true, nil
+	var rawData json.RawMessage
+	var err error
+	var oneValidationAlreadySucceeded bool
+
+	// If the jsonData is already json.RawMessage, use it.
+	// Else, Marshal it back to []byte (which is similar to json.RawMessage)
+	// because JsonSchema.validateJsonData() requires a slice of bytes.
+	if v, ok := jsonData.(json.RawMessage); ok {
+		rawData = v
+	} else {
+		rawData, err = json.Marshal(jsonData)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	// Validate rawData against each of the schemas until on of them succeeds.
+	for _, schema := range of {
+		valid, _ := schema.validateJsonData("", rawData)
+		if valid {
+			if oneValidationAlreadySucceeded {
+				return false, KeywordValidationError{
+					"oneOf",
+					"inspected data is valid against more than one given schema",
+				}
+			} else {
+				oneValidationAlreadySucceeded = true
+			}
+		}
+	}
+
+	if oneValidationAlreadySucceeded {
+		return true, nil
+	} else {
+		// If we arrived here, the validation of jsonData failed against all schemas.
+		return false, KeywordValidationError{
+			"oneOf",
+			"inspected value could not be validated against any of the given schemas",
+		}
+	}
 }
 
 type not JsonSchema
