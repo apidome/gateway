@@ -224,7 +224,7 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 	value, err := jsonPointer.Evaluate(jsonData)
 	if err != nil {
 		fmt.Println("[JsonSchema DEBUG] validateJsonData() failed while trying to evaluate a JsonPointer " + jsonPath)
-		return false, nil
+		return false, err
 	}
 
 	// Get a slice of all of JsonSchema's field in order to iterate them

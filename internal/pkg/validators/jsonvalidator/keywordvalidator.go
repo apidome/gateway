@@ -25,7 +25,7 @@ Implemented keywordValidators:
 > properties: 				V
 > additionalProperties: 	X
 > required: 				V
-> propertyNames: 			X
+> propertyNames: 			V
 > dependencies: 			X
 > patternProperties: 		X
 > minProperties: 			V
@@ -364,7 +364,7 @@ func (p *pattern) validate(jsonPath string, jsonData interface{}) (bool, error) 
 		} else {
 			return false, KeywordValidationError{
 				"pattern",
-				"value" + v + "does not match to pattern" + string(*p),
+				"value " + v + " does not match to pattern" + string(*p),
 			}
 		}
 	} else {
@@ -597,10 +597,41 @@ func (r required) validate(jsonPath string, jsonData interface{}) (bool, error) 
 	return true, nil
 }
 
-type propertyNames JsonSchema
+type propertyNames struct {
+	JsonSchema
+}
 
 func (pn *propertyNames) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if pn == nil {
+		return true, nil
+	}
+
+	// First, we need to verify that jsonData is a json object
+	if object, ok := jsonData.(map[string]interface{}); ok {
+		// Iterate over the object's properties.
+		for property := range object {
+			// Validate the property name against the schema stored in "propertyNames" field
+			valid, err := pn.validateJsonData("/", []byte("\""+property+"\""))
+
+			// If the property name could be validated against the scheme return an error
+			if !valid {
+				return false, KeywordValidationError{
+					"propertyNames",
+					"property name \"" + property + "\" failed in validation: " + err.Error(),
+				}
+			}
+		}
+
+		// If we arrived here it means that all the property names validated successfully against
+		// the schema stored in "propertyNames".
+		return true, nil
+	} else {
+		return false, KeywordValidationError{
+			"propertyNames",
+			"inspected value expected to be a json object",
+		}
+	}
 }
 
 type dependencies map[string]json.RawMessage
