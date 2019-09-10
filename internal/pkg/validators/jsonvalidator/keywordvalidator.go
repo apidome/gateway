@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"regexp"
 	"strconv"
 )
 
@@ -296,7 +297,7 @@ func (ml *minLength) validate(jsonPath string, jsonData interface{}) (bool, erro
 		} else {
 			return false, KeywordValidationError{
 				"minLength",
-				"inspected string shorter than " + strconv.Itoa(int(*ml)),
+				"inspected string greater than " + strconv.Itoa(int(*ml)),
 			}
 		}
 	} else {
@@ -310,13 +311,65 @@ func (ml *minLength) validate(jsonPath string, jsonData interface{}) (bool, erro
 type maxLength int
 
 func (ml *maxLength) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if ml == nil {
+		return true, nil
+	}
+
+	// If jsonData is a string, validate its length,
+	// else, return a KeywordValidationError
+	if v, ok := jsonData.(string); ok {
+		if len(v) <= int(*ml) {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"maxLength",
+				"inspected string lesser than " + strconv.Itoa(int(*ml)),
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"maxLength",
+			"inspected value is not a string",
+		}
+	}
 }
 
 type pattern string
 
 func (p *pattern) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if p == nil {
+		return true, nil
+	}
+
+	// If jsonData is a string, validate its length,
+	// else, return a KeywordValidationError
+	if v, ok := jsonData.(string); ok {
+		match, err := regexp.MatchString(string(*p), v)
+
+		// The pattern or the value is not in the right format (string)
+		if err != nil {
+			return false, KeywordValidationError{
+				"pattern",
+				err.Error(),
+			}
+		}
+
+		if match {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"pattern",
+				"value" + v + "does not match to pattern" + string(*p),
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"pattern",
+			"inspected value is not a string",
+		}
+	}
 }
 
 type format string
