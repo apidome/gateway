@@ -26,7 +26,7 @@ Implemented keywordValidators:
 > additionalProperties: 	X
 > required: 				V
 > propertyNames: 			V
-> dependencies: 			X
+> dependencies: 			V
 > patternProperties: 		X
 > minProperties: 			V
 > maxProperties: 			V
@@ -617,24 +617,36 @@ func (p properties) validate(jsonPath string, jsonData interface{}) (bool, error
 		return true, nil
 	}
 
-	// Marshal jsonData back to []byte (which is similar to json.RawMessage)
-	// because JsonSchema.validateJsonData() requires a slice of bytes.
-	rawData, err := json.Marshal(jsonData)
-	if err != nil {
-		return false, err
-	}
-
-	// For each "property" validate it according to its JsonSchema.
-	for key, value := range p {
-		valid, err := value.validateJsonData(jsonPath+"/"+key, rawData)
+	// First, we need to verify that jsonData is a json object
+	if object, ok := jsonData.(map[string]interface{}); ok {
+		// Marshal jsonData back to []byte (which is similar to json.RawMessage)
+		// because JsonSchema.validateJsonData() requires a slice of bytes.
+		rawData, err := json.Marshal(jsonData)
 		if err != nil {
-			return valid, err
+			return false, err
+		}
+
+		// For each "property" validate it according to its JsonSchema.
+		for key, value := range p {
+			// Before we try to validate the data against the schema,
+			// we make sure that the data actually contains the property.
+			if _, ok := object[key]; ok {
+				valid, err := value.validateJsonData(jsonPath+"/"+key, rawData)
+				if err != nil {
+					return valid, err
+				}
+			}
+		}
+
+		// If we arrived here, the validation of all the properties
+		// succeeded.
+		return true, nil
+	} else {
+		return false, KeywordValidationError{
+			"properties",
+			"inspected value expected to be a json object",
 		}
 	}
-
-	// If we arrived here, the validation of all the properties
-	// succeeded.
-	return true, nil
 }
 
 type additionalProperties struct {
@@ -709,10 +721,111 @@ func (pn *propertyNames) validate(jsonPath string, jsonData interface{}) (bool, 
 	}
 }
 
-type dependencies map[string]json.RawMessage
+type dependencies map[string]interface{}
 
 func (d dependencies) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if d == nil {
+		return true, nil
+	}
+
+	// First we need to verify that jsonData is a json object.
+	if object, ok := jsonData.(map[string]interface{}); ok {
+		// Marshal jsonData back to byte array in order to call
+		// JsonSchema.validateJsonData()
+		rawData, err := json.Marshal(jsonData)
+		if err != nil {
+			return false, err
+		}
+
+		// Iterate over the dependencies object from the schema.
+		for propertyName, dependency := range d {
+			// A dependency may be a json array (consist of strings) of a json
+			// object which is a json schema that the inspected value need to
+			// validated against.
+			switch v := dependency.(type) {
+
+			// In this case the dependency is a sub-schema.
+			case map[string]interface{}:
+				{
+					// Check if the propertyName (which is the key in the "dependencies" object)
+					// is present in the data. If it is, validate the whole instance against the
+					// sub-schema.
+					if _, ok := object[propertyName]; ok {
+						var subSchema JsonSchema
+
+						// Marshal the dependency in order to Unmarshal it into JsonSchema struct.
+						rawDependency, err := json.Marshal(dependency)
+						if err != nil {
+							return false, nil
+						}
+
+						// Unmarshal the raw data in order into a JsonSchema struct.
+						err = json.Unmarshal(rawDependency, &subSchema)
+						if err != nil {
+							return false, err
+						}
+
+						// Validate the whole data against the given sub-schema.
+						valid, err := subSchema.validateJsonData("/", rawData)
+						if !valid {
+							return false, KeywordValidationError{
+								"dependencies",
+								"inspected value failed in validation against sub-schema given in \"" +
+									propertyName +
+									"\" dependency",
+							}
+						}
+					}
+				}
+			// In this case the dependency is a list of required property names.
+			case []interface{}:
+				{
+					// Iterate over the items in the dependency array.
+					for index, value := range v {
+						// Verify that the value is actually a string.
+						// If not, return an error
+						if requiredProperty, ok := value.(string); ok {
+							// Check if the required property name is missing. If it is,
+							// return an error.
+							if _, ok := object[requiredProperty]; !ok {
+								return false, KeywordValidationError{
+									"dependencies",
+									"missing property \"" +
+										requiredProperty +
+										"\" although it is required according to \"" +
+										propertyName +
+										"\" dependency",
+								}
+							}
+						} else {
+							return false, KeywordValidationError{
+								"dependencies",
+								"all items in dependency array must be strings, item at position " +
+									strconv.Itoa(index) +
+									" is not a string",
+							}
+						}
+					}
+				}
+			default:
+				{
+					return false, KeywordValidationError{
+						"dependencies",
+						"dependency value must be a json object or a json array",
+					}
+				}
+			}
+		}
+
+		// If we arrived here it means that all the validations succeeded.
+		return true, nil
+	} else {
+		return false, KeywordValidationError{
+			"dependencies",
+			"inspected value expected to be a json object",
+		}
+	}
 }
 
 type patternProperties map[string]*JsonSchema
@@ -950,11 +1063,6 @@ func (c *contains) validate(jsonPath string, jsonData interface{}) (bool, error)
 	}
 }
 
-//func (c *contains) UnmarshalJSON(data []byte) error {
-//	*c = data
-//	return nil
-//}
-
 type additionalItems struct {
 	JsonSchema
 }
@@ -962,11 +1070,6 @@ type additionalItems struct {
 func (ai *additionalItems) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	return true, nil
 }
-
-//func (ai *additionalItems) UnmarshalJSON(data []byte) error {
-//	*ai = data
-//	return nil
-//}
 
 type minItems int
 
