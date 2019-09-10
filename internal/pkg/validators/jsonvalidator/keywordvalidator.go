@@ -10,8 +10,8 @@ import (
 
 /*
 Implemented keywordValidators:
-> enum: 					X
-> _const: 					X
+> enum: 					V
+> _const: 					V
 > _type: 					V ***
 > minLength: 				V
 > maxLength: 				V
@@ -271,13 +271,88 @@ func (t *_type) UnmarshalJSON(data []byte) error {
 type enum []interface{}
 
 func (e enum) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if e == nil {
+		return true, nil
+	}
+
+	// Marshal jsonData back to comparable value that does not require
+	// type assertion.
+	rawData, err := json.Marshal(jsonData)
+	if err != nil {
+		return false, nil
+	}
+
+	// Iterate over the items in "enum" array.
+	for _, item := range e {
+		// Marshal the item from "enum" array back comparable value that does
+		// not require type assertion.
+		rawEnumItem, err := json.Marshal(item)
+		if err != nil {
+			return false, nil
+		}
+
+		// Convert both of the byte arrays to string for more convenient
+		// comparison. If they are equal, the data is valid against "enum".
+		if string(rawEnumItem) == string(rawData) {
+			return true, nil
+		}
+	}
+
+	// If we arrived here it means that the inspected value is not equal
+	// to any of the values in "enum".
+	return false, KeywordValidationError{
+		"enum",
+		"inspected value does not match any of the items in \"enum\" array",
+	}
 }
 
 type _const json.RawMessage
 
-func (c _const) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
+func (c *_const) validate(jsonPath string, jsonData interface{}) (bool, error) {
+	// If the receiver is nil, dont validate it (return true)
+	if c == nil {
+		return true, nil
+	}
+
+	// Marshal jsonData back to comparable value that does not require
+	// type assertion.
+	rawData, err := json.Marshal(jsonData)
+	if err != nil {
+		return false, err
+	}
+
+	// Convert both of the byte arrays to string for more convenient
+	// comparison. If they are equal, the data is valid against "const".
+	if string(*c) == string(rawData) {
+		return true, nil
+	} else {
+		return false, KeywordValidationError{
+			"const",
+			"inspected value not equal to \"" + string(*c) + "\"",
+		}
+	}
+}
+
+func (c *_const) UnmarshalJSON(data []byte) error {
+	// In this function we Unmarshal and then Marshal again
+	// the argument data in order to remove special characters
+	// like \n \t \r etc.
+
+	var unmarshaledData interface{}
+
+	err := json.Unmarshal(data, &unmarshaledData)
+	if err != nil {
+		return err
+	}
+
+	rawConst, err := json.Marshal(unmarshaledData)
+	if err != nil {
+		return err
+	}
+
+	*c = rawConst
+	return nil
 }
 
 /*********************/

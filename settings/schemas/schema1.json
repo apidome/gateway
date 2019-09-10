@@ -6,8 +6,7 @@
         "a": 1
     },
     "propertyNames": {
-        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
-        "maxLength": 4
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
     },
     "dependencies": {
         "name": [

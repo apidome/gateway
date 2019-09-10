@@ -87,7 +87,7 @@ type JsonSchema struct {
 	Enum enum `json:"enum"`
 
 	// The const keyword is used to restrict a value to a single value.
-	Const _const `json:"const"`
+	Const *_const `json:"const"`
 
 	// The definitions keyword is used to create entities that we recognize as
 	// repetitive entities.
