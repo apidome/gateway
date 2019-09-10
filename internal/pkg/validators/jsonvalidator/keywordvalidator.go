@@ -12,11 +12,10 @@ import (
 Implemented keywordValidators:
 > enum: 					X
 > _const: 					X
-> definitions: 				X
 > _type: 					V
 > minLength: 				V
-> maxLength: 				X
-> pattern: 					X
+> maxLength: 				V
+> pattern: 					V
 > format: 					X
 > multipleOf: 				V
 > minimum: 					V
@@ -324,7 +323,7 @@ func (ml *maxLength) validate(jsonPath string, jsonData interface{}) (bool, erro
 		} else {
 			return false, KeywordValidationError{
 				"maxLength",
-				"inspected string lesser than " + strconv.Itoa(int(*ml)),
+				"inspected string is less than " + strconv.Itoa(int(*ml)),
 			}
 		}
 	} else {
@@ -685,7 +684,109 @@ func (d definitions) validate(jsonPath string, jsonData interface{}) (bool, erro
 type items json.RawMessage
 
 func (i items) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if i == nil {
+		return true, nil
+	}
+
+	// First, we need to verify that json Data is an array
+	if array, ok := jsonData.([]interface{}); ok {
+		var data interface{}
+
+		// Unmarshal the value in items in order to figure out if it is a
+		// json object or json array
+		err := json.Unmarshal(i, &data)
+		if err != nil {
+			return false, err
+		}
+
+		// Marshal jsonData back to raw data in order to call
+		// JsonSchema.validateJsonData()
+		rawData, err := json.Marshal(jsonData)
+		if err != nil {
+			return false, err
+		}
+
+		// Handle the value in items according to its json type.
+		switch itemsField := data.(type) {
+		// If jsonData is a json object, which means that is holds a single schema,
+		// we validate the all the items in the inspected array against the given
+		// schema.
+		case map[string]interface{}:
+			{
+				// This is the JsonSchema instance that should hold the schema in
+				// "items" field.
+				var schema JsonSchema
+
+				// Unmarshal the rawSchema into the JsonSchema struct.
+				err = json.Unmarshal(i, &schema)
+				if err != nil {
+					return false, err
+				}
+
+				// Iterate over the items in the inspected array and validate each
+				// item against the schema in "items" field.
+				for index := 0; index < len(array); index++ {
+					valid, err := schema.validateJsonData(jsonPath+"/"+strconv.Itoa(index), rawData)
+					if !valid {
+						return valid, err
+					}
+				}
+
+				// If we arrived here it means that all the items in the inspected array
+				// validated successfully against the given schema.
+				return true, nil
+			}
+		// If jsonData is a json array, which means that is holds multiple json schema objects,
+		// we validate each item in the inspected array against the schema at the same position.
+		case []interface{}:
+			{
+				// Iterate over the schemas in "items" field.
+				for index, schemaFromItems := range itemsField {
+					// Marshal the current schema in "items" field in order to Unmarshal it
+					// into JsonSchema instance.
+					rawSchema, err := json.Marshal(schemaFromItems)
+					if err != nil {
+						return false, err
+					}
+
+					// This is the JsonSchema instance that should hold the current
+					// working schema.
+					var schema JsonSchema
+
+					// Unmarshal the rawSchema into the JsonSchema struct.
+					err = json.Unmarshal(rawSchema, &schema)
+					if err != nil {
+						return false, err
+					}
+
+					// Validate the item against the schema at the same position.
+					valid, err := schema.validateJsonData(jsonPath+"/"+strconv.Itoa(index), rawData)
+					if !valid {
+						return valid, err
+					}
+				}
+
+				// If we arrived here it means that all the items in the inspected array
+				// validated successfully against corresponding schema.
+				return true, nil
+			}
+		// The default case indicates that the value in items field is not a json schema or
+		// a list of json schema.
+		default:
+			{
+				return false, KeywordValidationError{
+					"items",
+					"\"items\" field value in schema must be a valid Json Schema of an array of Json Schema",
+				}
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"items",
+			"inspected value expected to be a json array",
+		}
+	}
 }
 
 func (i *items) UnmarshalJSON(data []byte) error {

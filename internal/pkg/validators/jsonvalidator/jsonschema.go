@@ -252,7 +252,6 @@ func getKeywordsSlice(js *JsonSchema) []keywordValidator {
 		js.Type,
 		js.Enum,
 		js.Const,
-		js.Definitions,
 		js.MinLength,
 		js.MaxLength,
 		js.Pattern,
