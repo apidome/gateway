@@ -308,7 +308,7 @@ func (ml *minLength) validate(jsonPath string, jsonData interface{}) (bool, erro
 		} else {
 			return false, KeywordValidationError{
 				"minLength",
-				"inspected string shorter than " + strconv.Itoa(int(*ml)),
+				"inspected string greater than " + strconv.Itoa(int(*ml)),
 			}
 		}
 	} else {
@@ -322,7 +322,28 @@ func (ml *minLength) validate(jsonPath string, jsonData interface{}) (bool, erro
 type maxLength int
 
 func (ml *maxLength) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if ml == nil {
+		return true, nil
+	}
+
+	// If jsonData is a string, validate its length,
+	// else, return a KeywordValidationError
+	if v, ok := jsonData.(string); ok {
+		if len(v) <= int(*ml) {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"maxLength",
+				"inspected string lesser than " + strconv.Itoa(int(*ml)),
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"maxLength",
+			"inspected value is not a string",
+		}
+	}
 }
 
 type pattern string
