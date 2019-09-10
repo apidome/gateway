@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"regexp"
 	"strconv"
 )
 
@@ -349,7 +350,38 @@ func (ml *maxLength) validate(jsonPath string, jsonData interface{}) (bool, erro
 type pattern string
 
 func (p *pattern) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if p == nil {
+		return true, nil
+	}
+
+	// If jsonData is a string, validate its length,
+	// else, return a KeywordValidationError
+	if v, ok := jsonData.(string); ok {
+		match, err := regexp.MatchString(string(*p), v)
+
+		// The pattern or the value is not in the right format (string)
+		if err != nil {
+			return false, KeywordValidationError{
+				"pattern",
+				err.Error(),
+			}
+		}
+
+		if match {
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"pattern",
+				"value" + v + "does not match to pattern" + string(*p),
+			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"pattern",
+			"inspected value is not a string",
+		}
+	}
 }
 
 type format string
