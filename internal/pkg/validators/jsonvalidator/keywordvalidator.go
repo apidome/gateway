@@ -12,7 +12,7 @@ import (
 Implemented keywordValidators:
 > enum: 					X
 > _const: 					X
-> _type: 					V
+> _type: 					V ***
 > minLength: 				V
 > maxLength: 				V
 > pattern: 					V
@@ -30,12 +30,12 @@ Implemented keywordValidators:
 > patternProperties: 		X
 > minProperties: 			V
 > maxProperties: 			V
-> items: 					X
+> items: 					V ***
 > contains: 				V
 > additionalItems: 			X
 > minItems: 				V
 > maxItems: 				V
-> uniqueItems: 				X
+> uniqueItems: 				V
 > anyOf: 					V
 > allOf: 					V
 > oneOf: 					V
@@ -43,6 +43,10 @@ Implemented keywordValidators:
 > _if: 						X
 > _then: 					X
 > _else: 					X
+
+*** These keywords are being un-marshaled in their validate() function.
+	We need to find a way to do that on startup and not on runtime.
+
 */
 
 type keywordValidator interface {
@@ -741,6 +745,15 @@ func (i items) validate(jsonPath string, jsonData interface{}) (bool, error) {
 		// we validate each item in the inspected array against the schema at the same position.
 		case []interface{}:
 			{
+				// TODO: we should consider here the value of additionalItems.
+				if len(itemsField) != len(array) {
+					return false, KeywordValidationError{
+						"items",
+						"when \"items\" field contains a list of Json Schema objects, the amount " +
+							"of items in the inspected array must be equal to the amount of schemas",
+					}
+				}
+
 				// Iterate over the schemas in "items" field.
 				for index, schemaFromItems := range itemsField {
 					// Marshal the current schema in "items" field in order to Unmarshal it
@@ -777,7 +790,7 @@ func (i items) validate(jsonPath string, jsonData interface{}) (bool, error) {
 			{
 				return false, KeywordValidationError{
 					"items",
-					"\"items\" field value in schema must be a valid Json Schema of an array of Json Schema",
+					"\"items\" field value in schema must be a valid Json Schema or an array of Json Schema",
 				}
 			}
 		}
@@ -908,7 +921,51 @@ func (mi *maxItems) validate(jsonPath string, jsonData interface{}) (bool, error
 type uniqueItems bool
 
 func (ui *uniqueItems) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if ui == nil {
+		return true, nil
+	}
+
+	// First, we need to verify that jsonData is an array.
+	if array, ok := jsonData.([]interface{}); ok {
+		// Create a map that will help us to check if we already met the
+		// item by using the map's hashing mechanism.
+		uniqueSet := make(map[string]int)
+
+		// Iterate over the items in the inspected array.
+		for index, item := range array {
+			// Marshal the item back to hash-able value, because maps (json object)
+			// and slices (json arrays) are not a hash-able values.
+			rawItem, err := json.Marshal(item)
+			if err != nil {
+				return false, err
+			}
+
+			// If ok is true it means that the value exists in the map, which means
+			// we already met it in one of the previous iterations.
+			// Else, insert the item into the map as key, and the index as value.
+			if v, ok := uniqueSet[string(rawItem)]; ok {
+				return false, KeywordValidationError{
+					"uniqueItems",
+					"the inspected array contains two equal items at indices: " +
+						strconv.Itoa(v) +
+						", " +
+						strconv.Itoa(index),
+				}
+			} else {
+				uniqueSet[string(rawItem)] = index
+			}
+		}
+
+		// If we arrived here it means that we did not meat any item which is
+		// similar to another item in the array.
+		return true, nil
+	} else {
+		return false, KeywordValidationError{
+			"uniqueItems",
+			"inspected value expected to be json array",
+		}
+	}
 }
 
 /********************/

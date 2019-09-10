@@ -9,8 +9,12 @@
         "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
     },
     "dependencies": {
-        "name": ["age"],
-        "age": ["name"]
+        "name": [
+            "age"
+        ],
+        "age": [
+            "name"
+        ]
     },
     "properties": {
         "name": {
