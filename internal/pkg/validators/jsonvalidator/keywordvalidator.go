@@ -2,6 +2,7 @@ package jsonvalidator
 
 import (
 	"encoding/json"
+	"github.com/Creespye/caf/internal/pkg/validators/formatchecker"
 	"math"
 	"regexp"
 	"strconv"
@@ -47,6 +48,27 @@ Implemented keywordValidators:
 	We need to find a way to do that on startup and not on runtime.
 
 */
+
+// Valid values for "format" fields
+const (
+	FORMAT_DATE_TIME             = "date-time"
+	FORMAT_TIME                  = "time"
+	FORMAT_DATE                  = "date"
+	FORMAT_EMAIL                 = "email"
+	FORMAT_IDN_EMAIL             = "idn-email"
+	FORMAT_HOSTNAME              = "hostname"
+	FORMAT_IDN_HOSTNAME          = "idn-hostname"
+	FORMAT_IPV4                  = "ipv4"
+	FORMAT_IPV6                  = "ipv6"
+	FORMAT_URI                   = "uri"
+	FORMAT_URI_REFERENCE         = "uri-reference"
+	FORMAT_IRI                   = "iri"
+	FORMAT_IRI_REFERENCE         = "iri-reference"
+	FORMAT_URI_TEMPLATE          = "uri-template"
+	FORMAT_JSON_POINTER          = "json-pointer"
+	FORMAT_RELATIVE_JSON_POINTER = "relative-json-pointer"
+	FORMAT_REGEX                 = "regex"
+)
 
 type keywordValidator interface {
 	validate(string, interface{}) (bool, error)
@@ -452,6 +474,61 @@ func (p *pattern) validate(jsonPath string, jsonData interface{}) (bool, error) 
 type format string
 
 func (f *format) validate(jsonPath string, jsonData interface{}) (bool, error) {
+	// If the receiver is nil, dont validate it (return true)
+	if f == nil {
+		return true, nil
+	}
+
+	if v, ok := jsonData.(string); ok {
+		switch v {
+		case FORMAT_DATE_TIME:
+			if _, err := formatchecker.IsValidDateTime(v); err != nil {
+				return false, KeywordValidationError{
+					"format",
+					"date-time incorrectly formatted " + err.Error(),
+				}
+			}
+		case "date":
+			return true, nil
+		case "time":
+			return true, nil
+		case "email":
+			return true, nil
+		case "idn-email":
+			return true, nil
+		case "hostname":
+			return true, nil
+		case "idn-hostname":
+			return true, nil
+		case "ipv4":
+			return true, nil
+		case "ipv6":
+			return true, nil
+		case "uri":
+			return true, nil
+		case "uri-reference":
+			return true, nil
+		case "iri":
+			return true, nil
+		case "iri-reference":
+			return true, nil
+		case "uri-template":
+			return true, nil
+		case "json-pointer":
+			return true, nil
+		case "relative-json-pointer":
+			return true, nil
+		case "regex":
+			return true, nil
+		default:
+			return true, nil
+		}
+	} else {
+		return false, KeywordValidationError{
+			"pattern",
+			"inspected value is not a string",
+		}
+	}
 	return true, nil
 }
 

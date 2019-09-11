@@ -19,27 +19,6 @@ const (
 	TYPE_NULL    = "null"
 )
 
-// Valid values for "format" fields
-const (
-	FORMAT_DATE_TIME             = "date-time"
-	FORMAT_TIME                  = "time"
-	FORMAT_DATE                  = "date"
-	FORMAT_EMAIL                 = "email"
-	FORMAT_IDN_EMAIL             = "idn-email"
-	FORMAT_HOSTNAME              = "hostname"
-	FORMAT_IDN_HOSTNAME          = "idn-hostname"
-	FORMAT_IPV4                  = "ipv4"
-	FORMAT_IPV6                  = "ipv6"
-	FORMAT_URI                   = "uri"
-	FORMAT_URI_REFERENCE         = "uri-reference"
-	FORMAT_IRI                   = "iri"
-	FORMAT_IRI_REFERENCE         = "iri-reference"
-	FORMAT_URI_TEMPLATE          = "uri-template"
-	FORMAT_JSON_POINTER          = "json-pointer"
-	FORMAT_RELATIVE_JSON_POINTER = "relative-json-pointer"
-	FORMAT_REGEX                 = "regex"
-)
-
 // Valid values for "contentEncoding" field
 const (
 	ENCODING_7BIT             = "7bit"
