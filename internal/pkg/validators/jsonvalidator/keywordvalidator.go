@@ -27,7 +27,7 @@ Implemented keywordValidators:
 > required: 				V
 > propertyNames: 			V
 > dependencies: 			V
-> patternProperties: 		X
+> patternProperties: 		V
 > minProperties: 			V
 > maxProperties: 			V
 > items: 					V ***

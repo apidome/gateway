@@ -71,7 +71,11 @@ type JsonSchema struct {
 	Title       *title       `json:"title"`
 	Description *description `json:"description"`
 
-	// Type specifies the acceptable value type of the schema.
+	// The value of this keyword MUST be either a string or an array. If it is
+	// an array, elements of the array MUST be strings and MUST be unique.
+	// String values MUST be one of the six primitive types
+	// ("null", "boolean", "object", "array", "number", or "string"),
+	// or "integer" which matches any number with a zero fractional part.
 	Type *_type `json:"type"`
 
 	// The default keyword specifies a default value for an item.
@@ -81,66 +85,107 @@ type JsonSchema struct {
 	// that validate against the schema.
 	Examples examples `json:"examples"`
 
-	// The enum keyword is used to restrict a value to a fixed set of values.
-	// It must be an array with at least one element, where each element
-	// is unique.
+	// The value of this keyword MUST be an array.
+	// An instance validates successfully against this keyword if its value is
+	// equal to one of the elements in this keyword's array value.
 	Enum enum `json:"enum"`
 
-	// The const keyword is used to restrict a value to a single value.
+	// The value of this keyword MAY be of any type, including null.
+	// An instance validates successfully against this keyword if its value is
+	// equal to the value of the keyword.
 	Const *_const `json:"const"`
 
-	// The definitions keyword is used to create entities that we recognize as
-	// repetitive entities.
-	// This ability maintains reuse in out Json Schema.
+	// The "definitions" keywords provides a standardized location for schema
+	// authors to inline re-usable JSON Schemas into a more general schema. The
+	// keyword does not directly affect the validation result.
+	// This keyword's value MUST be an object. Each member value of this
+	// object MUST be a valid JSON Schema.
 	Definitions definitions `json:"definitions"`
 
-	// The value of properties is an object, where each key is the name of a
-	// property and each value is a JSON schema used to validate that property.
+	// The value of "properties" MUST be an object. Each value of this object
+	// MUST be a valid JSON Schema.
+	// This keyword determines how child instances validate for objects, and
+	// does not directly validate the immediate instance itself.
+	// Validation succeeds if, for each name that appears in both the instance
+	// and as a name within this keyword's value, the child instance for that
+	// name successfully validates against the corresponding schema.
 	Properties properties `json:"properties"`
 
-	// The additionalProperties keyword is used to control the handling of
-	// extra stuff, that is, properties whose names are not listed in the
-	// properties keyword.
-	// By default any additional properties are allowed.
-	// The additionalProperties keyword may be either a boolean or an object.
-	// If additionalProperties is a boolean and set to false, no additional
-	// properties will be allowed.
-	// If additionalProperties is an object, that object is a schema that will be
-	// used to validate any additional properties not listed in properties.
+	// The value of "additionalProperties" MUST be a valid JSON Schema.
+	// This keyword determines how child instances validate for objects,
+	// and does not directly validate the immediate instance itself.
+	// Validation with "additionalProperties" applies only to the child values
+	// of instance names that do not match any names in "properties", and do
+	// not match any regular expression in "patternProperties".
+	// For all such properties, validation succeeds if the child instance
+	// validates against the "additionalProperties" schema.
 	AdditionalProperties *additionalProperties `json:"additionalProperties"`
 
-	// The required keyword takes an array of zero or more strings.
-	// Each of these strings must be unique.
+	// The value of this keyword MUST be an array. Elements of this array,
+	// if any, MUST be strings, and MUST be unique.
+	// An object instance is valid against this keyword if every item in the
+	// array is the name of a property in the instance.
 	Required required `json:"required"`
 
-	// The names of properties can be validated against a schema, irrespective
-	// of their values.
-	// This can be useful if you don’t want to enforce specific properties,
-	// but you want to make sure that the names of those properties follow
-	// a specific convention.
+	// The value of "propertyNames" MUST be a valid JSON Schema.
+	// If the instance is an object, this keyword validates if every property
+	// name in the instance validates against the provided schema. Note the
+	// property name that the schema is testing will always be a string
 	PropertyNames *propertyNames `json:"propertyNames"`
 
-	// The dependencies keyword allows the schema of the object to change
-	// based on the presence of certain special properties.
+	// This keyword specifies rules that are evaluated if the instance is an
+	// object and contains a certain property.
+	// This keyword's value MUST be an object. Each property specifies a
+	// dependency. Each dependency value MUST be an array or a valid JSON
+	// Schema.
+	// If the dependency value is a subschema, and the dependency key is a
+	// property in the instance, the entire instance must validate against the
+	// dependency value.
+	// If the dependency value is an array, each element in the array, if any,
+	// MUST be a string, and MUST be unique. If the dependency key is a
+	// property in the instance, each of the items in the dependency value
+	// must be a property that exists in the instance.
 	Dependencies dependencies `json:"dependencies"`
 
-	// TODO: Learn more about this keyword.
+	// The value of "patternProperties" MUST be an object. Each property name
+	// of this object SHOULD be a valid regular expression, according to the
+	// ECMA 262 regular expression dialect. Each property value of this object
+	// MUST be a valid JSON Schema.
+	// This keyword determines how child instances validate for objects, and
+	// does not directly validate the immediate instance itself. Validation of
+	// the primitive instance type against this keyword always succeeds.
+	// Validation succeeds if, for each instance name that matches any regular
+	// expressions that appear as a property name in this keyword's value, the
+	// child instance for that name successfully validates against each schema
+	// that corresponds to a matching regular expression.
 	PatternProperties patternProperties `json:"patternProperties"`
 
-	// Items can be either an object or an array. If it is an object, it will
-	// represent a schema that all the items in the array should match.
-	// If it is an array, each item in that array is a different json schema
-	// that should match the corresponding item in the inspected array
-	// (In this case the index of each item is very important).
+	// The value of "items" MUST be either a valid JSON Schema or an array of
+	// valid JSON Schemas.
+	// This keyword determines how child instances validate for arrays, and
+	// does not directly validate the immediate instance itself.
+	// If "items" is a schema, validation succeeds if all elements in the array
+	// successfully validate against that schema.
+	// If "items" is an array of schemas, validation succeeds if each element
+	// of the instance validates against the schema at the same position,
+	// if any.
 	Items items `json:"items"`
 
-	// While the items schema must be valid for every item in the array,
-	// the contains schema only needs to validate against one or more
-	// items in the array.
+	// The value of this keyword MUST be a boolean.
+	// If this keyword has boolean value false, the instance validates
+	// successfully. If it has boolean value true, the instance validates
+	// successfully if all of its elements are unique.
 	Contains *contains `json:"contains"`
 
-	// The additionalItems keyword controls whether it’s valid to have
-	// additional items in the array beyond what is defined in items.
+	// The value of "additionalItems" MUST be a valid JSON Schema.
+	// This keyword determines how child instances validate for arrays, and
+	// does not directly validate the immediate instance itself.
+	// If "items" is an array of schemas, validation succeeds if every
+	// instance element at a position greater than the size of "items"
+	// validates against "additionalItems".
+	// Otherwise, "additionalItems" MUST be ignored, as the "items" schema
+	// (possibly the default value of an empty schema) is applied to all
+	// elements.
 	AdditionalItems *additionalItems `json:"additionalItems"`
 
 	// array limitations
