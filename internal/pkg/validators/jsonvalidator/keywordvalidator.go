@@ -23,7 +23,7 @@ Implemented keywordValidators:
 > exclusiveMinimum: 		V
 > exclusiveMaximum: 		V
 > properties: 				V
-> additionalProperties: 	X
+> additionalProperties: 	V
 > required: 				V
 > propertyNames: 			V
 > dependencies: 			V
@@ -79,52 +79,14 @@ type keywordValidator interface {
 /*****************/
 
 type schema string
-
-func (s *schema) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
-
 type ref string
-
-func (r *ref) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
-
 type id string
-
-func (i *id) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
-
 type comment string
-
-func (c *comment) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
-
 type title string
-
-func (t *title) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
-
 type description string
-
-func (d *description) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
-
 type examples []interface{}
-
-func (e examples) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
-
+type definitions map[string]*JsonSchema
 type _default json.RawMessage
-
-func (d _default) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
 
 func (d *_default) UnmarshalJSON(data []byte) error {
 	*d = data
@@ -174,7 +136,7 @@ func (t *_type) validate(jsonPath string, jsonData interface{}) (bool, error) {
 				} else {
 					return false, KeywordValidationError{
 						"type",
-						"type field in schema must be string or array of strings",
+						"\"type\" field in schema must be string or array of strings",
 					}
 				}
 			}
@@ -195,7 +157,7 @@ func (t *_type) validate(jsonPath string, jsonData interface{}) (bool, error) {
 		{
 			return false, KeywordValidationError{
 				"type",
-				"type field in schema must be string or array of strings",
+				"\"type\" field in schema must be string or array of strings",
 			}
 		}
 	}
@@ -278,7 +240,7 @@ func assertJsonType(jsonType string, jsonData interface{}) (bool, error) {
 		{
 			return false, KeywordValidationError{
 				"type",
-				"type field in schema must be string or array of strings",
+				"invalid json type " + jsonType,
 			}
 		}
 	}
@@ -896,7 +858,7 @@ func (d dependencies) validate(jsonPath string, jsonData interface{}) (bool, err
 						// Marshal the dependency in order to Unmarshal it into JsonSchema struct.
 						rawDependency, err := json.Marshal(dependency)
 						if err != nil {
-							return false, nil
+							return false, err
 						}
 
 						// Unmarshal the raw data in order into a JsonSchema struct.
@@ -1079,7 +1041,9 @@ func (mp *maxProperties) validate(jsonPath string, jsonData interface{}) (bool, 
 		} else {
 			return false, KeywordValidationError{
 				"minProperties",
-				"inspected value may contains at most " + strconv.Itoa(int(*mp)) + " properties",
+				"inspected value may contains at most " +
+					strconv.Itoa(int(*mp)) +
+					" properties",
 			}
 		}
 	} else {
@@ -1088,12 +1052,6 @@ func (mp *maxProperties) validate(jsonPath string, jsonData interface{}) (bool, 
 			"inspected value must be a json object",
 		}
 	}
-}
-
-type definitions map[string]*JsonSchema
-
-func (d definitions) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
 }
 
 /********************/
@@ -1160,12 +1118,11 @@ func (i items) validate(jsonPath string, jsonData interface{}) (bool, error) {
 		// we validate each item in the inspected array against the schema at the same position.
 		case []interface{}:
 			{
-				// TODO: we should consider here the value of additionalItems.
-				if len(itemsField) != len(array) {
+				if len(itemsField) > len(array) {
 					return false, KeywordValidationError{
 						"items",
-						"when \"items\" field contains a list of Json Schema objects, the amount " +
-							"of items in the inspected array must be equal to the amount of schemas",
+						"when \"items\" field contains a list of Json Schema objects, the " +
+							"inspected array must contain at least the same amount of items",
 					}
 				}
 
@@ -1224,10 +1181,16 @@ func (i *items) UnmarshalJSON(data []byte) error {
 
 type additionalItems struct {
 	JsonSchema
+	siblingItems *items
 }
 
 func (ai *additionalItems) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if ai == nil {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 type contains struct {
@@ -1378,16 +1341,7 @@ func (ui *uniqueItems) validate(jsonPath string, jsonData interface{}) (bool, er
 /********************/
 
 type contentMediaType string
-
-func (cm *contentMediaType) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
-
 type contentEncoding string
-
-func (ce *contentEncoding) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
 
 /**************************/
 /** Conditional Keywords **/
@@ -1528,6 +1482,8 @@ func (n *not) validate(jsonPath string, jsonData interface{}) (bool, error) {
 
 type _if struct {
 	JsonSchema
+	siblingThen *_then
+	siblingElse *_else
 }
 
 func (i *_if) validate(jsonPath string, jsonData interface{}) (bool, error) {
@@ -1555,13 +1511,4 @@ func (e *_else) validate(jsonPath string, jsonData interface{}) (bool, error) {
 /****************************/
 
 type readOnly bool
-
-func (ro *readOnly) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
-
 type writeOnly bool
-
-func (wo *writeOnly) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}

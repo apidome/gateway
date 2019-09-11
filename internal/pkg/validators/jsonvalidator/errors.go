@@ -10,3 +10,12 @@ type KeywordValidationError struct {
 func (e KeywordValidationError) Error() string {
 	return fmt.Sprintf("\"" + e.keyword + "\" validation failed, reason: " + e.reason)
 }
+
+type SchemaCompilationError struct {
+	path string
+	err  string
+}
+
+func (e SchemaCompilationError) Error() string {
+	return fmt.Sprintf("schema compilation failed in path " + e.path + ": " + e.err)
+}

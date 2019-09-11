@@ -9,12 +9,23 @@
         "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
     },
     "dependencies": {
-        "age": [
-            "name"
-        ],
-        "name": [
-            "age"
-        ]
+        "age": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[a-zA-Z0-9\\-]+(\\s[a-zA-Z0-9\\-]+)*$"
+                }
+            },
+            "patternProperties": {
+                "^ag": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": {}
+        }
     },
     "patternProperties": {
         "^ag": {
@@ -85,7 +96,8 @@
                 "maxLength": 120
             },
             "additionalItems": {
-                "type": "integer"
+                "type": "string",
+                "maxLength": 20
             }
         },
         "skills": {
@@ -94,7 +106,21 @@
             "minItems": 2,
             "maxItems": 2,
             "contains": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "pattern": "^[a-zA-Z0-9\\-]+(\\s[a-zA-Z0-9\\-]+)*$"
+                    }
+                },
+                "patternProperties": {
+                    "^ag": {
+                        "type": "integer"
+                    }
+                },
+                "additionalProperties": {}
             },
             "items": {
                 "type": "object",
