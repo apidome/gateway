@@ -261,14 +261,16 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 	// Create a new JsonPointer.
 	jsonPointer, err := jsonwalker.NewJsonPointer(relativeJsonPath)
 	if err != nil {
-		fmt.Println("[JsonSchema DEBUG] validateJsonData() failed while trying to create JsonPointer " + jsonPath)
+		fmt.Println("[JsonSchema DEBUG] validateJsonData() " +
+			"failed while trying to create JsonPointer " + jsonPath)
 		return false, err
 	}
 
 	// Get the piece of json that the current schema describes.
 	value, err := jsonPointer.Evaluate(jsonData)
 	if err != nil {
-		fmt.Println("[JsonSchema DEBUG] validateJsonData() failed while trying to evaluate a JsonPointer " + jsonPath)
+		fmt.Println("[JsonSchema DEBUG] validateJsonData() " +
+			"failed while trying to evaluate a JsonPointer " + jsonPath)
 		return false, err
 	}
 
@@ -284,7 +286,8 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 		// keyword.
 		valid, err := keyword.validate(jsonPath, value)
 		if err != nil {
-			log.Print("[JsonSchema DEBUG] validation failed in path: " + jsonPath + " - " + err.Error())
+			log.Print("[JsonSchema DEBUG] validation failed in path: " +
+				jsonPath + " - " + err.Error())
 			return valid, err
 		}
 	}

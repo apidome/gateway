@@ -1083,6 +1083,14 @@ func (i *items) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type additionalItems struct {
+	JsonSchema
+}
+
+func (ai *additionalItems) validate(jsonPath string, jsonData interface{}) (bool, error) {
+	return true, nil
+}
+
 type contains struct {
 	JsonSchema
 }
@@ -1118,14 +1126,6 @@ func (c *contains) validate(jsonPath string, jsonData interface{}) (bool, error)
 		"contains",
 		"could validate any of the inspected array's items against the given schema",
 	}
-}
-
-type additionalItems struct {
-	JsonSchema
-}
-
-func (ai *additionalItems) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
 }
 
 type minItems int

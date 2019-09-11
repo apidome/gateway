@@ -9,11 +9,17 @@
         "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
     },
     "dependencies": {
-        "age": ["name"],
-        "name": ["age"]
+        "age": [
+            "name"
+        ],
+        "name": [
+            "age"
+        ]
     },
     "patternProperties": {
-        "^ag": { "type": "integer" }
+        "^ag": {
+            "type": "integer"
+        }
     },
     "properties": {
         "name": {
@@ -71,9 +77,18 @@
             "minItems": 3,
             "maxItems": 100,
             "uniqueItems": true,
-            "items": {
-                "type": "string",
-                "maxLength": 120
+            "items": [
+                {
+                    "type": "string",
+                    "maxLength": 120
+                },
+                {
+                    "type": "string",
+                    "maxLength": 20
+                }
+            ],
+            "additionalItems": {
+                "type": "integer"
             }
         },
         "skills": {
