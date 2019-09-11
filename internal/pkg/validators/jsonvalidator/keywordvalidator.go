@@ -2,7 +2,6 @@ package jsonvalidator
 
 import (
 	"encoding/json"
-	"errors"
 	"math"
 	"regexp"
 	"strconv"
@@ -651,16 +650,71 @@ func (p properties) validate(jsonPath string, jsonData interface{}) (bool, error
 
 type additionalProperties struct {
 	JsonSchema
+	siblingProperties        *properties
+	siblingPatternProperties *patternProperties
 }
 
 func (ap *additionalProperties) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
+	// If the receiver is nil, dont validate it (return true)
+	if ap == nil {
+		return true, nil
+	}
 
-//func (ap *additionalProperties) UnmarshalJSON(data []byte) error {
-//	*ap = data
-//	return nil
-//}
+	// First we need to verify that jsonData is a json object.
+	if object, isObject := jsonData.(map[string]interface{}); isObject {
+		// Marshal the data in order to call JsonSchema.validateJsonData().
+		rawData, err := json.Marshal(jsonData)
+		if err != nil {
+			return false, err
+		}
+
+		// Iterate over the properties of the inspected object.
+		for property := range object {
+			// Check if the property does not have corresponding schema in
+			// "properties" field
+			if _, ok := (*ap.siblingProperties)[property]; !ok {
+				// Iterate over the patterns in "patternProperties" field.
+				for pattern := range *ap.siblingPatternProperties {
+					// Check if the inspected property matches to the pattern.
+					match, err := regexp.MatchString(pattern, property)
+
+					// The pattern or the value is not in the right format (string)
+					if err != nil {
+						return false, KeywordValidationError{
+							"additionalProperties",
+							err.Error(),
+						}
+					}
+
+					// If there is no match, validate the value of the property against
+					// the given schema in "additionalProperties" field.
+					if !match {
+						valid, err := (*ap).validateJsonData(jsonPath+"/"+property, rawData)
+
+						// If the validation fails, return an error.
+						if !valid {
+							return false, KeywordValidationError{
+								"additionalProperties",
+								"property \"" +
+									property +
+									"\" failed in validation: \n" + err.Error(),
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// If we arrived here, none of the properties failed in validation,
+		// and we return true.
+		return true, nil
+	} else {
+		return false, KeywordValidationError{
+			"properties",
+			"inspected value expected to be a json object",
+		}
+	}
+}
 
 type required []string
 
@@ -675,8 +729,16 @@ func (r required) validate(jsonPath string, jsonData interface{}) (bool, error) 
 		// For each property in the required list, check if it exists.
 		for _, property := range r {
 			if v[property] == nil {
-				return false, errors.New("Missing required property - " + property)
+				return false, KeywordValidationError{
+					"required",
+					"Missing required property - " + property,
+				}
 			}
+		}
+	} else {
+		return false, KeywordValidationError{
+			"required",
+			"all items \"required\" field must be strings",
 		}
 	}
 

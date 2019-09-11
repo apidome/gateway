@@ -1,6 +1,7 @@
 package jsonvalidator
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/Creespye/caf/internal/pkg/jsonwalker"
 	"log"
@@ -251,6 +252,27 @@ type JsonSchema struct {
 	WriteOnly *writeOnly `json:"writeOnly"`
 }
 
+func NewJsonSchema(bytes []byte) (*JsonSchema, error) {
+	var schema *JsonSchema
+
+	// Check if the string s is a valid json.
+	err := json.Unmarshal(bytes, &schema)
+	if err != nil {
+		return nil, err
+	}
+
+	if schema.AdditionalProperties != nil {
+		if schema.Properties != nil {
+			schema.AdditionalProperties.siblingProperties = &schema.Properties
+		}
+
+		if schema.PatternProperties != nil {
+			schema.AdditionalProperties.siblingPatternProperties = &schema.PatternProperties
+		}
+	}
+	return schema, nil
+}
+
 func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, error) {
 	fmt.Println("[JsonSchema DEBUG] Validating " + jsonPath)
 
@@ -310,11 +332,11 @@ func getKeywordsSlice(js *JsonSchema) []keywordValidator {
 		js.ExclusiveMinimum,
 		js.ExclusiveMaximum,
 		js.Required,
+		js.PropertyNames,
 		js.Properties,
 		js.AdditionalProperties,
-		js.PropertyNames,
-		js.Dependencies,
 		js.PatternProperties,
+		js.Dependencies,
 		js.MinProperties,
 		js.MaxProperties,
 		js.Items,

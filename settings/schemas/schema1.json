@@ -21,6 +21,9 @@
             "type": "integer"
         }
     },
+    "additionalProperties": {
+        "type": "string"
+    },
     "properties": {
         "name": {
             "type": "string",
@@ -77,16 +80,10 @@
             "minItems": 3,
             "maxItems": 100,
             "uniqueItems": true,
-            "items": [
-                {
-                    "type": "string",
-                    "maxLength": 120
-                },
-                {
-                    "type": "string",
-                    "maxLength": 20
-                }
-            ],
+            "items": {
+                "type": "string",
+                "maxLength": 120
+            },
             "additionalItems": {
                 "type": "integer"
             }
