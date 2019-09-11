@@ -831,7 +831,64 @@ func (d dependencies) validate(jsonPath string, jsonData interface{}) (bool, err
 type patternProperties map[string]*JsonSchema
 
 func (pp patternProperties) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if pp == nil {
+		return true, nil
+	}
+
+	// First we need to verify that jsonData is a json object.
+	if object, ok := jsonData.(map[string]interface{}); ok {
+		// Marshal jsonData back to byte array in order to call
+		// JsonSchema.validateJsonData()
+		rawData, err := json.Marshal(jsonData)
+		if err != nil {
+			return false, err
+		}
+
+		// Iterate over the given patterns.
+		for pattern, subSchema := range pp {
+			// Iterate over the properties in the inspected value.
+			for property := range object {
+				// Check if the property matches to the pattern.
+				match, err := regexp.MatchString(pattern, property)
+
+				// The pattern or the value is not in the right format (string)
+				if err != nil {
+					return false, KeywordValidationError{
+						"patternProperties",
+						err.Error(),
+					}
+				}
+
+				// If there is a match, validate the value of the property against
+				// the given schema.
+				if match {
+					valid, err := subSchema.validateJsonData(jsonPath+"/"+property, rawData)
+
+					// If the validation fails, return an error.
+					if !valid {
+						return false, KeywordValidationError{
+							"patternProperties",
+							"property \"" +
+								property +
+								"\" that matches the pattern \"" +
+								pattern +
+								"\" failed in validation: \n" + err.Error(),
+						}
+					}
+				}
+			}
+		}
+
+		// If we arrived here it means that none of the properties failed in
+		// validation against any of the given schemas.
+		return true, nil
+	} else {
+		return false, KeywordValidationError{
+			"patternProperties",
+			"inspected value expected to be a json object",
+		}
+	}
 }
 
 type minProperties int

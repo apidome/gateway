@@ -12,6 +12,9 @@
         "age": ["name"],
         "name": ["age"]
     },
+    "patternProperties": {
+        "^ag": { "type": "integer" }
+    },
     "properties": {
         "name": {
             "type": "string",
