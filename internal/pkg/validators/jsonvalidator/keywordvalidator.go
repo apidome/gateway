@@ -32,7 +32,7 @@ Implemented keywordValidators:
 > maxProperties: 			V
 > items: 					V ***
 > contains: 				V
-> additionalItems: 			X
+> additionalItems: 			V
 > minItems: 				V
 > maxItems: 				V
 > uniqueItems: 				V
@@ -40,9 +40,9 @@ Implemented keywordValidators:
 > allOf: 					V
 > oneOf: 					V
 > not: 						V
-> _if: 						X
-> _then: 					X
-> _else: 					X
+> _if: 						V
+> _then: 					V
+> _else: 					V
 
 *** These keywords are being un-marshaled in their validate() function.
 	We need to find a way to do that on startup and not on runtime.
@@ -1544,23 +1544,36 @@ type _if struct {
 }
 
 func (i *_if) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
+	// If the receiver is nil, dont validate it (return true)
+	if i == nil {
+		return true, nil
+	}
+
+	// Marshal jsonData in order to call JsonSchema.validateJsonData().
+	rawData, err := json.Marshal(jsonData)
+	if err != nil {
+		return false, err
+	}
+
+	// Validate the data against the given schema in "if".
+	valid, _ := i.validateJsonData("/", rawData)
+
+	// If the validation succeeded, validate the data against the given schema
+	// in "then".
+	// Else, validate the data against the given schema in "else".
+	if valid {
+		return i.siblingThen.validateJsonData(jsonPath, rawData)
+	} else {
+		return i.siblingElse.validateJsonData(jsonPath, rawData)
+	}
 }
 
 type _then struct {
 	JsonSchema
 }
 
-func (t *_then) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
-}
-
 type _else struct {
 	JsonSchema
-}
-
-func (e *_else) validate(jsonPath string, jsonData interface{}) (bool, error) {
-	return true, nil
 }
 
 /****************************/

@@ -91,24 +91,10 @@
             "minItems": 3,
             "maxItems": 100,
             "uniqueItems": true,
-            "items": [
-                {
-                    "type": "string",
-                    "maxLength": 120
-                },
-                {
-                    "type": "string",
-                    "maxLength": 120
-                },
-                {
-                    "type": "string",
-                    "maxLength": 120
-                },
-                {
-                    "type": "string",
-                    "maxLength": 120
-                }
-            ],
+            "items": {
+                "type": "string",
+                "maxLength": 120
+            },
             "additionalItems": {
                 "type": "string",
                 "maxLength": 2
@@ -166,5 +152,16 @@
         "available_for_hire",
         "interests",
         "skills"
-    ]
+    ],
+    "if": {
+        "type": "string"
+    },
+    "then": {
+        "minProperties": 9,
+        "maxProperties": 9
+    },
+    "else": {
+        "minProperties": 8,
+        "maxProperties": 8
+    }
 }

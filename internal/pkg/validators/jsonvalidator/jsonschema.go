@@ -534,9 +534,7 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 
 	// Iterate over the keywords.
 	for validatorName, keyword := range keywordValidators {
-		if keyword != nil {
-			fmt.Println("[JsonSchema DEBUG] Validating \"" + validatorName + "\" in path " + jsonPath)
-		}
+		fmt.Println("[JsonSchema DEBUG] Validating \"" + validatorName + "\" in path " + jsonPath)
 
 		// Validate the value that we extracted from the jsonData at each
 		// keyword.
@@ -679,14 +677,6 @@ func getNonNilKeywordsMap(js *JsonSchema) map[string]keywordValidator {
 
 	if js.If != nil {
 		m["if"] = js.If
-	}
-
-	if js.Then != nil {
-		m["then"] = js.Then
-	}
-
-	if js.Else != nil {
-		m["else"] = js.Else
 	}
 
 	// Return the map.
