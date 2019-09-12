@@ -450,12 +450,27 @@ func (f *format) validate(jsonPath string, jsonData interface{}) (bool, error) {
 					"date-time incorrectly formatted " + err.Error(),
 				}
 			}
-		case "date":
-			return true, nil
-		case "time":
-			return true, nil
-		case "email":
-			return true, nil
+		case FORMAT_DATE:
+			if _, err := formatchecker.IsValidDate(v); err != nil {
+				return false, KeywordValidationError{
+					"format",
+					"date incorrectly formatted " + err.Error(),
+				}
+			}
+		case FORMAT_TIME:
+			if _, err := formatchecker.IsValidTime(v); err != nil {
+				return false, KeywordValidationError{
+					"format",
+					"time incorrectly formatted " + err.Error(),
+				}
+			}
+		case FORMAT_EMAIL:
+			if _, err := formatchecker.IsValidTime(v); err != nil {
+				return false, KeywordValidationError{
+					"format",
+					"email incorrectly formatted " + err.Error(),
+				}
+			}
 		case "idn-email":
 			return true, nil
 		case "hostname":
