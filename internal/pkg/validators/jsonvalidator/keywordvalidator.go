@@ -251,6 +251,10 @@ func (t *_type) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (t *_type) MarshalJSON() ([]byte, error) {
+	return []byte(*t), nil
+}
+
 type enum []interface{}
 
 func (e enum) validate(jsonPath string, jsonData interface{}) (bool, error) {
