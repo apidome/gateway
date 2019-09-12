@@ -39,3 +39,12 @@ func IsValidEmail(email string) (bool, error) {
 	}
 	return true, nil
 }
+
+// RFC 6531 [RFC6531]
+// https://tools.ietf.org/html/rfc6531
+func IsValidIdnEmail(idnEmail string) (bool, error) {
+	if _, err := mail.ParseAddress(idnEmail); err != nil {
+		return false, err
+	}
+	return true, nil
+}

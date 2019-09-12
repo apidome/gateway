@@ -465,14 +465,19 @@ func (f *format) validate(jsonPath string, jsonData interface{}) (bool, error) {
 				}
 			}
 		case FORMAT_EMAIL:
-			if _, err := formatchecker.IsValidTime(v); err != nil {
+			if _, err := formatchecker.IsValidEmail(v); err != nil {
 				return false, KeywordValidationError{
 					"format",
 					"email incorrectly formatted " + err.Error(),
 				}
 			}
-		case "idn-email":
-			return true, nil
+		case FORMAT_IDN_EMAIL:
+			if _, err := formatchecker.IsValidIdnEmail(v); err != nil {
+				return false, KeywordValidationError{
+					"format",
+					"idn-email incorrectly formatted " + err.Error(),
+				}
+			}
 		case "hostname":
 			return true, nil
 		case "idn-hostname":
