@@ -540,7 +540,7 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 		// keyword.
 		valid, err := keyword.validate(jsonPath, value)
 		if err != nil {
-			log.Print("[JsonSchema DEBUG] validation failed in path: " +
+			log.Print("[JsonSchema DEBUG] \"" + validatorName + "\" validation failed in path: " +
 				jsonPath + " - " + err.Error())
 			return valid, err
 		}
