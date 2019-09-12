@@ -851,34 +851,21 @@ func (d dependencies) validate(jsonPath string, jsonData interface{}) (bool, err
 			switch v := dependency.(type) {
 
 			// In this case the dependency is a sub-schema.
-			case map[string]interface{}:
+			case JsonSchema:
 				{
 					// Check if the propertyName (which is the key in the "dependencies" object)
 					// is present in the data. If it is, validate the whole instance against the
 					// sub-schema.
 					if _, ok := object[propertyName]; ok {
-						var subSchema JsonSchema
-
-						// Marshal the dependency in order to Unmarshal it into JsonSchema struct.
-						rawDependency, err := json.Marshal(dependency)
-						if err != nil {
-							return false, err
-						}
-
-						// Unmarshal the raw data in order into a JsonSchema struct.
-						err = json.Unmarshal(rawDependency, &subSchema)
-						if err != nil {
-							return false, err
-						}
-
 						// Validate the whole data against the given sub-schema.
-						valid, err := subSchema.validateJsonData("/", rawData)
+						valid, err := v.validateJsonData("/", rawData)
 						if !valid {
 							return false, KeywordValidationError{
 								"dependencies",
 								"inspected value failed in validation against sub-schema given in \"" +
 									propertyName +
-									"\" dependency",
+									"\" dependency: " +
+									err.Error(),
 							}
 						}
 					}

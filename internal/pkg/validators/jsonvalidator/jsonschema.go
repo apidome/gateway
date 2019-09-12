@@ -503,8 +503,6 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 }
 
 func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, error) {
-	fmt.Println("[JsonSchema DEBUG] Validating " + jsonPath)
-
 	// Calculate the relative path in order to evaluate the data
 	jsonTokens := strings.Split(jsonPath, "/")
 	relativeJsonPath := "/" + jsonTokens[len(jsonTokens)-1]
@@ -527,11 +525,13 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 
 	// Get a slice of all of JsonSchema's field in order to iterate them
 	// and call each of their validate() functions.
-	keywordValidators := getKeywordsSlice(js)
+	keywordValidators := getKeywordsMap(js)
 
 	// Iterate over the keywords.
-	for _, keyword := range keywordValidators {
-		// TODO: Check if keyword != nil
+	for validatorName, keyword := range keywordValidators {
+		if keyword != nil {
+			fmt.Println("[JsonSchema DEBUG] Validating \"" + validatorName + "\" in path " + jsonPath)
+		}
 
 		// Validate the value that we extracted from the jsonData at each
 		// keyword.
@@ -546,40 +546,140 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 	return true, nil
 }
 
-func getKeywordsSlice(js *JsonSchema) []keywordValidator {
-	return []keywordValidator{
-		js.Type,
-		js.Const,
-		js.Enum,
-		js.MinLength,
-		js.MaxLength,
-		js.Pattern,
-		js.Format,
-		js.MultipleOf,
-		js.Minimum,
-		js.Maximum,
-		js.ExclusiveMinimum,
-		js.ExclusiveMaximum,
-		js.Required,
-		js.PropertyNames,
-		js.Properties,
-		js.AdditionalProperties,
-		js.PatternProperties,
-		js.Dependencies,
-		js.MinProperties,
-		js.MaxProperties,
-		js.Items,
-		js.Contains,
-		js.AdditionalItems,
-		js.MinItems,
-		js.MaxItems,
-		js.UniqueItems,
-		js.AnyOf,
-		js.AllOf,
-		js.OneOf,
-		js.Not,
-		js.If,
-		js.Then,
-		js.Else,
+func getKeywordsMap(js *JsonSchema) map[string]keywordValidator {
+	m := make(map[string]keywordValidator)
+
+	if js.Type != nil {
+		m["type"] = js.Type
 	}
+
+	if js.Const != nil {
+		m["const"] = js.Const
+	}
+
+	if js.Enum != nil {
+		m["enum"] = js.Enum
+	}
+
+	if js.MinLength != nil {
+		m["minLength"] = js.MinLength
+	}
+
+	if js.MaxLength != nil {
+		m["maxLength"] = js.MaxLength
+	}
+
+	if js.Pattern != nil {
+		m["pattern"] = js.Pattern
+	}
+
+	if js.Format != nil {
+		m["format"] = js.Format
+	}
+
+	if js.MultipleOf != nil {
+		m["multipleOf"] = js.MultipleOf
+	}
+
+	if js.Minimum != nil {
+		m["minimum"] = js.Minimum
+	}
+
+	if js.Maximum != nil {
+		m["maximum"] = js.Maximum
+	}
+
+	if js.ExclusiveMinimum != nil {
+		m["exclusiveMinimum"] = js.ExclusiveMinimum
+	}
+
+	if js.ExclusiveMaximum != nil {
+		m["exclusiveMaximum"] = js.ExclusiveMaximum
+	}
+
+	if js.Required != nil {
+		m["required"] = js.Required
+	}
+
+	if js.PropertyNames != nil {
+		m["propertyNames"] = js.PropertyNames
+	}
+
+	if js.Properties != nil {
+		m["properties"] = js.Properties
+	}
+
+	if js.AdditionalProperties != nil {
+		m["additionalProperties"] = js.AdditionalProperties
+	}
+
+	if js.PatternProperties != nil {
+		m["patternProperties"] = js.PatternProperties
+	}
+
+	if js.Dependencies != nil {
+		m["dependencies"] = js.Dependencies
+	}
+
+	if js.MinProperties != nil {
+		m["minProperties"] = js.MinProperties
+	}
+
+	if js.MaxProperties != nil {
+		m["maxProperties"] = js.MaxProperties
+	}
+
+	if js.Items != nil {
+		m["items"] = js.Items
+	}
+
+	if js.Contains != nil {
+		m["contains"] = js.Contains
+	}
+
+	if js.AdditionalItems != nil {
+		m["additionalItems"] = js.AdditionalItems
+	}
+
+	if js.MinItems != nil {
+		m["minItems"] = js.MinItems
+	}
+
+	if js.MaxItems != nil {
+		m["maxItems"] = js.MaxItems
+	}
+
+	if js.UniqueItems != nil {
+		m["uniqueItems"] = js.UniqueItems
+	}
+
+	if js.AnyOf != nil {
+		m["anyOf"] = js.AnyOf
+	}
+
+	if js.AllOf != nil {
+		m["allOf"] = js.AllOf
+	}
+
+	if js.OneOf != nil {
+		m["oneOf"] = js.OneOf
+	}
+
+	if js.Not != nil {
+		m["not"] = js.Not
+	}
+
+	if js.If != nil {
+		m["if"] = js.If
+	}
+
+	if js.Then != nil {
+		m["then"] = js.Then
+	}
+
+	if js.Else != nil {
+		m["else"] = js.Else
+	}
+
+	return m
 }
