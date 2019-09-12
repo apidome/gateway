@@ -91,13 +91,27 @@
             "minItems": 3,
             "maxItems": 100,
             "uniqueItems": true,
-            "items": {
-                "type": "string",
-                "maxLength": 120
-            },
+            "items": [
+                {
+                    "type": "string",
+                    "maxLength": 120
+                },
+                {
+                    "type": "string",
+                    "maxLength": 120
+                },
+                {
+                    "type": "string",
+                    "maxLength": 120
+                },
+                {
+                    "type": "string",
+                    "maxLength": 120
+                }
+            ],
             "additionalItems": {
                 "type": "string",
-                "maxLength": 20
+                "maxLength": 2
             }
         },
         "skills": {

@@ -871,7 +871,7 @@ func (d dependencies) validate(jsonPath string, jsonData interface{}) (bool, err
 			switch v := dependency.(type) {
 
 			// In this case the dependency is a sub-schema.
-			case JsonSchema:
+			case *JsonSchema:
 				{
 					// Check if the propertyName (which is the key in the "dependencies" object)
 					// is present in the data. If it is, validate the whole instance against the
@@ -1201,7 +1201,53 @@ func (ai *additionalItems) validate(jsonPath string, jsonData interface{}) (bool
 		return true, nil
 	}
 
-	return false, nil
+	// Unmarshal the sibling field "items" in order to check it's json type.
+	var siblingItems interface{}
+	err := json.Unmarshal([]byte(*ai.siblingItems), &siblingItems)
+	if err != nil {
+		return false, err
+	}
+
+	// If "items" is a json array, "additionalItems" needs to verify the items
+	// that the schema in "items" field did not validate.
+	if itemsArray, ok := siblingItems.([]interface{}); ok {
+		// Check if jsonData is a json array.
+		if array, ok := jsonData.([]interface{}); ok {
+			// Marshal jsonData in order to call JsonSchema.validateJsonData().
+			rawData, err := json.Marshal(jsonData)
+			if err != nil {
+				return false, nil
+			}
+
+			// Iterate over the inspected array from the position that items stopped
+			// validating.
+			for index := range array[len(itemsArray):] {
+				// Validate the inspected item against the schema given in "additionalItems".
+				valid, err := ai.validateJsonData(jsonPath+"/"+strconv.Itoa(index), rawData)
+				if !valid {
+					return false, KeywordValidationError{
+						"additionalItems",
+						"item at position " +
+							strconv.Itoa(index) +
+							" failed in validation: " +
+							err.Error(),
+					}
+				}
+			}
+
+			// If we arrived here it means that no item failed in validation.
+			return true, nil
+		} else {
+			return false, KeywordValidationError{
+				"additionalItems",
+				"inspected value expected to be a json array",
+			}
+		}
+	} else {
+		// If "items" field is not an array of json schema, additionalItems
+		// is meaningless so we return true.
+		return true, nil
+	}
 }
 
 type contains struct {

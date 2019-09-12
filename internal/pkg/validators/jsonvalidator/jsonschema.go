@@ -232,6 +232,13 @@ type JsonSchema struct {
 	WriteOnly *writeOnly `json:"writeOnly,omitempty"`
 }
 
+// NewJsonSchema created a new JsonSchema instance, Unmarshals the byte array
+// into the instance, and than connects the following related keywords:
+// Schema.AdditionalProperties 	---> 	Schema.Properties
+// Schema.AdditionalProperties 	---> 	Schema.PatternProperties
+// JsonSchema.AdditionalItems 	---> 	JsonSchema.Items
+// JsonSchema.If 				---> 	JsonSchema.Then
+// JsonSchema.IF 				---> 	JsonSchema.Else
 func NewJsonSchema(bytes []byte) (*JsonSchema, error) {
 	var schema *JsonSchema
 
@@ -251,6 +258,10 @@ func NewJsonSchema(bytes []byte) (*JsonSchema, error) {
 	return schema, nil
 }
 
+// connectRelatedKeywords is a recursive functions that connect the related
+// keywords of the schema (as mentioned in the description of NewJsonSchema()).
+// The function scans the schema in and it's sub-schemas and perform the
+// required connections.
 func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 	// Connect sub-schemas in "properties" field.
 	for key := range js.Properties {
@@ -288,9 +299,10 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 		}
 	}
 
+	// Connect sub-schemas in "dependencies" field.
 	for key, value := range js.Dependencies {
+		// Check if the dependency is a json schema or an array of properties.
 		if v, ok := value.(map[string]interface{}); ok {
-			var subSchema JsonSchema
 
 			// Marshal the dependency in order to Unmarshal it into JsonSchema struct.
 			rawDependency, err := json.Marshal(v)
@@ -301,20 +313,13 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 				}
 			}
 
-			// Unmarshal the raw data in order into a JsonSchema struct.
-			err = json.Unmarshal(rawDependency, &subSchema)
-			if err != nil {
-				return SchemaCompilationError{
-					schemaPath,
-					err.Error(),
-				}
-			}
-
-			err = subSchema.connectRelatedKeywords(schemaPath + "/dependencies/" + key)
+			// Create a new JsonSchema instance.
+			subSchema, err := NewJsonSchema(rawDependency)
 			if err != nil {
 				return err
 			}
 
+			// Save the new JsonSchema as the dependency itself.
 			js.Dependencies[key] = subSchema
 		}
 	}
@@ -335,8 +340,12 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 		}
 	}
 
+	// Connect sub-schemas in "items" field.
 	if js.Items != nil {
 		var items interface{}
+
+		// Unmarshal the item to an empty interface variable in order
+		// to check if the "items" is a single schema of a list of schemas.
 		err := json.Unmarshal(js.Items, &items)
 		if err != nil {
 			return SchemaCompilationError{
@@ -345,7 +354,9 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 			}
 		}
 
+		// Check the type of "items"
 		switch v := items.(type) {
+		// In this case, "items" is an object which means its a single schema.
 		case map[string]interface{}:
 			{
 				// Marshal the dependency in order to Unmarshal it into JsonSchema struct.
@@ -363,11 +374,6 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 					return err
 				}
 
-				err = subSchema.connectRelatedKeywords(schemaPath + "/items")
-				if err != nil {
-					return err
-				}
-
 				js.Items, err = json.Marshal(subSchema)
 				if err != nil {
 					return SchemaCompilationError{
@@ -376,8 +382,10 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 					}
 				}
 			}
+		// In this case "items" hold an array of schemas.
 		case []interface{}:
 			{
+				// Iterate over each schema in "items".
 				for index, value := range v {
 					// Marshal the dependency in order to Unmarshal it into JsonSchema struct.
 					rawSubSchema, err := json.Marshal(value)
@@ -394,14 +402,11 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 						return err
 					}
 
-					err = subSchema.connectRelatedKeywords(schemaPath + "/items/" + strconv.Itoa(index))
-					if err != nil {
-						return err
-					}
-
+					// Save the sub-schema in "items" array.
 					v[index] = subSchema
 				}
 
+				// Marshal "items" back to a json.RawMessage and store it in the parent schema.
 				js.Items, err = json.Marshal(v)
 				if err != nil {
 					return SchemaCompilationError{
@@ -525,7 +530,7 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 
 	// Get a slice of all of JsonSchema's field in order to iterate them
 	// and call each of their validate() functions.
-	keywordValidators := getKeywordsMap(js)
+	keywordValidators := getNonNilKeywordsMap(js)
 
 	// Iterate over the keywords.
 	for validatorName, keyword := range keywordValidators {
@@ -546,7 +551,10 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 	return true, nil
 }
 
-func getKeywordsMap(js *JsonSchema) map[string]keywordValidator {
+// getNonNilKeywordsMap gets a reference to JsonSchema and returns a
+// map of the schema's keywords that are not nil.
+func getNonNilKeywordsMap(js *JsonSchema) map[string]keywordValidator {
+	// Initialize a new map.
 	m := make(map[string]keywordValidator)
 
 	if js.Type != nil {
@@ -681,5 +689,6 @@ func getKeywordsMap(js *JsonSchema) map[string]keywordValidator {
 		m["else"] = js.Else
 	}
 
+	// Return the map.
 	return m
 }
