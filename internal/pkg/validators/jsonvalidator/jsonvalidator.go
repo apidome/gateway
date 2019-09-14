@@ -8,15 +8,9 @@ type JsonValidator struct {
 
 // LoadSchema is a function that handles addition of new schema to the
 // JsonValidator's schemas list
-func (jv JsonValidator) LoadSchema(path string, method string, rawSchema []byte) error {
-	// Create a new JsonSchema object.
-	schema, err := NewJsonSchema(rawSchema)
-	if err != nil {
-		return err
-	}
-
+func (jv JsonValidator) LoadSchema(path, method string, rawSchema []byte) error {
 	// Validate the given schema against draft-07 meta-schema.
-	isSchemaValid, err := validateJsonSchema(schema)
+	isSchemaValid, err := validateJsonSchema(rawSchema)
 	if err != nil {
 		return err
 	}
@@ -25,6 +19,12 @@ func (jv JsonValidator) LoadSchema(path string, method string, rawSchema []byte)
 	if isSchemaValid {
 		// Create a new empty method-JsonSchema map for the current path.
 		jv.schemaDict[path] = make(map[string]*JsonSchema)
+
+		// Create a new JsonSchema object.
+		schema, err := NewJsonSchema(rawSchema)
+		if err != nil {
+			return err
+		}
 
 		// Add the schema to the appropriate map according to its path and
 		// method.
@@ -47,8 +47,8 @@ func NewJsonValidator() JsonValidator {
 	}
 }
 
-// validateJsonSchema is a recursive function that validates the schema's
+// validateJsonSchema is a function that validates the schema's
 // structure according to Json Schema draft 7
-func validateJsonSchema(schema *JsonSchema) (bool, error) {
+func validateJsonSchema(rawSchema []byte) (bool, error) {
 	return true, nil
 }
