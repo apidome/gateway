@@ -16,8 +16,9 @@ Configuration is a struct that represents a JSON object
 that contains the configuration of our project.
 */
 type Configuration struct {
-	In               In  `json:"in"`
-	Out              Out `json:"out"`
+	General          General `json:"general"`
+	In               In      `json:"in"`
+	Out              Out     `json:"out"`
 	SettingsFilePath string
 }
 
@@ -73,6 +74,17 @@ func readConf(config *Configuration) error {
 				endpoint.Schema = string(schema)
 			}
 		}
+	}
+
+	for draft, metaSchemaPath := range config.General.JsonMetaSchema {
+		// Read the data from file.
+		metaSchema, err := readDataFromFile(SettingsFolderPath + metaSchemaPath)
+		if err != nil {
+			return err
+		}
+
+		// Set the actual schema in the endpoint.
+		config.General.JsonMetaSchema[draft] = string(metaSchema)
 	}
 
 	config.Out.CertificatePath =
