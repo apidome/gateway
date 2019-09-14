@@ -11,6 +11,28 @@ func (e KeywordValidationError) Error() string {
 	return fmt.Sprintf("\"" + e.keyword + "\" validation failed, reason: " + e.reason)
 }
 
+type SchemaValidationError struct {
+	path             string
+	keywordValidator string
+	err              string
+}
+
+func (e SchemaValidationError) Error() string {
+	var jsonPath string
+	if e.path == "" {
+		jsonPath = "/"
+	} else {
+		jsonPath = e.path
+	}
+
+	return fmt.Sprintf("validation filed in path " +
+		jsonPath +
+		" by keyword " +
+		e.keywordValidator +
+		": " +
+		e.err)
+}
+
 type SchemaCompilationError struct {
 	path string
 	err  string

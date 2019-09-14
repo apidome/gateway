@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Creespye/caf/internal/pkg/jsonwalker"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -564,15 +563,15 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 
 	// Iterate over the keywords.
 	for validatorName, keyword := range keywordValidators {
-		fmt.Println("[JsonSchema DEBUG] Validating \"" + validatorName + "\" in path #" + jsonPath)
-
 		// Validate the value that we extracted from the jsonData at each
 		// keyword.
 		valid, err := keyword.validate(jsonPath, value)
 		if err != nil {
-			log.Print("[JsonSchema DEBUG] \"" + validatorName + "\" validation failed in path: #" +
-				jsonPath + " - " + err.Error())
-			return valid, err
+			return valid, SchemaValidationError{
+				jsonPath,
+				validatorName,
+				err.Error(),
+			}
 		}
 	}
 

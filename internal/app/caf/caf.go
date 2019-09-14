@@ -77,7 +77,7 @@ func initReverseProxy(reverseProxy *middleman.Middleman,
 }
 
 func middlewareErrorHandler(path, method string, err error) bool {
-	log.Println("[Middleman Error]:", "\n",
+	log.Println("[Middleman Error]:", err.Error(), "\n",
 		"[Path]:", path, "\n",
 		"[Method]:", method)
 
