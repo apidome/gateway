@@ -2,6 +2,7 @@ package jsonvalidator
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/Creespye/caf/internal/pkg/jsonwalker"
 	"log"
@@ -30,6 +31,13 @@ const (
 )
 
 type JsonSchema struct {
+	// RejectAll is ***not*** a json schema keyword!
+	// It is an internal flag for internal use that represents a json schema
+	// that suppose to reject all json values.
+	// If it is true, all other field will be ignored and validateJsonData()
+	// will always return false.
+	RejectAll bool `json:"rejectAll,omitempty"`
+
 	// The $schema keyword is used to declare that a JSON fragment is
 	// actually a piece of JSON Schema.
 	Schema *schema `json:"$schema,omitempty"`
@@ -231,6 +239,21 @@ type JsonSchema struct {
 	// included in any updated or newly created version of the instance.
 	WriteOnly *writeOnly `json:"writeOnly,omitempty"`
 }
+
+// tempJsonSchema is an internal type that created because of the need of
+// JsonSchema type to implement the Unmarshaler interface.
+// An edge case of json schema, is the json schema "true" or "false".
+// In those cases, json.Unmarshal will try to unmarshal a boolean into a
+// JsonSchema instance which is a struct, and it will fail.
+// So I implemented the Unmarshaler and tried to unmarshal according to type
+// of the raw data that represents the schema. But then I realized that I
+// cannot use unmarshal data into a JsonSchema instance inside JsonSchema's
+// UnmarshalJSON because it created an endless indirect recursive call
+// between JsonSchema.UnmarshalJSON and json.Unmarshal, so I created a new type
+// that has all of JsonSchema's field but does not inherit JsonSchema's methods
+// (Particularly UnmarshalJSON) in order to be able to unmarshal a json schema
+// without starting an endless loop of function calls.
+type tempJsonSchema JsonSchema
 
 // NewJsonSchema created a new JsonSchema instance, Unmarshals the byte array
 // into the instance, and than connects the following related keywords:
@@ -507,7 +530,14 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 	return nil
 }
 
+// validateJsonData is a function that gets a byte array of data and validates
+// it against the schema that encoded in the receiver's field.
 func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, error) {
+	// If RejectAll field exists and true, reject the value.
+	if js.RejectAll {
+		return false, errors.New("the schema is configured to drop all values")
+	}
+
 	// Calculate the relative path in order to evaluate the data
 	jsonTokens := strings.Split(jsonPath, "/")
 	relativeJsonPath := "/" + jsonTokens[len(jsonTokens)-1]
@@ -681,4 +711,68 @@ func getNonNilKeywordsMap(js *JsonSchema) map[string]keywordValidator {
 
 	// Return the map.
 	return m
+}
+
+func (js *JsonSchema) UnmarshalJSON(bytes []byte) error {
+	// First, unmarshal the raw data into empty interface variable
+	// in order to figure out its type.
+	var value interface{}
+	err := json.Unmarshal(bytes, &value)
+	if err != nil {
+		return err
+	}
+
+	// Create a new tempJsonSchema i the heap.
+	tempSchema := new(tempJsonSchema)
+
+	// Handle the data according to its type:
+	// map[string]interface: An object json schema.
+	// bool: A boolean json schema.
+	switch schema := value.(type) {
+	case map[string]interface{}:
+		{
+			// Marshal the raw data into an the temporary type that represents
+			// a json schema.
+			err = json.Unmarshal(bytes, tempSchema)
+			if err != nil {
+				return err
+			}
+
+			// Convert the temporary type to JsonSchema and assign its address
+			// to the receiver.
+			*js = JsonSchema(*tempSchema)
+		}
+	case bool:
+		{
+			// If the boolean schema is true, unmarshal an empty object into
+			// the temporary schema (A valid json schema that accepts any
+			// json value).
+			// Else, unmarshal a json object with "rejectAll" flag (An internal
+			// sign that represents a schema that rejects everything).
+			if schema {
+				err = json.Unmarshal([]byte("{}"), tempSchema)
+				if err != nil {
+					return err
+				}
+			} else {
+				err = json.Unmarshal([]byte("{\"rejectAll\": true}"), tempSchema)
+				if err != nil {
+					return err
+				}
+			}
+
+			// Convert the temporary type to JsonSchema and assign its address
+			// to the receiver.
+			*js = JsonSchema(*tempSchema)
+		}
+	default:
+		{
+			// If the data is not a json object or a json boolean, it is not a
+			// valid schema.
+			return errors.New("a valid json schema must be a json object" +
+				" of a boolean")
+		}
+	}
+
+	return nil
 }
