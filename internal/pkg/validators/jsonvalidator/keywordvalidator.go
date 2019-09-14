@@ -884,7 +884,7 @@ func (pn *propertyNames) validate(jsonPath string, jsonData interface{}) (bool, 
 		// Iterate over the object's properties.
 		for property := range object {
 			// Validate the property name against the schema stored in "propertyNames" field
-			valid, err := pn.validateJsonData("/", []byte("\""+property+"\""))
+			valid, err := pn.validateJsonData("", []byte("\""+property+"\""))
 
 			// If the property name could be validated against the scheme return an error
 			if !valid {
@@ -938,7 +938,7 @@ func (d dependencies) validate(jsonPath string, jsonData interface{}) (bool, err
 					// sub-schema.
 					if _, ok := object[propertyName]; ok {
 						// Validate the whole data against the given sub-schema.
-						valid, err := v.validateJsonData("/", rawData)
+						valid, err := v.validateJsonData("", rawData)
 						if !valid {
 							return false, KeywordValidationError{
 								"dependencies",
@@ -1616,7 +1616,7 @@ func (i *_if) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	}
 
 	// Validate the data against the given schema in "if".
-	valid, _ := i.validateJsonData("/", rawData)
+	valid, _ := i.validateJsonData("", rawData)
 
 	// If the validation succeeded, validate the data against the given schema
 	// in "then".
