@@ -5,50 +5,6 @@
     "default": {
         "a": 1
     },
-    "const": {
-        "id": "123456789",
-        "name": "bar",
-        "age": 99,
-        "email": "bar@dromi.com",
-        "website": "bar.dromi.com",
-        "location": {
-            "country": "GB",
-            "address": "Neve Yamin 503"
-        },
-        "available_for_hire": true,
-        "interests": ["programming", "eating", "sleeping"],
-        "skills": [{
-            "name": "go programming3",
-            "value": 100
-        },
-            {
-                "name": "go programming",
-                "value": 100
-            }]
-    },
-    "enum": [
-        {
-            "id": "123456789",
-            "name": "bar",
-            "age": 99,
-            "email": "bar@dromi.com",
-            "website": "bar.dromi.com",
-            "location": {
-                "country": "GB",
-                "address": "Neve Yamin 503"
-            },
-            "available_for_hire": true,
-            "interests": ["programming", "eating", "sleeping"],
-            "skills": [{
-                "name": "go programming3",
-                "value": 100
-            },
-                {
-                    "name": "go programming",
-                    "value": 100
-                }]
-        }
-    ],
     "propertyNames": {
         "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
     },
@@ -171,7 +127,7 @@
                 "properties": {
                     "name": {
                         "type": "string",
-                        "minLength": 1,
+                        "minLength": 10,
                         "maxLength": 64
                     },
                     "value": {

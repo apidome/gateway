@@ -362,7 +362,7 @@ func (ml *minLength) validate(jsonPath string, jsonData interface{}) (bool, erro
 		} else {
 			return false, KeywordValidationError{
 				"minLength",
-				"inspected string greater than " + strconv.Itoa(int(*ml)),
+				"inspected string is less than " + strconv.Itoa(int(*ml)),
 			}
 		}
 	} else {
@@ -389,7 +389,7 @@ func (ml *maxLength) validate(jsonPath string, jsonData interface{}) (bool, erro
 		} else {
 			return false, KeywordValidationError{
 				"maxLength",
-				"inspected string is less than " + strconv.Itoa(int(*ml)),
+				"inspected string is greater than " + strconv.Itoa(int(*ml)),
 			}
 		}
 	} else {

@@ -12,9 +12,8 @@ func (e KeywordValidationError) Error() string {
 }
 
 type SchemaValidationError struct {
-	path             string
-	keywordValidator string
-	err              string
+	path string
+	err  string
 }
 
 func (e SchemaValidationError) Error() string {
@@ -27,8 +26,6 @@ func (e SchemaValidationError) Error() string {
 
 	return fmt.Sprintf("validation filed in path " +
 		jsonPath +
-		" by keyword " +
-		e.keywordValidator +
 		": " +
 		e.err)
 }

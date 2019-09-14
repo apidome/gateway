@@ -534,7 +534,10 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, error) {
 	// If RejectAll field exists and true, reject the value.
 	if js.RejectAll {
-		return false, errors.New("the schema is configured to drop all values")
+		return false, SchemaValidationError{
+			jsonPath,
+			"json schema \"false\" drops everything",
+		}
 	}
 
 	// Calculate the relative path in order to evaluate the data
@@ -562,16 +565,27 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 	keywordValidators := getNonNilKeywordsMap(js)
 
 	// Iterate over the keywords.
-	for validatorName, keyword := range keywordValidators {
+	for _, keyword := range keywordValidators {
 		// Validate the value that we extracted from the jsonData at each
 		// keyword.
-		valid, err := keyword.validate(jsonPath, value)
+		_, err := keyword.validate(jsonPath, value)
 		if err != nil {
-			return valid, SchemaValidationError{
-				jsonPath,
-				validatorName,
-				err.Error(),
+			// If the error is a SchemaValidationError, it means it came from
+			// a deeper call to this function, so we do not touch the error.
+			if schemaValidationError, ok := err.(SchemaValidationError); ok {
+				return false, schemaValidationError
 			}
+
+			// If the error is a KeywordValidationError, create a new
+			// SchemaValidationError and return it.
+			if keywordValidationError, ok := err.(KeywordValidationError); ok {
+				return false, SchemaValidationError{
+					jsonPath,
+					keywordValidationError.Error(),
+				}
+			}
+
+			return false, err
 		}
 	}
 
