@@ -68,7 +68,7 @@
                     "type": "integer"
                 }
             },
-            "additionalProperties": {}
+            "additionalProperties": false
         }
     },
     "patternProperties": {
