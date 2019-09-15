@@ -1,5 +1,7 @@
 package jsonvalidator
 
+import "github.com/Creespye/caf/internal/pkg/configs"
+
 // JsonValidator is a struct that implements the Validator interface
 // and validates json objects according to a json schema
 type JsonValidator struct {
@@ -48,7 +50,17 @@ func NewJsonValidator() JsonValidator {
 }
 
 // validateJsonSchema is a function that validates the schema's
-// structure according to Json Schema draft 7
+// structure according to Json Schema.
 func validateJsonSchema(rawSchema []byte) (bool, error) {
-	return true, nil
+	config, err := configs.GetConfiguration()
+	if err != nil {
+		return false, err
+	}
+
+	metaSchema, err := NewJsonSchema([]byte(config.General.JsonMetaSchema["draft-07"]))
+	if err != nil {
+		return false, err
+	}
+
+	return metaSchema.validateJsonData("", rawSchema)
 }

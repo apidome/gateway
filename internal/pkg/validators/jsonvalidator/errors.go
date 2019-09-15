@@ -24,7 +24,7 @@ func (e SchemaValidationError) Error() string {
 		jsonPath = e.path
 	}
 
-	return fmt.Sprintf("validation filed in path " +
+	return fmt.Sprintf("validation failed in path " +
 		jsonPath +
 		": " +
 		e.err)

@@ -793,34 +793,36 @@ func (ap *additionalProperties) validate(jsonPath string, jsonData interface{}) 
 
 		// Iterate over the properties of the inspected object.
 		for property := range object {
-			// Check if the property does not have corresponding schema in
-			// "properties" field
-			if _, ok := (*ap.siblingProperties)[property]; !ok {
-				// Iterate over the patterns in "patternProperties" field.
-				for pattern := range *ap.siblingPatternProperties {
-					// Check if the inspected property matches to the pattern.
-					match, err := regexp.MatchString(pattern, property)
+			if (*ap).siblingProperties != nil {
+				// Check if the property does not have corresponding schema in
+				// "properties" field
+				if _, ok := (*ap.siblingProperties)[property]; !ok {
+					// Iterate over the patterns in "patternProperties" field.
+					for pattern := range *ap.siblingPatternProperties {
+						// Check if the inspected property matches to the pattern.
+						match, err := regexp.MatchString(pattern, property)
 
-					// The pattern or the value is not in the right format (string)
-					if err != nil {
-						return false, KeywordValidationError{
-							"additionalProperties",
-							err.Error(),
-						}
-					}
-
-					// If there is no match, validate the value of the property against
-					// the given schema in "additionalProperties" field.
-					if !match {
-						valid, err := (*ap).validateJsonData(jsonPath+"/"+property, rawData)
-
-						// If the validation fails, return an error.
-						if !valid {
+						// The pattern or the value is not in the right format (string)
+						if err != nil {
 							return false, KeywordValidationError{
 								"additionalProperties",
-								"property \"" +
-									property +
-									"\" failed in validation: \n" + err.Error(),
+								err.Error(),
+							}
+						}
+
+						// If there is no match, validate the value of the property against
+						// the given schema in "additionalProperties" field.
+						if !match {
+							valid, err := (*ap).validateJsonData(jsonPath+"/"+property, rawData)
+
+							// If the validation fails, return an error.
+							if !valid {
+								return false, KeywordValidationError{
+									"additionalProperties",
+									"property \"" +
+										property +
+										"\" failed in validation: \n" + err.Error(),
+								}
 							}
 						}
 					}
@@ -1481,7 +1483,7 @@ func (af anyOf) validate(jsonPath string, jsonData interface{}) (bool, error) {
 
 	// Validate rawData against each of the schemas until on of them succeeds.
 	for _, schema := range af {
-		valid, err := schema.validateJsonData(jsonPath, rawData)
+		valid, err := schema.validateJsonData("", rawData)
 		if valid {
 			return valid, err
 		}
@@ -1512,7 +1514,7 @@ func (af allOf) validate(jsonPath string, jsonData interface{}) (bool, error) {
 	// Validate rawData against each of the schemas.
 	// If one of them fails, return error.
 	for _, schema := range af {
-		valid, err := schema.validateJsonData(jsonPath, rawData)
+		valid, err := schema.validateJsonData("", rawData)
 		if !valid {
 			return valid, err
 		}
@@ -1545,7 +1547,7 @@ func (of oneOf) validate(jsonPath string, jsonData interface{}) (bool, error) {
 
 	// Validate rawData against each of the schemas until on of them succeeds.
 	for _, schema := range of {
-		valid, _ := schema.validateJsonData(jsonPath, rawData)
+		valid, _ := schema.validateJsonData("", rawData)
 		if valid {
 			if oneValidationAlreadySucceeded {
 				return false, KeywordValidationError{
