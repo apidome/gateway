@@ -29,6 +29,11 @@ const (
 	ENCODING_BASE64           = "base64"
 )
 
+type jsonData struct {
+	raw   json.RawMessage
+	value interface{}
+}
+
 type JsonSchema struct {
 	// RejectAll is ***not*** a json schema keyword!
 	// It is an internal flag for internal use that represents a json schema
@@ -531,7 +536,7 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 
 // validateJsonData is a function that gets a byte array of data and validates
 // it against the schema that encoded in the receiver's field.
-func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, error) {
+func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte) (bool, error) {
 	// If RejectAll field exists and true, reject the value.
 	if js.RejectAll {
 		return false, SchemaValidationError{
@@ -553,11 +558,23 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 	}
 
 	// Get the piece of json that the current schema describes.
-	value, err := jsonPointer.Evaluate(jsonData)
+	value, err := jsonPointer.Evaluate(bytes)
 	if err != nil {
 		fmt.Println("[JsonSchema DEBUG] validateJsonData() " +
 			"failed while trying to evaluate a JsonPointer " + jsonPath)
 		return false, err
+	}
+
+	// Marshal the evaluated value to a byte array.
+	newBytes, err := json.Marshal(value)
+	if err != nil {
+		return false, err
+	}
+
+	// Create a new json data container
+	jsonData := jsonData{
+		newBytes,
+		value,
 	}
 
 	// Get a slice of all of JsonSchema's field in order to iterate them
@@ -568,7 +585,7 @@ func (js *JsonSchema) validateJsonData(jsonPath string, jsonData []byte) (bool, 
 	for _, keyword := range keywordValidators {
 		// Validate the value that we extracted from the jsonData at each
 		// keyword.
-		_, err := keyword.validate(jsonPath, value)
+		_, err := keyword.validate(jsonPath, jsonData)
 		if err != nil {
 			// If the error is a SchemaValidationError, it means it came from
 			// a deeper call to this function, so we do not touch the error.
