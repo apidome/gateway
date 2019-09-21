@@ -69,21 +69,21 @@ func NewMiddleman(mm *Middleman,
 func (mm *Middleman) ListenAndServeTLS(certFile, keyFile string) error {
 	err := mm.httpServer.ListenAndServeTLS(certFile, keyFile)
 
-	return NewListenerError(err, "middleman: failed to set up the listener")
+	return err
 }
 
 // ListenAndServe starts the http server
 func (mm *Middleman) ListenAndServe() error {
 	err := mm.httpServer.ListenAndServe()
 
-	return NewListenerError(err, "middleman: failed to set up the listener")
+	return err
 }
 
 // emitError calls the error handler callback to inform the user of an error
 // and returns if execution should continue
-func (mm *Middleman) emitError(path, method string, merr error) bool {
+func (mm *Middleman) emitError(path, method string, err error) bool {
 	if mm.errorHandler != nil {
-		return mm.errorHandler(path, method, merr)
+		return mm.errorHandler(path, method, err)
 	}
 
 	// If no error handler was configured, do not stop execution
@@ -96,10 +96,10 @@ func (mm *Middleman) mainHandler(res http.ResponseWriter, req *http.Request) {
 	// Store holds data between middlewares
 	store := Store{}
 
-	_, merr := mm.runMiddlewares(res, req, store)
+	_, err := mm.runMiddlewares(res, req, store)
 
-	if merr != nil {
-		mm.emitError(req.URL.Path, req.Method, merr)
+	if err != nil {
+		mm.emitError(req.URL.Path, req.Method, err)
 	}
 }
 
@@ -115,8 +115,7 @@ func (mm *Middleman) addMiddleware(path string, method string,
 	_, err := regexp.Compile(regexPath)
 
 	if err != nil {
-		return NewRegexCompilationError(err,
-			"middleman: middleware path failed regex compilation")
+		return err
 	}
 
 	mm.handlers = append(mm.handlers, middlewareHandler{
@@ -149,8 +148,12 @@ func (mm *Middleman) runMiddlewares(res http.ResponseWriter, req *http.Request,
 		}
 
 		// Match the regex of the handler to the request's uri path
-		regexMatch, _ := regexp.MatchString(handler.path,
+		regexMatch, err := regexp.MatchString(handler.path,
 			req.URL.Path)
+
+		if err != nil {
+			return false, err
+		}
 
 		if regexMatch && handler.method == req.Method {
 			err := handler.middleware(res, req, store, end)
