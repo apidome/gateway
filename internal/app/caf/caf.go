@@ -24,11 +24,18 @@ func Start() {
 		log.Panicln("Could not load configuration correctly:", err)
 	}
 
+	var prx proxy.Proxy
+
+	proxy.InitProxy(&prx, config.In.Targets[0].GetURL())
+
 	var reverseProxy middleman.Middleman
 
-	initReverseProxy(&reverseProxy,
-		config.Out.Port,
-		config.In.Targets[0].GetURL())
+	middleman.InitMiddleman(&reverseProxy,
+		":"+config.Out.Port,
+		middlewareErrorHandler)
+
+	requestProxying(&reverseProxy, &prx)
+	responseProxying(&reverseProxy)
 
 	log.Println("[Reverse proxy is listening on]:", config.Out.Port)
 
@@ -46,34 +53,22 @@ func Start() {
 }
 
 func requestProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
-	AddValidationMiddlewares(reverseProxy, config.In.Targets)
-	reverseProxy.All("/.*", proxymiddlewares.CreateRequest(pr))
-	reverseProxy.All("/.*", proxymiddlewares.SendRequest(pr))
-}
-
-func responseProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
-	reverseProxy.All("/.*", proxymiddlewares.ReadResponseBody())
-	reverseProxy.All("/.*", proxymiddlewares.SendResponse())
-}
-
-func initReverseProxy(reverseProxy *middleman.Middleman,
-	listeningPort,
-	target string) {
-	// Middleman is the underlying webserver/middleware manager for our reverse proxy
-	middleman.NewMiddleman(reverseProxy,
-		":"+listeningPort,
-		middlewareErrorHandler)
-
-	reverseProxy.All("*", middleman.RouteLogger())
+	// Log all incoming requests' routes
+	reverseProxy.All("/.*", middleman.RouteLogger())
 
 	// Read the request body and store it in store["reqeustBody"]
 	// for all middlewares to use
 	reverseProxy.All("/.*", middleman.BodyReader())
 
-	pr := proxy.NewProxy(target)
+	AddValidationMiddlewares(reverseProxy, config.In.Targets)
 
-	requestProxying(reverseProxy, &pr)
-	responseProxying(reverseProxy, &pr)
+	reverseProxy.All("/.*", proxymiddlewares.CreateRequest(pr))
+	reverseProxy.All("/.*", proxymiddlewares.SendRequest(pr))
+}
+
+func responseProxying(reverseProxy *middleman.Middleman) {
+	reverseProxy.All("/.*", proxymiddlewares.ReadResponseBody())
+	reverseProxy.All("/.*", proxymiddlewares.SendResponse())
 }
 
 func middlewareErrorHandler(path, method string, err error) bool {

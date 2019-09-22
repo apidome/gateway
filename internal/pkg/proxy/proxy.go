@@ -22,12 +22,19 @@ type Proxy struct {
 	Client http.Client
 }
 
-// NewProxy creates a new default proxy
-func NewProxy(target string) Proxy {
-	return Proxy{
-		Client: http.Client{},
-		target: target,
-	}
+// InitProxy initializes a Proxy instance
+func InitProxy(pr *Proxy, target string) {
+	pr.Client = http.Client{}
+	pr.target = target
+}
+
+// NewProxy creates a new proxy
+func NewProxy(target string) *Proxy {
+	pr := &Proxy{}
+
+	InitProxy(pr, target)
+
+	return pr
 }
 
 // CreateRequest creates a new request

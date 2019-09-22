@@ -47,22 +47,25 @@ var (
 	}
 )
 
-// NewMiddleman returns a new instance of a middleman
-func NewMiddleman(mm *Middleman,
-	addr string,
-	errorHandler errorHandler) {
-
+// InitMiddleman initializes a middleman instance
+func InitMiddleman(mm *Middleman, addr string, errHandler errorHandler) {
 	// Disable HTTP/2
 	tlsNextProto := make(map[string]func(*http.Server, *tls.Conn, http.Handler))
 
-	*mm = Middleman{
-		errorHandler: errorHandler,
-		httpServer: http.Server{
-			Addr:         addr,
-			Handler:      http.HandlerFunc(mm.mainHandler),
-			TLSNextProto: tlsNextProto,
-		},
-	}
+	mm.errorHandler = errHandler
+
+	mm.httpServer.Addr = addr
+	mm.httpServer.TLSNextProto = tlsNextProto
+	mm.httpServer.Handler = http.HandlerFunc(mm.mainHandler)
+}
+
+// NewMiddleman returns a new instance of a middleman
+func NewMiddleman(addr string, errHandler errorHandler) *Middleman {
+	mm := &Middleman{}
+
+	InitMiddleman(mm, addr, errHandler)
+
+	return mm
 }
 
 // ListenAndServeTLS starts the https server
