@@ -25,13 +25,51 @@ const (
 	ENCODING_7BIT             = "7bit"
 	ENCODING_8bit             = "8bit"
 	ENCODING_BINARY           = "binary"
-	ENCODING_QUOTED_PRINTABLE = "quited-printable"
+	ENCODING_QUOTED_PRINTABLE = "quoted-printable"
 	ENCODING_BASE64           = "base64"
 )
+
+var rootSchemaPool = map[string]*RootJsonSchema{}
 
 type jsonData struct {
 	raw   json.RawMessage
 	value interface{}
+}
+
+type RootJsonSchema struct {
+	JsonSchema
+	subSchemaMap map[string]*JsonSchema
+}
+
+func NewRootJsonSchema(bytes []byte) (*RootJsonSchema, error) {
+	var rootSchema *RootJsonSchema
+
+	// Check if the string s is a valid json.
+	err := json.Unmarshal(bytes, &rootSchema)
+	if err != nil {
+		return nil, err
+	}
+
+	rootSchema.subSchemaMap = make(map[string]*JsonSchema)
+
+	err = rootSchema.scanSchema("", string(*rootSchema.Id))
+	if err != nil {
+		fmt.Println("[JsonSchema DEBUG] scanSchema() " +
+			"failed: " + err.Error())
+		return nil, err
+	}
+
+	if rootSchema.Id != nil {
+		if _, ok := rootSchemaPool[string(*rootSchema.Id)]; !ok {
+			rootSchemaPool[string(*rootSchema.Id)] = rootSchema
+		}
+	}
+
+	return rootSchema, nil
+}
+
+func (rs *RootJsonSchema) GetSubSchema(path string) (*JsonSchema, error) {
+	return nil, nil
 }
 
 type JsonSchema struct {
@@ -275,7 +313,7 @@ func NewJsonSchema(bytes []byte) (*JsonSchema, error) {
 		return nil, err
 	}
 
-	err = schema.scanSchema("")
+	err = schema.scanSchema("", "")
 	if err != nil {
 		fmt.Println("[JsonSchema DEBUG] connectRelatedKeywords() " +
 			"failed: " + err.Error())
@@ -285,16 +323,24 @@ func NewJsonSchema(bytes []byte) (*JsonSchema, error) {
 	return schema, nil
 }
 
-// connectRelatedKeywords is a recursive functions that connect the related
+// scanSchema is a recursive function that connect the related
 // keywords of the schema (as mentioned in the description of NewJsonSchema()).
 // The function scans the schema in and it's sub-schemas and perform the
 // required connections.
-func (js *JsonSchema) scanSchema(schemaPath string) error {
+func (js *JsonSchema) scanSchema(schemaPath string, rootSchemaID string) error {
 	js.connectRelatedKeywords()
+
+	if schemaPath != "" && rootSchemaID != "" {
+		if rs, ok := rootSchemaPool[rootSchemaID]; ok {
+			if _, ok := rs.subSchemaMap[schemaPath]; !ok {
+				rs.subSchemaMap[schemaPath] = js
+			}
+		}
+	}
 
 	// Connect sub-schemas in "properties" field.
 	for key := range js.Properties {
-		err := js.Properties[key].scanSchema(schemaPath + "/properties/" + key)
+		err := js.Properties[key].scanSchema(schemaPath+"/properties/"+key, rootSchemaID)
 		if err != nil {
 			return err
 		}
@@ -302,27 +348,15 @@ func (js *JsonSchema) scanSchema(schemaPath string) error {
 
 	// Connect sub-schema in "additionalProperties" field.
 	if js.AdditionalProperties != nil {
-		err := js.AdditionalProperties.scanSchema(schemaPath + "/additionalProperties")
+		err := js.AdditionalProperties.scanSchema(schemaPath+"/additionalProperties", rootSchemaID)
 		if err != nil {
 			return err
-		}
-
-		// If "properties" field exists in the schema, save the keywordValidator's
-		// address in "AdditionalProperties".
-		if js.Properties != nil {
-			js.AdditionalProperties.siblingProperties = &js.Properties
-		}
-
-		// If "patternProperties" field exists in the schema, save the keywordValidator's
-		// address in "AdditionalProperties".
-		if js.PatternProperties != nil {
-			js.AdditionalProperties.siblingPatternProperties = &js.PatternProperties
 		}
 	}
 
 	// Connect sub-schema in "propertyNames" field.
 	if js.PropertyNames != nil {
-		err := js.PropertyNames.scanSchema(schemaPath + "/propertyNames")
+		err := js.PropertyNames.scanSchema(schemaPath+"/propertyNames", rootSchemaID)
 		if err != nil {
 			return err
 		}
@@ -348,7 +382,7 @@ func (js *JsonSchema) scanSchema(schemaPath string) error {
 				return err
 			}
 
-			err = subSchema.scanSchema(schemaPath + "/dependencies" + key)
+			err = subSchema.scanSchema(schemaPath+"/dependencies"+key, rootSchemaID)
 			if err != nil {
 				return nil
 			}
@@ -360,7 +394,7 @@ func (js *JsonSchema) scanSchema(schemaPath string) error {
 
 	// Connect sub-schemas in "patternProperties" field.
 	for key := range js.PatternProperties {
-		err := js.PatternProperties[key].scanSchema(schemaPath + "/patternProperties/" + key)
+		err := js.PatternProperties[key].scanSchema(schemaPath+"/patternProperties/"+key, rootSchemaID)
 		if err != nil {
 			return err
 		}
@@ -368,7 +402,7 @@ func (js *JsonSchema) scanSchema(schemaPath string) error {
 
 	// Connect sub-schemas in "definitions" field.
 	for key := range js.Definitions {
-		err := js.Definitions[key].scanSchema(schemaPath + "/definitions/" + key)
+		err := js.Definitions[key].scanSchema(schemaPath+"/definitions/"+key, rootSchemaID)
 		if err != nil {
 			return err
 		}
@@ -410,7 +444,7 @@ func (js *JsonSchema) scanSchema(schemaPath string) error {
 					return err
 				}
 
-				err = subSchema.scanSchema(schemaPath + "/items")
+				err = subSchema.scanSchema(schemaPath+"/items", rootSchemaID)
 				if err != nil {
 					return nil
 				}
@@ -445,7 +479,7 @@ func (js *JsonSchema) scanSchema(schemaPath string) error {
 						return err
 					}
 
-					err = subSchema.scanSchema(schemaPath + "/items" + strconv.Itoa(index))
+					err = subSchema.scanSchema(schemaPath+"/items"+strconv.Itoa(index), rootSchemaID)
 					if err != nil {
 						return nil
 					}
@@ -468,21 +502,15 @@ func (js *JsonSchema) scanSchema(schemaPath string) error {
 
 	// Connect sub-schema in "additionalItems" field.
 	if js.AdditionalItems != nil {
-		err := js.AdditionalItems.scanSchema(schemaPath + "/additionalItems")
+		err := js.AdditionalItems.scanSchema(schemaPath+"/additionalItems", rootSchemaID)
 		if err != nil {
 			return err
-		}
-
-		// If "items" field exists in the schema, save the keywordValidator's
-		// address in "AdditionalItems".
-		if js.Items != nil {
-			js.AdditionalItems.siblingItems = &js.Items
 		}
 	}
 
 	// Connect sub-schema in "contains" field.
 	if js.Contains != nil {
-		err := js.Contains.scanSchema(schemaPath + "/contains")
+		err := js.Contains.scanSchema(schemaPath+"/contains", rootSchemaID)
 		if err != nil {
 			return err
 		}
@@ -490,7 +518,7 @@ func (js *JsonSchema) scanSchema(schemaPath string) error {
 
 	// Connect sub-schemas in "anyOf" field.
 	for index := range js.AnyOf {
-		err := js.AnyOf[index].scanSchema(schemaPath + "/anyOf/" + strconv.Itoa(index))
+		err := js.AnyOf[index].scanSchema(schemaPath+"/anyOf/"+strconv.Itoa(index), rootSchemaID)
 		if err != nil {
 			return err
 		}
@@ -498,7 +526,7 @@ func (js *JsonSchema) scanSchema(schemaPath string) error {
 
 	// Connect sub-schemas in "allOf" field.
 	for index := range js.AllOf {
-		err := js.AllOf[index].scanSchema(schemaPath + "/allOf/" + strconv.Itoa(index))
+		err := js.AllOf[index].scanSchema(schemaPath+"/allOf/"+strconv.Itoa(index), rootSchemaID)
 		if err != nil {
 			return err
 		}
@@ -506,7 +534,7 @@ func (js *JsonSchema) scanSchema(schemaPath string) error {
 
 	// Connect sub-schemas in "oneOf" field.
 	for index := range js.OneOf {
-		err := js.OneOf[index].scanSchema(schemaPath + "/oneOf/" + strconv.Itoa(index))
+		err := js.OneOf[index].scanSchema(schemaPath+"/oneOf/"+strconv.Itoa(index), rootSchemaID)
 		if err != nil {
 			return err
 		}
@@ -514,7 +542,7 @@ func (js *JsonSchema) scanSchema(schemaPath string) error {
 
 	// Connect sub-schema in "not" field.
 	if js.Not != nil {
-		err := js.Not.scanSchema(schemaPath + "/not")
+		err := js.Not.scanSchema(schemaPath+"/not", rootSchemaID)
 		if err != nil {
 			return err
 		}
@@ -522,33 +550,25 @@ func (js *JsonSchema) scanSchema(schemaPath string) error {
 
 	// Connect sub-schema in "if" field.
 	if js.If != nil {
-		err := js.If.scanSchema(schemaPath + "/if")
+		err := js.If.scanSchema(schemaPath+"/if", rootSchemaID)
 		if err != nil {
 			return err
 		}
 
 		// Connect sub-schema in "then" field.
 		if js.Then != nil {
-			err := js.Then.scanSchema(schemaPath + "/then")
+			err := js.Then.scanSchema(schemaPath+"/then", rootSchemaID)
 			if err != nil {
 				return err
 			}
-
-			// If "then" field exists in the schema, save the keywordValidator's
-			// address in "If".
-			js.If.siblingThen = js.Then
 		}
 
 		// Connect sub-schema in "else" field.
 		if js.Else != nil {
-			err := js.Else.scanSchema(schemaPath + "/else")
+			err := js.Else.scanSchema(schemaPath+"/else", rootSchemaID)
 			if err != nil {
 				return err
 			}
-
-			// If "else" field exists in the schema, save the keywordValidator's
-			// address in "If".
-			js.If.siblingElse = js.Else
 		}
 	}
 

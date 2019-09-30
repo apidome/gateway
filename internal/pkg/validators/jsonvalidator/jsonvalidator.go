@@ -5,7 +5,7 @@ import "github.com/Creespye/caf/internal/pkg/configs"
 // JsonValidator is a struct that implements the Validator interface
 // and validates json objects according to a json schema
 type JsonValidator struct {
-	schemaDict map[string]map[string]*JsonSchema
+	schemaDict map[string]map[string]*RootJsonSchema
 }
 
 // LoadSchema is a function that handles addition of new schema to the
@@ -21,11 +21,11 @@ func (jv JsonValidator) LoadSchema(path, method string, rawSchema []byte) error 
 	if isSchemaValid {
 		if jv.schemaDict[path] == nil {
 			// Create a new empty method-JsonSchema map for the current path.
-			jv.schemaDict[path] = make(map[string]*JsonSchema)
+			jv.schemaDict[path] = make(map[string]*RootJsonSchema)
 		}
 
 		// Create a new JsonSchema object.
-		schema, err := NewJsonSchema(rawSchema)
+		schema, err := NewRootJsonSchema(rawSchema)
 		if err != nil {
 			return err
 		}
@@ -47,7 +47,7 @@ func (jv JsonValidator) Validate(path string, method string, body []byte) (bool,
 // NewJsonValidator returns a new instance of JsonValidator
 func NewJsonValidator() JsonValidator {
 	return JsonValidator{
-		make(map[string]map[string]*JsonSchema),
+		make(map[string]map[string]*RootJsonSchema),
 	}
 }
 

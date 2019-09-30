@@ -78,8 +78,13 @@ type keywordValidator interface {
 /** Annotations **/
 /*****************/
 
-type schema string
 type ref string
+
+func (r ref) validateByRef(rootSchemaID string) (bool, error) {
+	return true, nil
+}
+
+type schema string
 type id string
 type comment string
 type title string
