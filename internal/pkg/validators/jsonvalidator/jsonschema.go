@@ -275,7 +275,7 @@ func NewJsonSchema(bytes []byte) (*JsonSchema, error) {
 		return nil, err
 	}
 
-	err = schema.connectRelatedKeywords("")
+	err = schema.scanSchema("")
 	if err != nil {
 		fmt.Println("[JsonSchema DEBUG] connectRelatedKeywords() " +
 			"failed: " + err.Error())
@@ -289,10 +289,12 @@ func NewJsonSchema(bytes []byte) (*JsonSchema, error) {
 // keywords of the schema (as mentioned in the description of NewJsonSchema()).
 // The function scans the schema in and it's sub-schemas and perform the
 // required connections.
-func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
+func (js *JsonSchema) scanSchema(schemaPath string) error {
+	js.connectRelatedKeywords()
+
 	// Connect sub-schemas in "properties" field.
 	for key := range js.Properties {
-		err := js.Properties[key].connectRelatedKeywords(schemaPath + "/properties/" + key)
+		err := js.Properties[key].scanSchema(schemaPath + "/properties/" + key)
 		if err != nil {
 			return err
 		}
@@ -300,7 +302,7 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 
 	// Connect sub-schema in "additionalProperties" field.
 	if js.AdditionalProperties != nil {
-		err := js.AdditionalProperties.connectRelatedKeywords(schemaPath + "/additionalProperties")
+		err := js.AdditionalProperties.scanSchema(schemaPath + "/additionalProperties")
 		if err != nil {
 			return err
 		}
@@ -320,7 +322,7 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 
 	// Connect sub-schema in "propertyNames" field.
 	if js.PropertyNames != nil {
-		err := js.PropertyNames.connectRelatedKeywords(schemaPath + "/propertyNames")
+		err := js.PropertyNames.scanSchema(schemaPath + "/propertyNames")
 		if err != nil {
 			return err
 		}
@@ -330,7 +332,7 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 	for key, value := range js.Dependencies {
 		// Check if the dependency is a json schema or an array of properties.
 		if v, ok := value.(map[string]interface{}); ok {
-
+			subSchema := new(JsonSchema)
 			// Marshal the dependency in order to Unmarshal it into JsonSchema struct.
 			rawDependency, err := json.Marshal(v)
 			if err != nil {
@@ -341,9 +343,14 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 			}
 
 			// Create a new JsonSchema instance.
-			subSchema, err := NewJsonSchema(rawDependency)
+			err = json.Unmarshal(rawDependency, subSchema)
 			if err != nil {
 				return err
+			}
+
+			err = subSchema.scanSchema(schemaPath + "/dependencies" + key)
+			if err != nil {
+				return nil
 			}
 
 			// Save the new JsonSchema as the dependency itself.
@@ -353,7 +360,7 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 
 	// Connect sub-schemas in "patternProperties" field.
 	for key := range js.PatternProperties {
-		err := js.PatternProperties[key].connectRelatedKeywords(schemaPath + "/patternProperties/" + key)
+		err := js.PatternProperties[key].scanSchema(schemaPath + "/patternProperties/" + key)
 		if err != nil {
 			return err
 		}
@@ -361,7 +368,7 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 
 	// Connect sub-schemas in "definitions" field.
 	for key := range js.Definitions {
-		err := js.Definitions[key].connectRelatedKeywords(schemaPath + "/definitions/" + key)
+		err := js.Definitions[key].scanSchema(schemaPath + "/definitions/" + key)
 		if err != nil {
 			return err
 		}
@@ -395,10 +402,17 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 					}
 				}
 
-				// Create a new JsonSchema object.
-				subSchema, err := NewJsonSchema(rawSubSchema)
+				subSchema := new(JsonSchema)
+
+				// Create a new JsonSchema instance.
+				err = json.Unmarshal(rawSubSchema, subSchema)
 				if err != nil {
 					return err
+				}
+
+				err = subSchema.scanSchema(schemaPath + "/items")
+				if err != nil {
+					return nil
 				}
 
 				js.Items, err = json.Marshal(subSchema)
@@ -423,10 +437,17 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 						}
 					}
 
-					// Create a new JsonSchema object.
-					subSchema, err := NewJsonSchema(rawSubSchema)
+					subSchema := new(JsonSchema)
+
+					// Create a new JsonSchema instance.
+					err = json.Unmarshal(rawSubSchema, subSchema)
 					if err != nil {
 						return err
+					}
+
+					err = subSchema.scanSchema(schemaPath + "/items" + strconv.Itoa(index))
+					if err != nil {
+						return nil
 					}
 
 					// Save the sub-schema in "items" array.
@@ -447,7 +468,7 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 
 	// Connect sub-schema in "additionalItems" field.
 	if js.AdditionalItems != nil {
-		err := js.AdditionalItems.connectRelatedKeywords(schemaPath + "/additionalItems")
+		err := js.AdditionalItems.scanSchema(schemaPath + "/additionalItems")
 		if err != nil {
 			return err
 		}
@@ -461,7 +482,7 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 
 	// Connect sub-schema in "contains" field.
 	if js.Contains != nil {
-		err := js.Contains.connectRelatedKeywords(schemaPath + "/contains")
+		err := js.Contains.scanSchema(schemaPath + "/contains")
 		if err != nil {
 			return err
 		}
@@ -469,7 +490,7 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 
 	// Connect sub-schemas in "anyOf" field.
 	for index := range js.AnyOf {
-		err := js.AnyOf[index].connectRelatedKeywords(schemaPath + "/anyOf/" + strconv.Itoa(index))
+		err := js.AnyOf[index].scanSchema(schemaPath + "/anyOf/" + strconv.Itoa(index))
 		if err != nil {
 			return err
 		}
@@ -477,7 +498,7 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 
 	// Connect sub-schemas in "allOf" field.
 	for index := range js.AllOf {
-		err := js.AllOf[index].connectRelatedKeywords(schemaPath + "/allOf/" + strconv.Itoa(index))
+		err := js.AllOf[index].scanSchema(schemaPath + "/allOf/" + strconv.Itoa(index))
 		if err != nil {
 			return err
 		}
@@ -485,7 +506,7 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 
 	// Connect sub-schemas in "oneOf" field.
 	for index := range js.OneOf {
-		err := js.OneOf[index].connectRelatedKeywords(schemaPath + "/oneOf/" + strconv.Itoa(index))
+		err := js.OneOf[index].scanSchema(schemaPath + "/oneOf/" + strconv.Itoa(index))
 		if err != nil {
 			return err
 		}
@@ -493,7 +514,7 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 
 	// Connect sub-schema in "not" field.
 	if js.Not != nil {
-		err := js.Not.connectRelatedKeywords(schemaPath + "/not")
+		err := js.Not.scanSchema(schemaPath + "/not")
 		if err != nil {
 			return err
 		}
@@ -501,14 +522,14 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 
 	// Connect sub-schema in "if" field.
 	if js.If != nil {
-		err := js.If.connectRelatedKeywords(schemaPath + "/if")
+		err := js.If.scanSchema(schemaPath + "/if")
 		if err != nil {
 			return err
 		}
 
 		// Connect sub-schema in "then" field.
 		if js.Then != nil {
-			err := js.Then.connectRelatedKeywords(schemaPath + "/then")
+			err := js.Then.scanSchema(schemaPath + "/then")
 			if err != nil {
 				return err
 			}
@@ -520,7 +541,7 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 
 		// Connect sub-schema in "else" field.
 		if js.Else != nil {
-			err := js.Else.connectRelatedKeywords(schemaPath + "/else")
+			err := js.Else.scanSchema(schemaPath + "/else")
 			if err != nil {
 				return err
 			}
@@ -532,6 +553,51 @@ func (js *JsonSchema) connectRelatedKeywords(schemaPath string) error {
 	}
 
 	return nil
+}
+
+func (js *JsonSchema) connectRelatedKeywords() {
+	// Connect sub-schema in "additionalProperties" field.
+	if js.AdditionalProperties != nil {
+		// If "properties" field exists in the schema, save the keywordValidator's
+		// address in "AdditionalProperties".
+		if js.Properties != nil {
+			js.AdditionalProperties.siblingProperties = &js.Properties
+		}
+
+		// If "patternProperties" field exists in the schema, save the keywordValidator's
+		// address in "AdditionalProperties".
+		if js.PatternProperties != nil {
+			js.AdditionalProperties.siblingPatternProperties = &js.PatternProperties
+		}
+	}
+
+	// Connect sub-schema in "additionalItems" field.
+	if js.AdditionalItems != nil {
+		// If "items" field exists in the schema, save the keywordValidator's
+		// address in "AdditionalItems".
+		if js.Items != nil {
+			js.AdditionalItems.siblingItems = &js.Items
+		}
+	}
+
+	// Connect sub-schema in "if" field.
+	if js.If != nil {
+		// Connect sub-schema in "then" field.
+		if js.Then != nil {
+
+			// If "then" field exists in the schema, save the keywordValidator's
+			// address in "If".
+			js.If.siblingThen = js.Then
+		}
+
+		// Connect sub-schema in "else" field.
+		if js.Else != nil {
+
+			// If "else" field exists in the schema, save the keywordValidator's
+			// address in "If".
+			js.If.siblingElse = js.Else
+		}
+	}
 }
 
 // validateJsonData is a function that gets a byte array of data and validates

@@ -4,13 +4,26 @@
         "name": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 64
+            "maxLength": 64,
+            "$ref": "#"
         }
     },
     "patternProperties": {
         "^ag": {
-            "type": "integer"
+            "type": "integer",
+            "$ref": "#/properties/name"
         }
     },
-    "additionalProperties": true
+    "additionalProperties": true,
+    "if": {
+        "type": "string",
+        "$ref": "#/else"
+    },
+    "else": {
+        "type": "string",
+        "$ref": "#/if"
+    },
+    "then": {
+        "type": "string"
+    }
 }

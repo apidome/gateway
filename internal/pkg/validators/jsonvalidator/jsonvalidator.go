@@ -19,8 +19,10 @@ func (jv JsonValidator) LoadSchema(path, method string, rawSchema []byte) error 
 
 	// If the schema is valid make a new map and insert the new schema to it.
 	if isSchemaValid {
-		// Create a new empty method-JsonSchema map for the current path.
-		jv.schemaDict[path] = make(map[string]*JsonSchema)
+		if jv.schemaDict[path] == nil {
+			// Create a new empty method-JsonSchema map for the current path.
+			jv.schemaDict[path] = make(map[string]*JsonSchema)
+		}
 
 		// Create a new JsonSchema object.
 		schema, err := NewJsonSchema(rawSchema)
