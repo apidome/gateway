@@ -184,10 +184,10 @@ func (t *_type) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 				// A json type must be represented by a string.
 				if v, ok := typeFromList.(string); ok {
 					// Perform the "json type assertion"
-					ok, _ := assertJsonType(v, jsonData.value)
+					err := assertJsonType(v, jsonData.value)
 
 					// If the assertion succeeded, return true
-					if ok {
+					if err == nil {
 						return nil
 					}
 				} else {
@@ -223,14 +223,14 @@ func (t *_type) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 // assertJsonType is a function that gets a jsonType and some jsonData and
 // returns true if the value belongs to the type.
 // If it is not, the function will return an appropriate error.
-func assertJsonType(jsonType string, jsonData interface{}) (bool, error) {
+func assertJsonType(jsonType string, jsonData interface{}) error {
 	switch jsonType {
 	case TYPE_OBJECT:
 		{
 			if _, ok := jsonData.(map[string]interface{}); ok {
-				return true, nil
+				return nil
 			} else {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"type",
 					"inspected value expected to be a json object",
 				}
@@ -239,9 +239,9 @@ func assertJsonType(jsonType string, jsonData interface{}) (bool, error) {
 	case TYPE_ARRAY:
 		{
 			if _, ok := jsonData.([]interface{}); ok {
-				return true, nil
+				return nil
 			} else {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"type",
 					"inspected value expected to be a json array",
 				}
@@ -250,9 +250,9 @@ func assertJsonType(jsonType string, jsonData interface{}) (bool, error) {
 	case TYPE_STRING:
 		{
 			if _, ok := jsonData.(string); ok {
-				return true, nil
+				return nil
 			} else {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"type",
 					"inspected value expected to be a json string",
 				}
@@ -261,9 +261,9 @@ func assertJsonType(jsonType string, jsonData interface{}) (bool, error) {
 	case TYPE_NUMBER, TYPE_INTEGER:
 		{
 			if _, ok := jsonData.(float64); ok {
-				return true, nil
+				return nil
 			} else {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"type",
 					"inspected value expected to be a json number",
 				}
@@ -272,9 +272,9 @@ func assertJsonType(jsonType string, jsonData interface{}) (bool, error) {
 	case TYPE_BOOLEAN:
 		{
 			if _, ok := jsonData.(bool); ok {
-				return true, nil
+				return nil
 			} else {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"type",
 					"inspected value expected to be a json boolean",
 				}
@@ -295,7 +295,7 @@ func assertJsonType(jsonType string, jsonData interface{}) (bool, error) {
 	//	}
 	default:
 		{
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"type",
 				"invalid json type " + jsonType,
 			}
@@ -789,7 +789,7 @@ func (p properties) validate(jsonPath string, jsonData jsonData, rootSchemaId st
 			// Before we try to validate the data against the schema,
 			// we make sure that the data actually contains the property.
 			if _, ok := object[key]; ok {
-				valid, err := value.validateJsonData(jsonPath+"/"+key, jsonData.raw, rootSchemaId)
+				err := value.validateJsonData(jsonPath+"/"+key, jsonData.raw, rootSchemaId)
 				if err != nil {
 					return err
 				}
@@ -844,10 +844,10 @@ func (ap *additionalProperties) validate(jsonPath string, jsonData jsonData, roo
 						// If there is no match, validate the value of the property against
 						// the given schema in "additionalProperties" field.
 						if !match {
-							valid, err := (*ap).validateJsonData(jsonPath+"/"+property, jsonData.raw, rootSchemaId)
+							err := (*ap).validateJsonData(jsonPath+"/"+property, jsonData.raw, rootSchemaId)
 
 							// If the validation fails, return an error.
-							if !valid {
+							if err != nil {
 								return KeywordValidationError{
 									"additionalProperties",
 									"property \"" +
@@ -917,10 +917,10 @@ func (pn *propertyNames) validate(jsonPath string, jsonData jsonData, rootSchema
 		// Iterate over the object's properties.
 		for property := range object {
 			// Validate the property name against the schema stored in "propertyNames" field
-			valid, err := pn.validateJsonData("", []byte("\""+property+"\""), rootSchemaId)
+			err := pn.validateJsonData("", []byte("\""+property+"\""), rootSchemaId)
 
 			// If the property name could be validated against the scheme return an error
-			if !valid {
+			if err != nil {
 				return KeywordValidationError{
 					"propertyNames",
 					"property name \"" + property + "\" failed in validation: " + err.Error(),
@@ -965,8 +965,8 @@ func (d dependencies) validate(jsonPath string, jsonData jsonData, rootSchemaId 
 					// sub-schema.
 					if _, ok := object[propertyName]; ok {
 						// Validate the whole data against the given sub-schema.
-						valid, err := v.validateJsonData("", jsonData.raw, rootSchemaId)
-						if !valid {
+						err := v.validateJsonData("", jsonData.raw, rootSchemaId)
+						if err != nil {
 							return KeywordValidationError{
 								"dependencies",
 								"inspected value failed in validation against sub-schema given in \"" +
@@ -1055,10 +1055,10 @@ func (pp patternProperties) validate(jsonPath string, jsonData jsonData, rootSch
 				// If there is a match, validate the value of the property against
 				// the given schema.
 				if match {
-					valid, err := subSchema.validateJsonData(jsonPath+"/"+property, jsonData.raw, rootSchemaId)
+					err := subSchema.validateJsonData(jsonPath+"/"+property, jsonData.raw, rootSchemaId)
 
 					// If the validation fails, return an error.
-					if !valid {
+					if err != nil {
 						return KeywordValidationError{
 							"patternProperties",
 							"property \"" +
@@ -1128,7 +1128,7 @@ func (mp *maxProperties) validate(jsonPath string, jsonData jsonData, rootSchema
 		// than maxProperties.
 		// Else, return an error.
 		if len(v) <= int(*mp) {
-			return true, nil
+			return nil
 		} else {
 			return KeywordValidationError{
 				"minProperties",
@@ -1188,7 +1188,7 @@ func (i items) validate(jsonPath string, jsonData jsonData, rootSchemaId string)
 				// Iterate over the items in the inspected array and validate each
 				// item against the schema in "items" field.
 				for index := 0; index < len(array); index++ {
-					valid, err := schema.validateJsonData(jsonPath+"/"+strconv.Itoa(index), jsonData.raw, rootSchemaId)
+					err := schema.validateJsonData(jsonPath+"/"+strconv.Itoa(index), jsonData.raw, rootSchemaId)
 					if err != nil {
 						return err
 					}
@@ -1230,7 +1230,7 @@ func (i items) validate(jsonPath string, jsonData jsonData, rootSchemaId string)
 					}
 
 					// Validate the item against the schema at the same position.
-					valid, err := schema.validateJsonData(jsonPath+"/"+strconv.Itoa(index), jsonData.raw, rootSchemaId)
+					err = schema.validateJsonData(jsonPath+"/"+strconv.Itoa(index), jsonData.raw, rootSchemaId)
 					if err != nil {
 						return err
 					}
@@ -1290,7 +1290,7 @@ func (ai *additionalItems) validate(jsonPath string, jsonData jsonData, rootSche
 			// validating.
 			for index := range array[len(itemsArray):] {
 				// Validate the inspected item against the schema given in "additionalItems".
-				valid, err := ai.validateJsonData(jsonPath+"/"+strconv.Itoa(index), jsonData.raw, rootSchemaId)
+				err := ai.validateJsonData(jsonPath+"/"+strconv.Itoa(index), jsonData.raw, rootSchemaId)
 				if err != nil {
 					return KeywordValidationError{
 						"additionalItems",
@@ -1333,8 +1333,8 @@ func (c *contains) validate(jsonPath string, jsonData jsonData, rootSchemaId str
 		for index := range array {
 			// If the item is valid against the given schema, which means that
 			// the array contains the required value.
-			valid, _ := (*c).validateJsonData(jsonPath+"/"+strconv.Itoa(index), jsonData.raw, rootSchemaId)
-			if valid {
+			err := (*c).validateJsonData(jsonPath+"/"+strconv.Itoa(index), jsonData.raw, rootSchemaId)
+			if err == nil {
 				return nil
 			}
 		}
@@ -1475,8 +1475,8 @@ func (af anyOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 
 	// Validate jsonData.raw against each of the schemas until on of them succeeds.
 	for _, schema := range af {
-		valid, err := schema.validateJsonData("", jsonData.raw, rootSchemaId)
-		if valid {
+		err := schema.validateJsonData("", jsonData.raw, rootSchemaId)
+		if err == nil {
 			return err
 		}
 	}
@@ -1499,8 +1499,8 @@ func (af allOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 	// Validate jsonData.raw against each of the schemas.
 	// If one of them fails, return error.
 	for _, schema := range af {
-		valid, err := schema.validateJsonData("", jsonData.raw, rootSchemaId)
-		if !valid {
+		err := schema.validateJsonData("", jsonData.raw, rootSchemaId)
+		if err != nil {
 			return err
 		}
 	}
@@ -1525,8 +1525,8 @@ func (of oneOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 
 	// Validate jsonData.raw against each of the schemas until on of them succeeds.
 	for _, schema := range of {
-		valid, _ := schema.validateJsonData("", jsonData.raw, rootSchemaId)
-		if valid {
+		err := schema.validateJsonData("", jsonData.raw, rootSchemaId)
+		if err == nil {
 			if oneValidationAlreadySucceeded {
 				return KeywordValidationError{
 					"oneOf",
@@ -1559,8 +1559,8 @@ func (n *not) validate(jsonPath string, jsonData jsonData, rootSchemaId string) 
 		return nil
 	}
 
-	valid, _ := (*n).validateJsonData(jsonPath, jsonData.raw, rootSchemaId)
-	if !valid {
+	err := (*n).validateJsonData(jsonPath, jsonData.raw, rootSchemaId)
+	if err != nil {
 		return nil
 	} else {
 		return KeywordValidationError{
@@ -1583,12 +1583,12 @@ func (i *_if) validate(jsonPath string, jsonData jsonData, rootSchemaId string) 
 	}
 
 	// Validate the data against the given schema in "if".
-	valid, _ := i.validateJsonData("", jsonData.raw, rootSchemaId)
+	err := i.validateJsonData("", jsonData.raw, rootSchemaId)
 
 	// If the validation succeeded, validate the data against the given schema
 	// in "then".
 	// Else, validate the data against the given schema in "else".
-	if valid {
+	if err == nil {
 		return i.siblingThen.validateJsonData(jsonPath, jsonData.raw, rootSchemaId)
 	} else {
 		return i.siblingElse.validateJsonData(jsonPath, jsonData.raw, rootSchemaId)
