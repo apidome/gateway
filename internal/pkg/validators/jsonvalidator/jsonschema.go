@@ -29,47 +29,9 @@ const (
 	ENCODING_BASE64           = "base64"
 )
 
-var rootSchemaPool = map[string]*RootJsonSchema{}
-
 type jsonData struct {
 	raw   json.RawMessage
 	value interface{}
-}
-
-type RootJsonSchema struct {
-	JsonSchema
-	subSchemaMap map[string]*JsonSchema
-}
-
-func NewRootJsonSchema(bytes []byte) (*RootJsonSchema, error) {
-	var rootSchema *RootJsonSchema
-
-	// Check if the string s is a valid json.
-	err := json.Unmarshal(bytes, &rootSchema)
-	if err != nil {
-		return nil, err
-	}
-
-	rootSchema.subSchemaMap = make(map[string]*JsonSchema)
-
-	err = rootSchema.scanSchema("", string(*rootSchema.Id))
-	if err != nil {
-		fmt.Println("[JsonSchema DEBUG] scanSchema() " +
-			"failed: " + err.Error())
-		return nil, err
-	}
-
-	if rootSchema.Id != nil {
-		if _, ok := rootSchemaPool[string(*rootSchema.Id)]; !ok {
-			rootSchemaPool[string(*rootSchema.Id)] = rootSchema
-		}
-	}
-
-	return rootSchema, nil
-}
-
-func (rs *RootJsonSchema) GetSubSchema(path string) (*JsonSchema, error) {
-	return nil, nil
 }
 
 type JsonSchema struct {
@@ -286,7 +248,7 @@ type JsonSchema struct {
 // JsonSchema type to implement the Unmarshaler interface.
 // An edge case of json schema, is the json schema "true" or "false".
 // In those cases, json.Unmarshal will try to unmarshal a boolean into a
-// JsonSchema instance which is a struct, and it will fail.
+// JsonSchema instance which is a struct, and it will fail.8
 // So I implemented the Unmarshaler and tried to unmarshal according to type
 // of the raw data that represents the schema. But then I realized that I
 // cannot use unmarshal data into a JsonSchema instance inside JsonSchema's
@@ -331,7 +293,7 @@ func (js *JsonSchema) scanSchema(schemaPath string, rootSchemaID string) error {
 	js.connectRelatedKeywords()
 
 	if schemaPath != "" && rootSchemaID != "" {
-		if rs, ok := rootSchemaPool[rootSchemaID]; ok {
+		if rs, ok := rootSchemaPool[rootSchemaID]; ok && rs != nil {
 			if _, ok := rs.subSchemaMap[schemaPath]; !ok {
 				rs.subSchemaMap[schemaPath] = js
 			}
@@ -622,13 +584,17 @@ func (js *JsonSchema) connectRelatedKeywords() {
 
 // validateJsonData is a function that gets a byte array of data and validates
 // it against the schema that encoded in the receiver's field.
-func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte) (bool, error) {
+func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte, rootSchemaId string) (bool, error) {
 	// If RejectAll field exists and true, reject the value.
 	if js.RejectAll {
 		return false, SchemaValidationError{
 			jsonPath,
 			"json schema \"false\" drops everything",
 		}
+	}
+
+	if js.Ref != nil {
+		return js.Ref.validateByRef(jsonPath, bytes, rootSchemaId)
 	}
 
 	// Calculate the relative path in order to evaluate the data
@@ -671,7 +637,7 @@ func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte) (bool, err
 	for _, keyword := range keywordValidators {
 		// Validate the value that we extracted from the jsonData at each
 		// keyword.
-		_, err := keyword.validate(jsonPath, jsonData)
+		_, err := keyword.validate(jsonPath, jsonData, rootSchemaId)
 		if err != nil {
 			// If the error is a SchemaValidationError, it means it came from
 			// a deeper call to this function, so we do not touch the error.
@@ -886,7 +852,7 @@ func (js *JsonSchema) UnmarshalJSON(bytes []byte) error {
 			// If the data is not a json object or a json boolean, it is not a
 			// valid schema.
 			return errors.New("a valid json schema must be a json object" +
-				" of a boolean")
+				" or a boolean")
 		}
 	}
 
