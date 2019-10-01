@@ -260,12 +260,7 @@ type JsonSchema struct {
 type tempJsonSchema JsonSchema
 
 // NewJsonSchema created a new JsonSchema instance, Unmarshals the byte array
-// into the instance, and than connects the following related keywords:
-// Schema.AdditionalProperties 	---> 	Schema.Properties
-// Schema.AdditionalProperties 	---> 	Schema.PatternProperties
-// JsonSchema.AdditionalItems 	---> 	JsonSchema.Items
-// JsonSchema.If 				---> 	JsonSchema.Then
-// JsonSchema.IF 				---> 	JsonSchema.Else
+// into the instance, and return the instance.
 func NewJsonSchema(bytes []byte) (*JsonSchema, error) {
 	var schema *JsonSchema
 
@@ -291,14 +286,7 @@ func NewJsonSchema(bytes []byte) (*JsonSchema, error) {
 // required connections.
 func (js *JsonSchema) scanSchema(schemaPath string, rootSchemaID string) error {
 	js.connectRelatedKeywords()
-
-	if schemaPath != "" && rootSchemaID != "" {
-		if rs, ok := rootSchemaPool[rootSchemaID]; ok && rs != nil {
-			if _, ok := rs.subSchemaMap[schemaPath]; !ok {
-				rs.subSchemaMap[schemaPath] = js
-			}
-		}
-	}
+	js.mapSubSchema(schemaPath, rootSchemaID)
 
 	// Connect sub-schemas in "properties" field.
 	for key := range js.Properties {
@@ -537,6 +525,13 @@ func (js *JsonSchema) scanSchema(schemaPath string, rootSchemaID string) error {
 	return nil
 }
 
+// connectRelatedKeywords is a receiver function that initialized references
+// between keywordValidators that depend on each other:
+// Schema.AdditionalProperties 	---> 	Schema.Properties
+// Schema.AdditionalProperties 	---> 	Schema.PatternProperties
+// JsonSchema.AdditionalItems 	---> 	JsonSchema.Items
+// JsonSchema.If 				---> 	JsonSchema.Then
+// JsonSchema.IF 				---> 	JsonSchema.Else
 func (js *JsonSchema) connectRelatedKeywords() {
 	// Connect sub-schema in "additionalProperties" field.
 	if js.AdditionalProperties != nil {
@@ -582,6 +577,28 @@ func (js *JsonSchema) connectRelatedKeywords() {
 	}
 }
 
+func (js *JsonSchema) mapSubSchema(schemaPath, rootSchemaID string) {
+	// If the schema path is not an empty string (means we are not in the root schema),
+	// and the rootSchemaID is not an empty string (means the root schema contains
+	// the "$id" field), map the current sub schema into the subSchemaMap of the rootSchema.
+	if schemaPath != "" && rootSchemaID != "" {
+		// If the rootSchema exists in the pool, add the sub schema to it.
+		// Else, TODO: decide what to do.
+		if rs, ok := rootSchemaPool[rootSchemaID]; ok && rs != nil {
+			// If the root schema does not contain the sub schema already, add it to the
+			// subSchemaMap.
+			// Else, TODO: decide what to do.
+			if _, ok := rs.subSchemaMap[schemaPath]; !ok {
+				rs.subSchemaMap[schemaPath] = js
+			} else {
+				fmt.Println("[JsonSchema DEBUG]  ")
+			}
+		} else {
+			fmt.Println("[JsonSchema DEBUG]  ")
+		}
+	}
+}
+
 // validateJsonData is a function that gets a byte array of data and validates
 // it against the schema that encoded in the receiver's field.
 func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte, rootSchemaId string) (bool, error) {
@@ -593,6 +610,9 @@ func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte, rootSchema
 		}
 	}
 
+	// If the schema contains the $ref field, validate the data against the
+	// referenced schema (and by the way ignore all the keywords of the current
+	// schema).
 	if js.Ref != nil {
 		return js.Ref.validateByRef(jsonPath, bytes, rootSchemaId)
 	}

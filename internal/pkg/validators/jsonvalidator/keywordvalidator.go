@@ -82,16 +82,46 @@ type keywordValidator interface {
 
 type ref string
 
+//rootSchemaPool = {
+//	"http://api.example.com/profile2.json#": *rootSchema
+//}
+
+//rootSchema = {
+//"subSchemaMap": {
+//"/properties/name": *jsonSchema,
+//"/patternProperties/^ag": *jsonSchema,
+//"/if": *jsonSchema,
+//"/if/properties/x": *jsonSchema,
+//"/else": *jsonSchema,
+//"/then": *jsonSchema
+//}
+//}
+
+// r = "#/properties/name"
+// schemaURI = ""
+// fragment = "/properties/name"
+// schemaURI = "http://api.example.com/profile2.json#"
+
 func (r ref) validateByRef(jsonPath string, jsonData []byte, rootSchemaID string) (bool, error) {
 	schemaURI := strings.Split(string(r), "#")[0]
 	fragment := strings.Split(string(r), "#")[1]
 
+	// If the schemaURI is empty string it means that the reference points to a schema
+	// in the local schema (for example #/definitions/x), so we want to use the rootSchemaID
+	// in order to get the current root-schema from the rootSchemaPool.
 	if schemaURI == "" {
 		schemaURI = rootSchemaID
 	}
 
+	// If the root-schema exists in the rootSchemaPool, validate the data according to the
+	// fragment.
+	// Else, return an error
 	if rootSchema, ok := rootSchemaPool[schemaURI]; ok {
+		// If the fragment is an empty fragment, validate the data against the root-schema.
+		// Else, validate the data against the sub-schema that the fragment points to.
 		if fragment != "" {
+			// If the referenced sub-schema exists, validate the data againt it.
+			// Else, return an error
 			if subSchema, ok := rootSchema.subSchemaMap[fragment]; ok {
 				return subSchema.validateJsonData(jsonPath, jsonData, rootSchemaID)
 			} else {
@@ -765,16 +795,17 @@ func (p properties) validate(jsonPath string, jsonData jsonData, rootSchemaId st
 				}
 			}
 		}
-
-		// If we arrived here, the validation of all the properties
-		// succeeded.
-		return true, nil
-	} else {
-		return false, KeywordValidationError{
-			"properties",
-			"inspected value expected to be a json object",
-		}
 	}
+	//else {
+	//	return false, KeywordValidationError{
+	//		"properties",
+	//		"inspected value expected to be a json object",
+	//	}
+	//}
+
+	// If we arrived here, the validation of all the properties
+	// succeeded.
+	return true, nil
 }
 
 type additionalProperties struct {
