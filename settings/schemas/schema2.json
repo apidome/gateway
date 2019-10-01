@@ -3,34 +3,15 @@
     "type": "object",
     "properties": {
         "name": {
-            "$id": "bar",
             "type": "string",
             "minLength": 1,
-            "maxLength": 64,
-            "$ref": "#"
+            "maxLength": 64
         }
     },
     "patternProperties": {
         "^ag": {
-            "type": "integer",
-            "$ref": "#/properties/name"
+            "type": "integer"
         }
     },
-    "additionalProperties": true,
-    "if": {
-        "type": "object",
-        "properties": {
-            "x": {
-                "type": "integer"
-            }
-        },
-        "$ref": "#/else"
-    },
-    "else": {
-        "type": "string",
-        "$ref": "#/if"
-    },
-    "then": {
-        "type": "string"
-    }
+    "additionalProperties": true
 }

@@ -590,11 +590,7 @@ func (js *JsonSchema) mapSubSchema(schemaPath, rootSchemaID string) {
 			// Else, TODO: decide what to do.
 			if _, ok := rs.subSchemaMap[schemaPath]; !ok {
 				rs.subSchemaMap[schemaPath] = js
-			} else {
-				fmt.Println("[JsonSchema DEBUG]  ")
 			}
-		} else {
-			fmt.Println("[JsonSchema DEBUG]  ")
 		}
 	}
 }

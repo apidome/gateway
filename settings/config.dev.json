@@ -24,7 +24,7 @@
                             {
                                 "path": "/apidojo/api/yahoo-finance1/details",
                                 "method": "GET",
-                                "schema": "schemas/schema2.json"
+                                "schema": "schemas/schema1.json"
                             },
                             {
                                 "path": "/api/v1/person/:id",

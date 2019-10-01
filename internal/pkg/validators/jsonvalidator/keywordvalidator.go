@@ -82,26 +82,6 @@ type keywordValidator interface {
 
 type ref string
 
-//rootSchemaPool = {
-//	"http://api.example.com/profile2.json#": *rootSchema
-//}
-
-//rootSchema = {
-//"subSchemaMap": {
-//"/properties/name": *jsonSchema,
-//"/patternProperties/^ag": *jsonSchema,
-//"/if": *jsonSchema,
-//"/if/properties/x": *jsonSchema,
-//"/else": *jsonSchema,
-//"/then": *jsonSchema
-//}
-//}
-
-// r = "#/properties/name"
-// schemaURI = ""
-// fragment = "/properties/name"
-// schemaURI = "http://api.example.com/profile2.json#"
-
 func (r ref) validateByRef(jsonPath string, jsonData []byte, rootSchemaID string) error {
 	schemaURI := strings.Split(string(r), "#")[0]
 	fragment := strings.Split(string(r), "#")[1]
@@ -408,12 +388,9 @@ func (ml *minLength) validate(jsonPath string, jsonData jsonData, rootSchemaId s
 				"inspected string is less than " + strconv.Itoa(int(*ml)),
 			}
 		}
-	} else {
-		return KeywordValidationError{
-			"minLength",
-			"inspected value is not a string",
-		}
 	}
+
+	return nil
 }
 
 type maxLength int
@@ -435,12 +412,9 @@ func (ml *maxLength) validate(jsonPath string, jsonData jsonData, rootSchemaId s
 				"inspected string is greater than " + strconv.Itoa(int(*ml)),
 			}
 		}
-	} else {
-		return KeywordValidationError{
-			"maxLength",
-			"inspected value is not a string",
-		}
 	}
+
+	return nil
 }
 
 type pattern string
@@ -472,12 +446,9 @@ func (p *pattern) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 				"value " + v + " does not match to pattern" + string(*p),
 			}
 		}
-	} else {
-		return KeywordValidationError{
-			"pattern",
-			"inspected value is not a string",
-		}
 	}
+
+	return nil
 }
 
 type format string
@@ -612,12 +583,8 @@ func (f *format) validate(jsonPath string, jsonData jsonData, rootSchemaId strin
 		default:
 			return nil
 		}
-	} else {
-		return KeywordValidationError{
-			"pattern",
-			"inspected value is not a string",
-		}
 	}
+
 	return nil
 }
 
@@ -646,12 +613,9 @@ func (mo *multipleOf) validate(jsonPath string, jsonData jsonData, rootSchemaId 
 					64),
 			}
 		}
-	} else {
-		return KeywordValidationError{
-			"multipleOf",
-			"inspected value is not an integer",
-		}
 	}
+
+	return nil
 }
 
 type minimum float64
@@ -675,12 +639,9 @@ func (m *minimum) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 					64),
 			}
 		}
-	} else {
-		return KeywordValidationError{
-			"minimum",
-			"inspected value is not a number",
-		}
 	}
+
+	return nil
 }
 
 type maximum float64
@@ -704,12 +665,9 @@ func (m *maximum) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 					64),
 			}
 		}
-	} else {
-		return KeywordValidationError{
-			"maximum",
-			"inspected value is not a number",
-		}
 	}
+
+	return nil
 }
 
 type exclusiveMinimum float64
@@ -733,12 +691,9 @@ func (em *exclusiveMinimum) validate(jsonPath string, jsonData jsonData, rootSch
 					64),
 			}
 		}
-	} else {
-		return KeywordValidationError{
-			"exclusiveMinimum",
-			"inspected value is not a number",
-		}
 	}
+
+	return nil
 }
 
 type exclusiveMaximum float64
@@ -762,12 +717,9 @@ func (em *exclusiveMaximum) validate(jsonPath string, jsonData jsonData, rootSch
 					64),
 			}
 		}
-	} else {
-		return KeywordValidationError{
-			"exclusiveMaximum",
-			"inspected value is not a number",
-		}
 	}
+
+	return nil
 }
 
 /*********************/
@@ -796,12 +748,6 @@ func (p properties) validate(jsonPath string, jsonData jsonData, rootSchemaId st
 			}
 		}
 	}
-	//else {
-	//	return false, KeywordValidationError{
-	//		"properties",
-	//		"inspected value expected to be a json object",
-	//	}
-	//}
 
 	// If we arrived here, the validation of all the properties
 	// succeeded.
@@ -860,16 +806,11 @@ func (ap *additionalProperties) validate(jsonPath string, jsonData jsonData, roo
 				}
 			}
 		}
-
-		// If we arrived here, none of the properties failed in validation,
-		// and we return true.
-		return nil
-	} else {
-		return KeywordValidationError{
-			"properties",
-			"inspected value expected to be a json object",
-		}
 	}
+
+	// If we arrived here, none of the properties failed in validation,
+	// and we return true.
+	return nil
 }
 
 type required []string
@@ -890,11 +831,6 @@ func (r required) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 					"Missing required property - " + property,
 				}
 			}
-		}
-	} else {
-		return KeywordValidationError{
-			"required",
-			"all items \"required\" field must be strings",
 		}
 	}
 
@@ -927,16 +863,11 @@ func (pn *propertyNames) validate(jsonPath string, jsonData jsonData, rootSchema
 				}
 			}
 		}
-
-		// If we arrived here it means that all the property names validated successfully against
-		// the schema stored in "propertyNames".
-		return nil
-	} else {
-		return KeywordValidationError{
-			"propertyNames",
-			"inspected value expected to be a json object",
-		}
 	}
+
+	// If we arrived here it means that all the property names validated successfully against
+	// the schema stored in "propertyNames".
+	return nil
 }
 
 type dependencies map[string]interface{}
@@ -1016,15 +947,10 @@ func (d dependencies) validate(jsonPath string, jsonData jsonData, rootSchemaId 
 				}
 			}
 		}
-
-		// If we arrived here it means that all the validations succeeded.
-		return nil
-	} else {
-		return KeywordValidationError{
-			"dependencies",
-			"inspected value expected to be a json object",
-		}
 	}
+
+	// If we arrived here it means that all the validations succeeded.
+	return nil
 }
 
 type patternProperties map[string]*JsonSchema
@@ -1071,16 +997,11 @@ func (pp patternProperties) validate(jsonPath string, jsonData jsonData, rootSch
 				}
 			}
 		}
-
-		// If we arrived here it means that none of the properties failed in
-		// validation against any of the given schemas.
-		return nil
-	} else {
-		return KeywordValidationError{
-			"patternProperties",
-			"inspected value expected to be a json object",
-		}
 	}
+
+	// If we arrived here it means that none of the properties failed in
+	// validation against any of the given schemas.
+	return nil
 }
 
 type minProperties int
@@ -1105,12 +1026,9 @@ func (mp *minProperties) validate(jsonPath string, jsonData jsonData, rootSchema
 				"inspected value must contains at least " + strconv.Itoa(int(*mp)) + " properties",
 			}
 		}
-	} else {
-		return KeywordValidationError{
-			"minProperties",
-			"inspected value must be a json object",
-		}
 	}
+
+	return nil
 }
 
 type maxProperties int
@@ -1137,12 +1055,9 @@ func (mp *maxProperties) validate(jsonPath string, jsonData jsonData, rootSchema
 					" properties",
 			}
 		}
-	} else {
-		return KeywordValidationError{
-			"minProperties",
-			"inspected value must be a json object",
-		}
 	}
+
+	return nil
 }
 
 /********************/
@@ -1368,12 +1283,9 @@ func (mi *minItems) validate(jsonPath string, jsonData jsonData, rootSchemaId st
 				"inspected array must contain at least " + strconv.Itoa(int(*mi)) + " items",
 			}
 		}
-	} else {
-		return KeywordValidationError{
-			"minItems",
-			"inspected value expected to be json array",
-		}
 	}
+
+	return nil
 }
 
 type maxItems int
@@ -1396,12 +1308,9 @@ func (mi *maxItems) validate(jsonPath string, jsonData jsonData, rootSchemaId st
 				"inspected array must contain at most " + strconv.Itoa(int(*mi)) + " items",
 			}
 		}
-	} else {
-		return KeywordValidationError{
-			"maxItems",
-			"inspected value expected to be json array",
-		}
 	}
+
+	return nil
 }
 
 type uniqueItems bool
@@ -1446,12 +1355,9 @@ func (ui *uniqueItems) validate(jsonPath string, jsonData jsonData, rootSchemaId
 		// If we arrived here it means that we did not meat any item which is
 		// similar to another item in the array.
 		return nil
-	} else {
-		return KeywordValidationError{
-			"uniqueItems",
-			"inspected value expected to be json array",
-		}
 	}
+
+	return nil
 }
 
 /********************/
@@ -1477,7 +1383,7 @@ func (af anyOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 	for _, schema := range af {
 		err := schema.validateJsonData("", jsonData.raw, rootSchemaId)
 		if err == nil {
-			return err
+			return nil
 		}
 	}
 
@@ -1501,16 +1407,16 @@ func (af allOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 	for _, schema := range af {
 		err := schema.validateJsonData("", jsonData.raw, rootSchemaId)
 		if err != nil {
-			return err
+			return KeywordValidationError{
+				"allOf",
+				"inspected value could not be validated against all of the given schemas",
+			}
 		}
 	}
 
 	// If we arrived here, the validation of jsonData succeeded against all
 	// given schemas.
-	return KeywordValidationError{
-		"allOf",
-		"inspected value could not be validated against all of the given schemas",
-	}
+	return nil
 }
 
 type oneOf []*JsonSchema
