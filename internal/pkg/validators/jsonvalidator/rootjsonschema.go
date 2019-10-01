@@ -54,7 +54,7 @@ func NewRootJsonSchema(bytes []byte) (*RootJsonSchema, error) {
 
 // validate calls RootJsonSchema.validateJsonData() with an empty jsonPath
 // (represents root), and the root-schema id if exists.
-func (rs *RootJsonSchema) validate(bytes []byte) error {
+func (rs *RootJsonSchema) validateBytes(bytes []byte) error {
 	var id string
 	if rs.Id != nil {
 		id = string(*rs.Id)

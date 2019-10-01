@@ -39,7 +39,7 @@ func (jv JsonValidator) LoadSchema(path, method string, rawSchema []byte) error 
 // Validate is the function that actually perform validation of json value
 // according to a specific json schema
 func (jv JsonValidator) Validate(path string, method string, body []byte) error {
-	return jv.schemaDict[path][method].validate(body)
+	return jv.schemaDict[path][method].validateBytes(body)
 }
 
 // NewJsonValidator returns a new instance of JsonValidator
@@ -62,5 +62,5 @@ func validateJsonSchema(rawSchema []byte) error {
 		return err
 	}
 
-	return metaSchema.validate(rawSchema)
+	return metaSchema.validateBytes(rawSchema)
 }
