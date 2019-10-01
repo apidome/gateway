@@ -601,10 +601,10 @@ func (js *JsonSchema) mapSubSchema(schemaPath, rootSchemaID string) {
 
 // validateJsonData is a function that gets a byte array of data and validates
 // it against the schema that encoded in the receiver's field.
-func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte, rootSchemaId string) (bool, error) {
+func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte, rootSchemaId string) error {
 	// If RejectAll field exists and true, reject the value.
 	if js.RejectAll {
-		return false, SchemaValidationError{
+		return SchemaValidationError{
 			jsonPath,
 			"json schema \"false\" drops everything",
 		}
@@ -626,7 +626,7 @@ func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte, rootSchema
 	if err != nil {
 		fmt.Println("[JsonSchema DEBUG] validateJsonData() " +
 			"failed while trying to create JsonPointer " + jsonPath)
-		return false, err
+		return err
 	}
 
 	// Get the piece of json that the current schema describes.
@@ -634,13 +634,13 @@ func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte, rootSchema
 	if err != nil {
 		fmt.Println("[JsonSchema DEBUG] validateJsonData() " +
 			"failed while trying to evaluate a JsonPointer " + jsonPath)
-		return false, err
+		return err
 	}
 
 	// Marshal the evaluated value to a byte array.
 	newBytes, err := json.Marshal(value)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// Create a new json data container
@@ -657,28 +657,28 @@ func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte, rootSchema
 	for _, keyword := range keywordValidators {
 		// Validate the value that we extracted from the jsonData at each
 		// keyword.
-		_, err := keyword.validate(jsonPath, jsonData, rootSchemaId)
+		err := keyword.validate(jsonPath, jsonData, rootSchemaId)
 		if err != nil {
 			// If the error is a SchemaValidationError, it means it came from
 			// a deeper call to this function, so we do not touch the error.
 			if schemaValidationError, ok := err.(SchemaValidationError); ok {
-				return false, schemaValidationError
+				return schemaValidationError
 			}
 
 			// If the error is a KeywordValidationError, create a new
 			// SchemaValidationError and return it.
 			if keywordValidationError, ok := err.(KeywordValidationError); ok {
-				return false, SchemaValidationError{
+				return SchemaValidationError{
 					jsonPath,
 					keywordValidationError.Error(),
 				}
 			}
 
-			return false, err
+			return err
 		}
 	}
 
-	return true, nil
+	return nil
 }
 
 // getNonNilKeywordsMap gets a reference to JsonSchema and returns a

@@ -73,7 +73,7 @@ const (
 )
 
 type keywordValidator interface {
-	validate(string, jsonData, string) (bool, error)
+	validate(string, jsonData, string) error
 }
 
 /*****************/
@@ -102,7 +102,7 @@ type ref string
 // fragment = "/properties/name"
 // schemaURI = "http://api.example.com/profile2.json#"
 
-func (r ref) validateByRef(jsonPath string, jsonData []byte, rootSchemaID string) (bool, error) {
+func (r ref) validateByRef(jsonPath string, jsonData []byte, rootSchemaID string) error {
 	schemaURI := strings.Split(string(r), "#")[0]
 	fragment := strings.Split(string(r), "#")[1]
 
@@ -125,14 +125,14 @@ func (r ref) validateByRef(jsonPath string, jsonData []byte, rootSchemaID string
 			if subSchema, ok := rootSchema.subSchemaMap[fragment]; ok {
 				return subSchema.validateJsonData(jsonPath, jsonData, rootSchemaID)
 			} else {
-				return false, errors.New("TODO: implement new error type - sub-schema " + fragment +
+				return errors.New("TODO: implement new error type - sub-schema " + fragment +
 					"in root schema " + schemaURI + " does not exist")
 			}
 		} else {
 			return rootSchema.validateJsonData(jsonPath, jsonData, rootSchemaID)
 		}
 	} else {
-		return false, errors.New("TODO: implement new error type - root-schema " + schemaURI + "does not exist")
+		return errors.New("TODO: implement new error type - root-schema " + schemaURI + "does not exist")
 	}
 }
 
@@ -156,10 +156,10 @@ func (d *_default) UnmarshalJSON(data []byte) error {
 
 type _type json.RawMessage
 
-func (t *_type) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (t *_type) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if t == nil {
-		return true, nil
+		return nil
 	}
 
 	var data interface{}
@@ -167,7 +167,7 @@ func (t *_type) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 	// First we need to unmarshal the json data.
 	err := json.Unmarshal(*t, &data)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// The "type" field in json schema can be represented by two different values:
@@ -188,10 +188,10 @@ func (t *_type) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 
 					// If the assertion succeeded, return true
 					if ok {
-						return ok, nil
+						return nil
 					}
 				} else {
-					return false, KeywordValidationError{
+					return KeywordValidationError{
 						"type",
 						"\"type\" field in schema must be string or array of strings",
 					}
@@ -199,7 +199,7 @@ func (t *_type) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 			}
 
 			// JsonTypeMismatchError
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"type",
 				"inspected value does not match any of the valid types in the schema",
 			}
@@ -212,7 +212,7 @@ func (t *_type) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 		}
 	default:
 		{
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"type",
 				"\"type\" field in schema must be string or array of strings",
 			}
@@ -314,10 +314,10 @@ func (t *_type) MarshalJSON() ([]byte, error) {
 
 type enum []interface{}
 
-func (e enum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (e enum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if e == nil {
-		return true, nil
+		return nil
 	}
 
 	// Iterate over the items in "enum" array.
@@ -326,19 +326,19 @@ func (e enum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) 
 		// not require type assertion.
 		rawEnumItem, err := json.Marshal(item)
 		if err != nil {
-			return false, nil
+			return nil
 		}
 
 		// Convert both of the byte arrays to string for more convenient
 		// comparison. If they are equal, the data is valid against "enum".
 		if string(rawEnumItem) == string(jsonData.raw) {
-			return true, nil
+			return nil
 		}
 	}
 
 	// If we arrived here it means that the inspected value is not equal
 	// to any of the values in "enum".
-	return false, KeywordValidationError{
+	return KeywordValidationError{
 		"enum",
 		"inspected value does not match any of the items in \"enum\" array",
 	}
@@ -346,18 +346,18 @@ func (e enum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) 
 
 type _const json.RawMessage
 
-func (c *_const) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (c *_const) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if c == nil {
-		return true, nil
+		return nil
 	}
 
 	// Convert both of the byte arrays to string for more convenient
 	// comparison. If they are equal, the data is valid against "const".
 	if string(*c) == string(jsonData.raw) {
-		return true, nil
+		return nil
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"const",
 			"inspected value not equal to \"" + string(*c) + "\"",
 		}
@@ -391,25 +391,25 @@ func (c *_const) UnmarshalJSON(data []byte) error {
 
 type minLength int
 
-func (ml *minLength) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (ml *minLength) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if ml == nil {
-		return true, nil
+		return nil
 	}
 
 	// If jsonData is a string, validate its length,
 	// else, return a KeywordValidationError
 	if v, ok := jsonData.value.(string); ok {
 		if len(v) >= int(*ml) {
-			return true, nil
+			return nil
 		} else {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"minLength",
 				"inspected string is less than " + strconv.Itoa(int(*ml)),
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"minLength",
 			"inspected value is not a string",
 		}
@@ -418,25 +418,25 @@ func (ml *minLength) validate(jsonPath string, jsonData jsonData, rootSchemaId s
 
 type maxLength int
 
-func (ml *maxLength) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (ml *maxLength) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if ml == nil {
-		return true, nil
+		return nil
 	}
 
 	// If jsonData is a string, validate its length,
 	// else, return a KeywordValidationError
 	if v, ok := jsonData.value.(string); ok {
 		if len(v) <= int(*ml) {
-			return true, nil
+			return nil
 		} else {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"maxLength",
 				"inspected string is greater than " + strconv.Itoa(int(*ml)),
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"maxLength",
 			"inspected value is not a string",
 		}
@@ -445,10 +445,10 @@ func (ml *maxLength) validate(jsonPath string, jsonData jsonData, rootSchemaId s
 
 type pattern string
 
-func (p *pattern) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (p *pattern) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if p == nil {
-		return true, nil
+		return nil
 	}
 
 	// If jsonData is a string, validate its length,
@@ -458,22 +458,22 @@ func (p *pattern) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 
 		// The pattern or the value is not in the right format (string)
 		if err != nil {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"pattern",
 				err.Error(),
 			}
 		}
 
 		if match {
-			return true, nil
+			return nil
 		} else {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"pattern",
 				"value " + v + " does not match to pattern" + string(*p),
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"pattern",
 			"inspected value is not a string",
 		}
@@ -482,143 +482,143 @@ func (p *pattern) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 
 type format string
 
-func (f *format) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (f *format) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if f == nil {
-		return true, nil
+		return nil
 	}
 
 	if v, ok := jsonData.value.(string); ok {
 		switch v {
 		case FORMAT_DATE_TIME:
 			if _, err := formatchecker.IsValidDateTime(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"date-time incorrectly formatted " + err.Error(),
 				}
 			}
 		case FORMAT_DATE:
 			if _, err := formatchecker.IsValidDate(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"date incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_TIME:
 			if _, err := formatchecker.IsValidTime(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"time incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_EMAIL:
 			if _, err := formatchecker.IsValidEmail(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"email incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_IDN_EMAIL:
 			if _, err := formatchecker.IsValidIdnEmail(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"idn-email incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_HOSTNAME:
 			if _, err := formatchecker.IsValidHostname(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"hostname incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_IDN_HOSTNAME:
 			if _, err := formatchecker.IsValidIdnHostname(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"idn-hostname incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_IPV4:
 			if _, err := formatchecker.IsValidIPv4(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"ipv4 incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_IPV6:
 			if _, err := formatchecker.IsValidIPv6(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"ipv6 incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_URI:
 			if _, err := formatchecker.IsValidURI(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"uri incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_URI_REFERENCE:
 			if _, err := formatchecker.IsValidUriRef(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"uri-reference incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_IRI:
 			if _, err := formatchecker.IsValidIri(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"iri incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_IRI_REFERENCE:
 			if _, err := formatchecker.IsValidIriRef(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"iri-reference incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_URI_TEMPLATE:
 			if _, err := formatchecker.IsValidURITemplate(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"uri-template incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_JSON_POINTER:
 			if _, err := formatchecker.IsValidJSONPointer(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"json-pointer incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_RELATIVE_JSON_POINTER:
 			if _, err := formatchecker.IsValidRelJSONPointer(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"relative-json-pointer incorrectly formatted: " + err.Error(),
 				}
 			}
 		case "regex":
 			if _, err := formatchecker.IsValidRegex(v); err != nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"format",
 					"regex incorrectly formatted: " + err.Error(),
 				}
 			}
 		default:
-			return true, nil
+			return nil
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"pattern",
 			"inspected value is not a string",
 		}
 	}
-	return true, nil
+	return nil
 }
 
 /*********************/
@@ -627,18 +627,18 @@ func (f *format) validate(jsonPath string, jsonData jsonData, rootSchemaId strin
 
 type multipleOf float64
 
-func (mo *multipleOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (mo *multipleOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if mo == nil {
-		return true, nil
+		return nil
 	}
 
 	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.value.(float64); ok {
 		if math.Mod(v, float64(*mo)) == 0 {
-			return true, nil
+			return nil
 		} else {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"multipleOf",
 				"inspected value is not a multiple of " + strconv.FormatFloat(float64(*mo),
 					'f',
@@ -647,7 +647,7 @@ func (mo *multipleOf) validate(jsonPath string, jsonData jsonData, rootSchemaId 
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"multipleOf",
 			"inspected value is not an integer",
 		}
@@ -656,18 +656,18 @@ func (mo *multipleOf) validate(jsonPath string, jsonData jsonData, rootSchemaId 
 
 type minimum float64
 
-func (m *minimum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (m *minimum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if m == nil {
-		return true, nil
+		return nil
 	}
 
 	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.value.(float64); ok {
 		if v >= float64(*m) {
-			return true, nil
+			return nil
 		} else {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"minimum",
 				"inspected value is less than " + strconv.FormatFloat(float64(*m),
 					'f',
@@ -676,7 +676,7 @@ func (m *minimum) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"minimum",
 			"inspected value is not a number",
 		}
@@ -685,18 +685,18 @@ func (m *minimum) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 
 type maximum float64
 
-func (m *maximum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (m *maximum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if m == nil {
-		return true, nil
+		return nil
 	}
 
 	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.value.(float64); ok {
 		if v <= float64(*m) {
-			return true, nil
+			return nil
 		} else {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"maximum",
 				"inspected value is greater than " + strconv.FormatFloat(float64(*m),
 					'f',
@@ -705,7 +705,7 @@ func (m *maximum) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"maximum",
 			"inspected value is not a number",
 		}
@@ -714,18 +714,18 @@ func (m *maximum) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 
 type exclusiveMinimum float64
 
-func (em *exclusiveMinimum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (em *exclusiveMinimum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if em == nil {
-		return true, nil
+		return nil
 	}
 
 	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.value.(float64); ok {
 		if v > float64(*em) {
-			return true, nil
+			return nil
 		} else {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"exclusiveMinimum",
 				"inspected value is not greater than " + strconv.FormatFloat(float64(*em),
 					'f',
@@ -734,7 +734,7 @@ func (em *exclusiveMinimum) validate(jsonPath string, jsonData jsonData, rootSch
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"exclusiveMinimum",
 			"inspected value is not a number",
 		}
@@ -743,18 +743,18 @@ func (em *exclusiveMinimum) validate(jsonPath string, jsonData jsonData, rootSch
 
 type exclusiveMaximum float64
 
-func (em *exclusiveMaximum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (em *exclusiveMaximum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if em == nil {
-		return true, nil
+		return nil
 	}
 
 	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.value.(float64); ok {
 		if v < float64(*em) {
-			return true, nil
+			return nil
 		} else {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"exclusiveMaximum",
 				"inspected value is not less than " + strconv.FormatFloat(float64(*em),
 					'f',
@@ -763,7 +763,7 @@ func (em *exclusiveMaximum) validate(jsonPath string, jsonData jsonData, rootSch
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"exclusiveMaximum",
 			"inspected value is not a number",
 		}
@@ -776,10 +776,10 @@ func (em *exclusiveMaximum) validate(jsonPath string, jsonData jsonData, rootSch
 
 type properties map[string]*JsonSchema
 
-func (p properties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (p properties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if p == nil {
-		return true, nil
+		return nil
 	}
 
 	// First, we need to verify that jsonData is a json object
@@ -791,7 +791,7 @@ func (p properties) validate(jsonPath string, jsonData jsonData, rootSchemaId st
 			if _, ok := object[key]; ok {
 				valid, err := value.validateJsonData(jsonPath+"/"+key, jsonData.raw, rootSchemaId)
 				if err != nil {
-					return valid, err
+					return err
 				}
 			}
 		}
@@ -805,7 +805,7 @@ func (p properties) validate(jsonPath string, jsonData jsonData, rootSchemaId st
 
 	// If we arrived here, the validation of all the properties
 	// succeeded.
-	return true, nil
+	return nil
 }
 
 type additionalProperties struct {
@@ -814,10 +814,10 @@ type additionalProperties struct {
 	siblingPatternProperties *patternProperties
 }
 
-func (ap *additionalProperties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (ap *additionalProperties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if ap == nil {
-		return true, nil
+		return nil
 	}
 
 	// First we need to verify that jsonData is a json object.
@@ -835,7 +835,7 @@ func (ap *additionalProperties) validate(jsonPath string, jsonData jsonData, roo
 
 						// The pattern or the value is not in the right format (string)
 						if err != nil {
-							return false, KeywordValidationError{
+							return KeywordValidationError{
 								"additionalProperties",
 								err.Error(),
 							}
@@ -848,7 +848,7 @@ func (ap *additionalProperties) validate(jsonPath string, jsonData jsonData, roo
 
 							// If the validation fails, return an error.
 							if !valid {
-								return false, KeywordValidationError{
+								return KeywordValidationError{
 									"additionalProperties",
 									"property \"" +
 										property +
@@ -863,9 +863,9 @@ func (ap *additionalProperties) validate(jsonPath string, jsonData jsonData, roo
 
 		// If we arrived here, none of the properties failed in validation,
 		// and we return true.
-		return true, nil
+		return nil
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"properties",
 			"inspected value expected to be a json object",
 		}
@@ -874,10 +874,10 @@ func (ap *additionalProperties) validate(jsonPath string, jsonData jsonData, roo
 
 type required []string
 
-func (r required) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (r required) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if r == nil {
-		return true, nil
+		return nil
 	}
 
 	// First, we must verify that jsonData is a json object.
@@ -885,31 +885,31 @@ func (r required) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 		// For each property in the required list, check if it exists.
 		for _, property := range r {
 			if v[property] == nil {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"required",
 					"Missing required property - " + property,
 				}
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"required",
 			"all items \"required\" field must be strings",
 		}
 	}
 
 	// Is we arrived here, all the properties exist.
-	return true, nil
+	return nil
 }
 
 type propertyNames struct {
 	JsonSchema
 }
 
-func (pn *propertyNames) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (pn *propertyNames) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if pn == nil {
-		return true, nil
+		return nil
 	}
 
 	// First, we need to verify that jsonData is a json object
@@ -921,7 +921,7 @@ func (pn *propertyNames) validate(jsonPath string, jsonData jsonData, rootSchema
 
 			// If the property name could be validated against the scheme return an error
 			if !valid {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"propertyNames",
 					"property name \"" + property + "\" failed in validation: " + err.Error(),
 				}
@@ -930,9 +930,9 @@ func (pn *propertyNames) validate(jsonPath string, jsonData jsonData, rootSchema
 
 		// If we arrived here it means that all the property names validated successfully against
 		// the schema stored in "propertyNames".
-		return true, nil
+		return nil
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"propertyNames",
 			"inspected value expected to be a json object",
 		}
@@ -941,10 +941,10 @@ func (pn *propertyNames) validate(jsonPath string, jsonData jsonData, rootSchema
 
 type dependencies map[string]interface{}
 
-func (d dependencies) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (d dependencies) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if d == nil {
-		return true, nil
+		return nil
 	}
 
 	// First we need to verify that jsonData is a json object.
@@ -967,7 +967,7 @@ func (d dependencies) validate(jsonPath string, jsonData jsonData, rootSchemaId 
 						// Validate the whole data against the given sub-schema.
 						valid, err := v.validateJsonData("", jsonData.raw, rootSchemaId)
 						if !valid {
-							return false, KeywordValidationError{
+							return KeywordValidationError{
 								"dependencies",
 								"inspected value failed in validation against sub-schema given in \"" +
 									propertyName +
@@ -988,7 +988,7 @@ func (d dependencies) validate(jsonPath string, jsonData jsonData, rootSchemaId 
 							// Check if the required property name is missing. If it is,
 							// return an error.
 							if _, ok := object[requiredProperty]; !ok {
-								return false, KeywordValidationError{
+								return KeywordValidationError{
 									"dependencies",
 									"missing property \"" +
 										requiredProperty +
@@ -998,7 +998,7 @@ func (d dependencies) validate(jsonPath string, jsonData jsonData, rootSchemaId 
 								}
 							}
 						} else {
-							return false, KeywordValidationError{
+							return KeywordValidationError{
 								"dependencies",
 								"all items in dependency array must be strings, item at position " +
 									strconv.Itoa(index) +
@@ -1009,7 +1009,7 @@ func (d dependencies) validate(jsonPath string, jsonData jsonData, rootSchemaId 
 				}
 			default:
 				{
-					return false, KeywordValidationError{
+					return KeywordValidationError{
 						"dependencies",
 						"dependency value must be a json object or a json array",
 					}
@@ -1018,9 +1018,9 @@ func (d dependencies) validate(jsonPath string, jsonData jsonData, rootSchemaId 
 		}
 
 		// If we arrived here it means that all the validations succeeded.
-		return true, nil
+		return nil
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"dependencies",
 			"inspected value expected to be a json object",
 		}
@@ -1029,10 +1029,10 @@ func (d dependencies) validate(jsonPath string, jsonData jsonData, rootSchemaId 
 
 type patternProperties map[string]*JsonSchema
 
-func (pp patternProperties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (pp patternProperties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if pp == nil {
-		return true, nil
+		return nil
 	}
 
 	// First we need to verify that jsonData is a json object.
@@ -1046,7 +1046,7 @@ func (pp patternProperties) validate(jsonPath string, jsonData jsonData, rootSch
 
 				// The pattern or the value is not in the right format (string)
 				if err != nil {
-					return false, KeywordValidationError{
+					return KeywordValidationError{
 						"patternProperties",
 						err.Error(),
 					}
@@ -1059,7 +1059,7 @@ func (pp patternProperties) validate(jsonPath string, jsonData jsonData, rootSch
 
 					// If the validation fails, return an error.
 					if !valid {
-						return false, KeywordValidationError{
+						return KeywordValidationError{
 							"patternProperties",
 							"property \"" +
 								property +
@@ -1074,9 +1074,9 @@ func (pp patternProperties) validate(jsonPath string, jsonData jsonData, rootSch
 
 		// If we arrived here it means that none of the properties failed in
 		// validation against any of the given schemas.
-		return true, nil
+		return nil
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"patternProperties",
 			"inspected value expected to be a json object",
 		}
@@ -1085,10 +1085,10 @@ func (pp patternProperties) validate(jsonPath string, jsonData jsonData, rootSch
 
 type minProperties int
 
-func (mp *minProperties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (mp *minProperties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if mp == nil {
-		return true, nil
+		return nil
 	}
 
 	// First, we must verify that jsonData is a json object.
@@ -1098,15 +1098,15 @@ func (mp *minProperties) validate(jsonPath string, jsonData jsonData, rootSchema
 		// than minProperties.
 		// Else, return an error.
 		if len(v) >= int(*mp) {
-			return true, nil
+			return nil
 		} else {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"minProperties",
 				"inspected value must contains at least " + strconv.Itoa(int(*mp)) + " properties",
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"minProperties",
 			"inspected value must be a json object",
 		}
@@ -1115,10 +1115,10 @@ func (mp *minProperties) validate(jsonPath string, jsonData jsonData, rootSchema
 
 type maxProperties int
 
-func (mp *maxProperties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (mp *maxProperties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if mp == nil {
-		return true, nil
+		return nil
 	}
 
 	// First, we must verify that jsonData is a json object.
@@ -1130,7 +1130,7 @@ func (mp *maxProperties) validate(jsonPath string, jsonData jsonData, rootSchema
 		if len(v) <= int(*mp) {
 			return true, nil
 		} else {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"minProperties",
 				"inspected value may contains at most " +
 					strconv.Itoa(int(*mp)) +
@@ -1138,7 +1138,7 @@ func (mp *maxProperties) validate(jsonPath string, jsonData jsonData, rootSchema
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"minProperties",
 			"inspected value must be a json object",
 		}
@@ -1151,10 +1151,10 @@ func (mp *maxProperties) validate(jsonPath string, jsonData jsonData, rootSchema
 
 type items json.RawMessage
 
-func (i items) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (i items) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if i == nil {
-		return true, nil
+		return nil
 	}
 
 	// First, we need to verify that json Data is an array
@@ -1165,7 +1165,7 @@ func (i items) validate(jsonPath string, jsonData jsonData, rootSchemaId string)
 		// json object or json array
 		err := json.Unmarshal(i, &data)
 		if err != nil {
-			return false, err
+			return err
 		}
 
 		// Handle the value in items according to its json type.
@@ -1182,28 +1182,28 @@ func (i items) validate(jsonPath string, jsonData jsonData, rootSchemaId string)
 				// Unmarshal the rawSchema into the JsonSchema struct.
 				err = json.Unmarshal(i, &schema)
 				if err != nil {
-					return false, err
+					return err
 				}
 
 				// Iterate over the items in the inspected array and validate each
 				// item against the schema in "items" field.
 				for index := 0; index < len(array); index++ {
 					valid, err := schema.validateJsonData(jsonPath+"/"+strconv.Itoa(index), jsonData.raw, rootSchemaId)
-					if !valid {
-						return valid, err
+					if err != nil {
+						return err
 					}
 				}
 
 				// If we arrived here it means that all the items in the inspected array
 				// validated successfully against the given schema.
-				return true, nil
+				return nil
 			}
 		// If jsonData is a json array, which means that is holds multiple json schema objects,
 		// we validate each item in the inspected array against the schema at the same position.
 		case []interface{}:
 			{
 				if len(itemsField) > len(array) {
-					return false, KeywordValidationError{
+					return KeywordValidationError{
 						"items",
 						"when \"items\" field contains a list of Json Schema objects, the " +
 							"inspected array must contain at least the same amount of items",
@@ -1216,7 +1216,7 @@ func (i items) validate(jsonPath string, jsonData jsonData, rootSchemaId string)
 					// into JsonSchema instance.
 					rawSchema, err := json.Marshal(schemaFromItems)
 					if err != nil {
-						return false, err
+						return err
 					}
 
 					// This is the JsonSchema instance that should hold the current
@@ -1226,32 +1226,32 @@ func (i items) validate(jsonPath string, jsonData jsonData, rootSchemaId string)
 					// Unmarshal the rawSchema into the JsonSchema struct.
 					err = json.Unmarshal(rawSchema, &schema)
 					if err != nil {
-						return false, err
+						return err
 					}
 
 					// Validate the item against the schema at the same position.
 					valid, err := schema.validateJsonData(jsonPath+"/"+strconv.Itoa(index), jsonData.raw, rootSchemaId)
-					if !valid {
-						return valid, err
+					if err != nil {
+						return err
 					}
 				}
 
 				// If we arrived here it means that all the items in the inspected array
 				// validated successfully against corresponding schema.
-				return true, nil
+				return nil
 			}
 		// The default case indicates that the value in items field is not a json schema or
 		// a list of json schema.
 		default:
 			{
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"items",
 					"\"items\" field value in schema must be a valid Json Schema or an array of Json Schema",
 				}
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"items",
 			"inspected value expected to be a json array",
 		}
@@ -1268,17 +1268,17 @@ type additionalItems struct {
 	siblingItems *items
 }
 
-func (ai *additionalItems) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (ai *additionalItems) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if ai == nil {
-		return true, nil
+		return nil
 	}
 
 	// Unmarshal the sibling field "items" in order to check it's json type.
 	var siblingItems interface{}
 	err := json.Unmarshal([]byte(*ai.siblingItems), &siblingItems)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// If "items" is a json array, "additionalItems" needs to verify the items
@@ -1291,8 +1291,8 @@ func (ai *additionalItems) validate(jsonPath string, jsonData jsonData, rootSche
 			for index := range array[len(itemsArray):] {
 				// Validate the inspected item against the schema given in "additionalItems".
 				valid, err := ai.validateJsonData(jsonPath+"/"+strconv.Itoa(index), jsonData.raw, rootSchemaId)
-				if !valid {
-					return false, KeywordValidationError{
+				if err != nil {
+					return KeywordValidationError{
 						"additionalItems",
 						"item at position " +
 							strconv.Itoa(index) +
@@ -1303,9 +1303,9 @@ func (ai *additionalItems) validate(jsonPath string, jsonData jsonData, rootSche
 			}
 
 			// If we arrived here it means that no item failed in validation.
-			return true, nil
+			return nil
 		} else {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"additionalItems",
 				"inspected value expected to be a json array",
 			}
@@ -1313,7 +1313,7 @@ func (ai *additionalItems) validate(jsonPath string, jsonData jsonData, rootSche
 	} else {
 		// If "items" field is not an array of json schema, additionalItems
 		// is meaningless so we return true.
-		return true, nil
+		return nil
 	}
 }
 
@@ -1321,10 +1321,10 @@ type contains struct {
 	JsonSchema
 }
 
-func (c *contains) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (c *contains) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if c == nil {
-		return true, nil
+		return nil
 	}
 
 	// First, we need to verify that jsonData is a json array.
@@ -1335,14 +1335,14 @@ func (c *contains) validate(jsonPath string, jsonData jsonData, rootSchemaId str
 			// the array contains the required value.
 			valid, _ := (*c).validateJsonData(jsonPath+"/"+strconv.Itoa(index), jsonData.raw, rootSchemaId)
 			if valid {
-				return true, nil
+				return nil
 			}
 		}
 	}
 
 	// If we arrived here it means that we could not validate any of the array's
 	// items against the given schema.
-	return false, KeywordValidationError{
+	return KeywordValidationError{
 		"contains",
 		"could validate any of the inspected array's items against the given schema",
 	}
@@ -1350,10 +1350,10 @@ func (c *contains) validate(jsonPath string, jsonData jsonData, rootSchemaId str
 
 type minItems int
 
-func (mi *minItems) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (mi *minItems) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if mi == nil {
-		return true, nil
+		return nil
 	}
 
 	// First, we need to verify that jsonData is an array.
@@ -1361,15 +1361,15 @@ func (mi *minItems) validate(jsonPath string, jsonData jsonData, rootSchemaId st
 		// Check that the number of items in the array is equal to
 		// or greater than minItems.
 		if len(v) >= int(*mi) {
-			return true, nil
+			return nil
 		} else {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"minItems",
 				"inspected array must contain at least " + strconv.Itoa(int(*mi)) + " items",
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"minItems",
 			"inspected value expected to be json array",
 		}
@@ -1378,10 +1378,10 @@ func (mi *minItems) validate(jsonPath string, jsonData jsonData, rootSchemaId st
 
 type maxItems int
 
-func (mi *maxItems) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (mi *maxItems) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if mi == nil {
-		return true, nil
+		return nil
 	}
 
 	// First, we need to verify that jsonData is an array.
@@ -1389,15 +1389,15 @@ func (mi *maxItems) validate(jsonPath string, jsonData jsonData, rootSchemaId st
 		// Check that the number of items in the array is equal to
 		// or less than maxItems.
 		if len(v) <= int(*mi) {
-			return true, nil
+			return nil
 		} else {
-			return false, KeywordValidationError{
+			return KeywordValidationError{
 				"maxItems",
 				"inspected array must contain at most " + strconv.Itoa(int(*mi)) + " items",
 			}
 		}
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"maxItems",
 			"inspected value expected to be json array",
 		}
@@ -1406,10 +1406,10 @@ func (mi *maxItems) validate(jsonPath string, jsonData jsonData, rootSchemaId st
 
 type uniqueItems bool
 
-func (ui *uniqueItems) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (ui *uniqueItems) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if ui == nil {
-		return true, nil
+		return nil
 	}
 
 	// First, we need to verify that jsonData is an array.
@@ -1424,14 +1424,14 @@ func (ui *uniqueItems) validate(jsonPath string, jsonData jsonData, rootSchemaId
 			// and slices (json arrays) are not a hash-able values.
 			rawItem, err := json.Marshal(item)
 			if err != nil {
-				return false, err
+				return err
 			}
 
 			// If ok is true it means that the value exists in the map, which means
 			// we already met it in one of the previous iterations.
 			// Else, insert the item into the map as key, and the index as value.
 			if v, ok := uniqueSet[string(rawItem)]; ok {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"uniqueItems",
 					"the inspected array contains two equal items at indices: " +
 						strconv.Itoa(v) +
@@ -1445,9 +1445,9 @@ func (ui *uniqueItems) validate(jsonPath string, jsonData jsonData, rootSchemaId
 
 		// If we arrived here it means that we did not meat any item which is
 		// similar to another item in the array.
-		return true, nil
+		return nil
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"uniqueItems",
 			"inspected value expected to be json array",
 		}
@@ -1467,22 +1467,22 @@ type contentEncoding string
 
 type anyOf []*JsonSchema
 
-func (af anyOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (af anyOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if af == nil {
-		return true, nil
+		return nil
 	}
 
 	// Validate jsonData.raw against each of the schemas until on of them succeeds.
 	for _, schema := range af {
 		valid, err := schema.validateJsonData("", jsonData.raw, rootSchemaId)
 		if valid {
-			return valid, err
+			return err
 		}
 	}
 
 	// If we arrived here, the validation of jsonData failed against all schemas.
-	return false, KeywordValidationError{
+	return KeywordValidationError{
 		"anyOf",
 		"inspected value could not be validated against any of the given schemas",
 	}
@@ -1490,10 +1490,10 @@ func (af anyOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 
 type allOf []*JsonSchema
 
-func (af allOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (af allOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if af == nil {
-		return true, nil
+		return nil
 	}
 
 	// Validate jsonData.raw against each of the schemas.
@@ -1501,13 +1501,13 @@ func (af allOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 	for _, schema := range af {
 		valid, err := schema.validateJsonData("", jsonData.raw, rootSchemaId)
 		if !valid {
-			return valid, err
+			return err
 		}
 	}
 
 	// If we arrived here, the validation of jsonData succeeded against all
 	// given schemas.
-	return false, KeywordValidationError{
+	return KeywordValidationError{
 		"allOf",
 		"inspected value could not be validated against all of the given schemas",
 	}
@@ -1515,10 +1515,10 @@ func (af allOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 
 type oneOf []*JsonSchema
 
-func (of oneOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (of oneOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if of == nil {
-		return true, nil
+		return nil
 	}
 
 	var oneValidationAlreadySucceeded bool
@@ -1528,7 +1528,7 @@ func (of oneOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 		valid, _ := schema.validateJsonData("", jsonData.raw, rootSchemaId)
 		if valid {
 			if oneValidationAlreadySucceeded {
-				return false, KeywordValidationError{
+				return KeywordValidationError{
 					"oneOf",
 					"inspected data is valid against more than one given schema",
 				}
@@ -1539,10 +1539,10 @@ func (of oneOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 	}
 
 	if oneValidationAlreadySucceeded {
-		return true, nil
+		return nil
 	} else {
 		// If we arrived here, the validation of jsonData failed against all schemas.
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"oneOf",
 			"inspected value could not be validated against any of the given schemas",
 		}
@@ -1553,17 +1553,17 @@ type not struct {
 	JsonSchema
 }
 
-func (n *not) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (n *not) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if n == nil {
-		return true, nil
+		return nil
 	}
 
 	valid, _ := (*n).validateJsonData(jsonPath, jsonData.raw, rootSchemaId)
 	if !valid {
-		return true, nil
+		return nil
 	} else {
-		return false, KeywordValidationError{
+		return KeywordValidationError{
 			"not",
 			"inspected value did not fail on validation against the schema defined by this keyword",
 		}
@@ -1576,10 +1576,10 @@ type _if struct {
 	siblingElse *_else
 }
 
-func (i *_if) validate(jsonPath string, jsonData jsonData, rootSchemaId string) (bool, error) {
+func (i *_if) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
 	// If the receiver is nil, dont validate it (return true)
 	if i == nil {
-		return true, nil
+		return nil
 	}
 
 	// Validate the data against the given schema in "if".

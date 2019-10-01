@@ -5,5 +5,5 @@ type Validator interface {
 	LoadSchema(path string, method string, schema []byte) error
 
 	// Validate enforces the schema's rules on a piece of data.
-	Validate(path string, method string, body []byte) (bool, error)
+	Validate(path string, method string, body []byte) error
 }

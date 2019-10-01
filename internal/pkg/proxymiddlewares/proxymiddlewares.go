@@ -94,7 +94,7 @@ func PrintTargetResponseBody() middleman.Middleware {
 func ValidateRequest(path, method string, validator validators.Validator) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
-		_, err := validator.Validate(path, method, store["requestBody"].([]byte))
+		err := validator.Validate(path, method, store["requestBody"].([]byte))
 		if err != nil {
 			end()
 			return err
