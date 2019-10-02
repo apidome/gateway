@@ -1,18 +1,30 @@
 package jsonvalidator
 
-import "github.com/Creespye/caf/internal/pkg/configs"
+import (
+	"errors"
+	"github.com/Creespye/caf/internal/pkg/configs"
+)
 
 // JsonValidator is a struct that implements the Validator interface
 // and validates json objects according to a json schema
 type JsonValidator struct {
+	draft      string
 	schemaDict map[string]map[string]*RootJsonSchema
+}
+
+// NewJsonValidator returns a new instance of JsonValidator
+func NewJsonValidator(draft string) JsonValidator {
+	return JsonValidator{
+		draft,
+		make(map[string]map[string]*RootJsonSchema),
+	}
 }
 
 // LoadSchema is a function that handles addition of new schema to the
 // JsonValidator's schemas list
 func (jv JsonValidator) LoadSchema(path, method string, rawSchema []byte) error {
 	// Validate the given schema against draft-07 meta-schema.
-	err := validateJsonSchema(rawSchema)
+	err := validateJsonSchema(jv.draft, rawSchema)
 	if err != nil {
 		return err
 	}
@@ -42,25 +54,22 @@ func (jv JsonValidator) Validate(path string, method string, body []byte) error 
 	return jv.schemaDict[path][method].validateBytes(body)
 }
 
-// NewJsonValidator returns a new instance of JsonValidator
-func NewJsonValidator() JsonValidator {
-	return JsonValidator{
-		make(map[string]map[string]*RootJsonSchema),
-	}
-}
-
 // validateJsonSchema is a function that validates the schema's
 // structure according to Json Schema.
-func validateJsonSchema(rawSchema []byte) error {
+func validateJsonSchema(draft string, rawSchema []byte) error {
 	config, err := configs.GetConfiguration()
 	if err != nil {
 		return err
 	}
 
-	metaSchema, err := NewRootJsonSchema([]byte(config.General.JsonMetaSchema["draft-07"]))
-	if err != nil {
-		return err
-	}
+	if rawMetaSchema, ok := config.General.JsonMetaSchema[draft]; ok {
+		metaSchema, err := NewRootJsonSchema([]byte(rawMetaSchema))
+		if err != nil {
+			return err
+		}
 
-	return metaSchema.validateBytes(rawSchema)
+		return metaSchema.validateBytes(rawSchema)
+	} else {
+		return errors.New("invalid draft version - " + draft)
+	}
 }

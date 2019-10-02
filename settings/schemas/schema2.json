@@ -13,5 +13,12 @@
             "type": "integer"
         }
     },
-    "additionalProperties": true
+    "additionalProperties": true,
+    "if": {
+        "type": "object",
+        "$ref": "#/else"
+    },
+    "else": {
+        "$ref": "#/if"
+    }
 }

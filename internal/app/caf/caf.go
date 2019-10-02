@@ -97,7 +97,7 @@ func AddValidationMiddlewares(mm *middleman.Middleman, targets []configs.Target)
 			// Here we decide which validator to create according to the api's type.
 			switch api.Type {
 			case configs.TypeRest:
-				validator = jsonvalidator.NewJsonValidator()
+				validator = jsonvalidator.NewJsonValidator(api.Version)
 			default:
 				log.Print("[Proxy WARNING]: Invalid API Type - " + api.Type)
 			}

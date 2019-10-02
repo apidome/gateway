@@ -20,6 +20,7 @@
                 "apis": [
                     {
                         "type": "REST",
+                        "version": "draft-07",
                         "endpoints": [
                             {
                                 "path": "/apidojo/api/yahoo-finance1/details",
