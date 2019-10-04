@@ -57,6 +57,9 @@ func InitMiddleman(mm *Middleman, addr string, errHandler errorHandler) {
 	mm.httpServer.Addr = addr
 	mm.httpServer.TLSNextProto = tlsNextProto
 	mm.httpServer.Handler = http.HandlerFunc(mm.mainHandler)
+
+	mm.All("/.*", VariablesReader())
+	mm.All("/.*", ParametersReader())
 }
 
 // NewMiddleman returns a new instance of a middleman

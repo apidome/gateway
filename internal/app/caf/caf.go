@@ -34,6 +34,11 @@ func Start() {
 		":"+config.Out.Port,
 		middlewareErrorHandler)
 
+	reverseProxy.All("/.*", func(res http.ResponseWriter, req *http.Request, store middleman.Store, end middleman.End) error {
+
+		return nil
+	})
+
 	requestProxying(&reverseProxy, &prx)
 	responseProxying(&reverseProxy)
 
