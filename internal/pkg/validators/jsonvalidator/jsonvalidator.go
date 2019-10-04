@@ -1,8 +1,8 @@
 package jsonvalidator
 
 import (
-	"errors"
 	"github.com/Creespye/caf/internal/pkg/configs"
+	"github.com/pkg/errors"
 )
 
 // JsonValidator is a struct that implements the Validator interface
@@ -26,7 +26,7 @@ func (jv JsonValidator) LoadSchema(path, method string, rawSchema []byte) error 
 	// Validate the given schema against draft-07 meta-schema.
 	err := validateJsonSchema(jv.draft, rawSchema)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "validation against meta-schema failed")
 	}
 
 	// If the schema is valid make a new map and insert the new schema to it.
@@ -38,7 +38,7 @@ func (jv JsonValidator) LoadSchema(path, method string, rawSchema []byte) error 
 	// Create a new JsonSchema object.
 	schema, err := NewRootJsonSchema(rawSchema)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create a RootJsonSchema instance")
 	}
 
 	// Add the schema to the appropriate map according to its path and
@@ -59,17 +59,17 @@ func (jv JsonValidator) Validate(path string, method string, body []byte) error 
 func validateJsonSchema(draft string, rawSchema []byte) error {
 	config, err := configs.GetConfiguration()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not access configuration module")
 	}
 
 	if rawMetaSchema, ok := config.General.JsonMetaSchema[draft]; ok {
 		metaSchema, err := NewRootJsonSchema([]byte(rawMetaSchema))
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to create a RootJsonSchema instance for meta-schema - "+draft)
 		}
 
 		return metaSchema.validateBytes(rawSchema)
 	} else {
-		return errors.New("invalid draft version - " + draft)
+		return InvalidDraftError(draft)
 	}
 }

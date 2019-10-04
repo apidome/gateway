@@ -38,3 +38,9 @@ type SchemaCompilationError struct {
 func (e SchemaCompilationError) Error() string {
 	return fmt.Sprintf("schema compilation failed in path " + e.path + ": " + e.err)
 }
+
+type InvalidDraftError string
+
+func (e InvalidDraftError) Error() string {
+	return fmt.Sprintf("draft " + string(e) + " does not exist")
+}
