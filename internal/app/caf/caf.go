@@ -42,6 +42,8 @@ func Start() {
 	requestProxying(&reverseProxy, &prx)
 	responseProxying(&reverseProxy)
 
+	reverseProxy.All("/.*", defaultMiddleware())
+
 	log.Println("[Reverse proxy is listening on]:", config.Out.Port)
 
 	if config.Out.SSL {
@@ -87,6 +89,14 @@ func middlewareErrorHandler(path, method string, err error) bool {
 		"[Method]:", method)
 
 	return false
+}
+
+func defaultMiddleware() middleman.Middleware {
+	return func(res http.ResponseWriter, req *http.Request,
+		store middleman.Store, end middleman.End) error {
+		res.WriteHeader(404)
+		return nil
+	}
 }
 
 // AddValidationMiddlewares gets a reference to a Middleman and a slice of targets
