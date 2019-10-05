@@ -2,9 +2,9 @@ package jsonvalidator
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/Creespye/caf/internal/pkg/jsonwalker"
+	"github.com/pkg/errors"
 	"strconv"
 	"strings"
 )
@@ -321,7 +321,7 @@ func (js *JsonSchema) scanSchema(schemaPath string, rootSchemaID string) error {
 			rawDependency, err := json.Marshal(v)
 			if err != nil {
 				return SchemaCompilationError{
-					schemaPath,
+					schemaPath + "/dependencies" + key,
 					err.Error(),
 				}
 			}
@@ -329,12 +329,15 @@ func (js *JsonSchema) scanSchema(schemaPath string, rootSchemaID string) error {
 			// Create a new JsonSchema instance.
 			err = json.Unmarshal(rawDependency, subSchema)
 			if err != nil {
-				return err
+				return SchemaCompilationError{
+					schemaPath,
+					err.Error(),
+				}
 			}
 
 			err = subSchema.scanSchema(schemaPath+"/dependencies"+key, rootSchemaID)
 			if err != nil {
-				return nil
+				return err
 			}
 
 			// Save the new JsonSchema as the dependency itself.
@@ -381,7 +384,7 @@ func (js *JsonSchema) scanSchema(schemaPath string, rootSchemaID string) error {
 				rawSubSchema, err := json.Marshal(v)
 				if err != nil {
 					return SchemaCompilationError{
-						schemaPath,
+						schemaPath + "/items",
 						err.Error(),
 					}
 				}
@@ -391,18 +394,21 @@ func (js *JsonSchema) scanSchema(schemaPath string, rootSchemaID string) error {
 				// Create a new JsonSchema instance.
 				err = json.Unmarshal(rawSubSchema, subSchema)
 				if err != nil {
-					return err
+					return SchemaCompilationError{
+						schemaPath + "/items",
+						err.Error(),
+					}
 				}
 
 				err = subSchema.scanSchema(schemaPath+"/items", rootSchemaID)
 				if err != nil {
-					return nil
+					return err
 				}
 
 				js.Items, err = json.Marshal(subSchema)
 				if err != nil {
 					return SchemaCompilationError{
-						schemaPath,
+						schemaPath + "/items",
 						err.Error(),
 					}
 				}
@@ -416,7 +422,7 @@ func (js *JsonSchema) scanSchema(schemaPath string, rootSchemaID string) error {
 					rawSubSchema, err := json.Marshal(value)
 					if err != nil {
 						return SchemaCompilationError{
-							schemaPath,
+							schemaPath + "/items" + strconv.Itoa(index),
 							err.Error(),
 						}
 					}
@@ -426,7 +432,10 @@ func (js *JsonSchema) scanSchema(schemaPath string, rootSchemaID string) error {
 					// Create a new JsonSchema instance.
 					err = json.Unmarshal(rawSubSchema, subSchema)
 					if err != nil {
-						return err
+						return SchemaCompilationError{
+							path: schemaPath + "/items" + strconv.Itoa(index),
+							err:  "",
+						}
 					}
 
 					err = subSchema.scanSchema(schemaPath+"/items"+strconv.Itoa(index), rootSchemaID)
@@ -442,7 +451,7 @@ func (js *JsonSchema) scanSchema(schemaPath string, rootSchemaID string) error {
 				js.Items, err = json.Marshal(v)
 				if err != nil {
 					return SchemaCompilationError{
-						schemaPath,
+						schemaPath + "/items",
 						err.Error(),
 					}
 				}
@@ -622,7 +631,7 @@ func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte, rootSchema
 	if err != nil {
 		fmt.Println("[JsonSchema DEBUG] validateJsonData() " +
 			"failed while trying to create JsonPointer " + jsonPath)
-		return err
+		return errors.Wrap(err, "JsonPointer creation failed")
 	}
 
 	// Get the piece of json that the current schema describes.
@@ -630,13 +639,13 @@ func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte, rootSchema
 	if err != nil {
 		fmt.Println("[JsonSchema DEBUG] validateJsonData() " +
 			"failed while trying to evaluate a JsonPointer " + jsonPath)
-		return err
+		return errors.Wrap(err, "JsonPointer evaluation failed")
 	}
 
 	// Marshal the evaluated value to a byte array.
 	newBytes, err := json.Marshal(value)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "data marshaling after JsonPointer evaluation failed")
 	}
 
 	// Create a new json data container
@@ -647,7 +656,7 @@ func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte, rootSchema
 
 	// Get a slice of all of JsonSchema's field in order to iterate them
 	// and call each of their validate() functions.
-	keywordValidators := getNonNilKeywordsMap(js)
+	keywordValidators := getNonNilKeywordsSlice(js)
 
 	// Iterate over the keywords.
 	for _, keyword := range keywordValidators {
@@ -679,6 +688,139 @@ func (js *JsonSchema) validateJsonData(jsonPath string, bytes []byte, rootSchema
 
 // getNonNilKeywordsMap gets a reference to JsonSchema and returns a
 // map of the schema's keywords that are not nil.
+func getNonNilKeywordsSlice(js *JsonSchema) []keywordValidator {
+	var slice []keywordValidator
+
+	if js.Type != nil {
+		slice = append(slice, js.Type)
+	}
+
+	if js.Const != nil {
+		slice = append(slice, js.Const)
+	}
+
+	if js.Enum != nil {
+		slice = append(slice, js.Enum)
+	}
+
+	if js.MinLength != nil {
+		slice = append(slice, js.MinLength)
+	}
+
+	if js.MaxLength != nil {
+		slice = append(slice, js.MaxLength)
+	}
+
+	if js.Pattern != nil {
+		slice = append(slice, js.Pattern)
+	}
+
+	if js.Format != nil {
+		slice = append(slice, js.Format)
+	}
+
+	if js.MultipleOf != nil {
+		slice = append(slice, js.MultipleOf)
+	}
+
+	if js.Minimum != nil {
+		slice = append(slice, js.Minimum)
+	}
+
+	if js.Maximum != nil {
+		slice = append(slice, js.Maximum)
+	}
+
+	if js.ExclusiveMinimum != nil {
+		slice = append(slice, js.ExclusiveMinimum)
+	}
+
+	if js.ExclusiveMaximum != nil {
+		slice = append(slice, js.ExclusiveMaximum)
+	}
+
+	if js.Required != nil {
+		slice = append(slice, js.Required)
+	}
+
+	if js.PropertyNames != nil {
+		slice = append(slice, js.PropertyNames)
+	}
+
+	if js.Properties != nil {
+		slice = append(slice, js.Properties)
+	}
+
+	if js.AdditionalProperties != nil {
+		slice = append(slice, js.AdditionalProperties)
+	}
+
+	if js.PatternProperties != nil {
+		slice = append(slice, js.PatternProperties)
+	}
+
+	if js.Dependencies != nil {
+		slice = append(slice, js.Dependencies)
+	}
+
+	if js.MinProperties != nil {
+		slice = append(slice, js.MinProperties)
+	}
+
+	if js.MaxProperties != nil {
+		slice = append(slice, js.MaxProperties)
+	}
+
+	if js.Items != nil {
+		slice = append(slice, js.Items)
+	}
+
+	if js.Contains != nil {
+		slice = append(slice, js.Contains)
+	}
+
+	if js.AdditionalItems != nil {
+		slice = append(slice, js.AdditionalItems)
+	}
+
+	if js.MinItems != nil {
+		slice = append(slice, js.MinItems)
+	}
+
+	if js.MaxItems != nil {
+		slice = append(slice, js.MaxItems)
+	}
+
+	if js.UniqueItems != nil {
+		slice = append(slice, js.UniqueItems)
+	}
+
+	if js.AnyOf != nil {
+		slice = append(slice, js.AnyOf)
+	}
+
+	if js.AllOf != nil {
+		slice = append(slice, js.AllOf)
+	}
+
+	if js.OneOf != nil {
+		slice = append(slice, js.OneOf)
+	}
+
+	if js.Not != nil {
+		slice = append(slice, js.Not)
+	}
+
+	if js.If != nil {
+		slice = append(slice, js.If)
+	}
+
+	// Return the map.
+	return slice
+}
+
+// getNonNilKeywordsSlice gets a reference to JsonSchema and returns a
+// slice of the schema's keywords that are not nil.
 func getNonNilKeywordsMap(js *JsonSchema) map[string]keywordValidator {
 	// Initialize a new map.
 	m := make(map[string]keywordValidator)

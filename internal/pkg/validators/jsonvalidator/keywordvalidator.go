@@ -107,6 +107,7 @@ func (r ref) validateByRef(jsonPath string, jsonData []byte, rootSchemaID string
 			} else {
 				return errors.New("TODO: implement new error type - sub-schema " + fragment +
 					"in root schema " + schemaURI + " does not exist")
+
 			}
 		} else {
 			return rootSchema.validateJsonData(jsonPath, jsonData, rootSchemaID)
@@ -1108,10 +1109,6 @@ func (i items) validate(jsonPath string, jsonData jsonData, rootSchemaId string)
 						return err
 					}
 				}
-
-				// If we arrived here it means that all the items in the inspected array
-				// validated successfully against the given schema.
-				return nil
 			}
 		// If jsonData is a json array, which means that is holds multiple json schema objects,
 		// we validate each item in the inspected array against the schema at the same position.
@@ -1150,10 +1147,6 @@ func (i items) validate(jsonPath string, jsonData jsonData, rootSchemaId string)
 						return err
 					}
 				}
-
-				// If we arrived here it means that all the items in the inspected array
-				// validated successfully against corresponding schema.
-				return nil
 			}
 		// The default case indicates that the value in items field is not a json schema or
 		// a list of json schema.
@@ -1165,12 +1158,11 @@ func (i items) validate(jsonPath string, jsonData jsonData, rootSchemaId string)
 				}
 			}
 		}
-	} else {
-		return KeywordValidationError{
-			"items",
-			"inspected value expected to be a json array",
-		}
 	}
+
+	// If we arrived here it means that all the items in the inspected array
+	// validated successfully against the given schema.
+	return nil
 }
 
 func (i *items) UnmarshalJSON(data []byte) error {
