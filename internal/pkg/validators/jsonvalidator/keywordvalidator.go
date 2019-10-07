@@ -462,7 +462,7 @@ func (f *format) validate(jsonPath string, jsonData jsonData, rootSchemaId strin
 	}
 
 	if v, ok := jsonData.value.(string); ok {
-		switch v {
+		switch string(*f) {
 		case FORMAT_DATE_TIME:
 			if _, err := formatchecker.IsValidDateTime(v); err != nil {
 				return KeywordValidationError{
