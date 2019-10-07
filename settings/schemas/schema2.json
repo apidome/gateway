@@ -1,8 +1,12 @@
 {
     "$id": "http://api.example.com/profile2.json#",
-    "type": "object",
+    "type": ["object", "array"],
+    "const": {
+        "a": 6
+    },
     "properties": {
         "name": {
+            "$ref": "#",
             "type": "string",
             "minLength": 1,
             "maxLength": 64
@@ -13,12 +17,5 @@
             "type": "integer"
         }
     },
-    "additionalProperties": true,
-    "if": {
-        "type": "object",
-        "$ref": "#/else"
-    },
-    "else": {
-        "$ref": "#/if"
-    }
+    "additionalProperties": true
 }

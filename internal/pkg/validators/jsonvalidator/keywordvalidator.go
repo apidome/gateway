@@ -83,8 +83,9 @@ type keywordValidator interface {
 type ref string
 
 func (r ref) validateByRef(jsonPath string, jsonData []byte, rootSchemaID string) error {
-	schemaURI := strings.Split(string(r), "#")[0]
-	fragment := strings.Split(string(r), "#")[1]
+	splittedRef := strings.Split(string(r), "#")
+	schemaURI := splittedRef[0]
+	fragment := splittedRef[1]
 
 	// If the schemaURI is empty string it means that the reference points to a schema
 	// in the local schema (for example #/definitions/x), so we want to use the rootSchemaID
@@ -823,10 +824,10 @@ func (r required) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 	}
 
 	// First, we must verify that jsonData is a json object.
-	if v, ok := jsonData.value.(map[string]interface{}); ok {
+	if object, ok := jsonData.value.(map[string]interface{}); ok {
 		// For each property in the required list, check if it exists.
 		for _, property := range r {
-			if v[property] == nil {
+			if object[property] == nil {
 				return KeywordValidationError{
 					"required",
 					"Missing required property - " + property,
@@ -1183,7 +1184,7 @@ func (ai *additionalItems) validate(jsonPath string, jsonData jsonData, rootSche
 
 	// Unmarshal the sibling field "items" in order to check it's json type.
 	var siblingItems interface{}
-	err := json.Unmarshal([]byte(*ai.siblingItems), &siblingItems)
+	err := json.Unmarshal(*ai.siblingItems, &siblingItems)
 	if err != nil {
 		return err
 	}
@@ -1217,11 +1218,11 @@ func (ai *additionalItems) validate(jsonPath string, jsonData jsonData, rootSche
 				"inspected value expected to be a json array",
 			}
 		}
-	} else {
-		// If "items" field is not an array of json schema, additionalItems
-		// is meaningless so we return true.
-		return nil
 	}
+
+	// If "items" field is not an array of json schema, additionalItems
+	// is meaningless so we return true.
+	return nil
 }
 
 type contains struct {

@@ -164,10 +164,12 @@ type JsonSchema struct {
 	// if any.
 	Items items `json:"items,omitempty"`
 
-	// The value of this keyword MUST be a boolean.
-	// If this keyword has boolean value false, the instance validates
-	// successfully. If it has boolean value true, the instance validates
-	// successfully if all of its elements are unique.
+	// The value of this keyword MUST be a valid JSON Schema.
+	// An array instance is valid against "contains" if at least one of its
+	// elements is valid against the given schema. Note that when collecting
+	// annotations, the subschema MUST be applied to every array element even
+	// after the first match has been found. This is to ensure that all
+	// possible annotations are collected.
 	Contains *contains `json:"contains,omitempty"`
 
 	// The value of "additionalItems" MUST be a valid JSON Schema.
