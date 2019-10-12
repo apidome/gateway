@@ -44,3 +44,18 @@ type InvalidDraftError string
 func (e InvalidDraftError) Error() string {
 	return fmt.Sprintf("draft " + string(e) + " does not exist")
 }
+
+type InvalidReferenceError struct {
+	schemaURI string
+	fragment  string
+	err       string
+}
+
+func (e InvalidReferenceError) Error() string {
+	fragment := "/"
+	if e.fragment != "" {
+		fragment = e.fragment
+	}
+
+	return fmt.Sprintf(e.err + ": schema id - " + e.schemaURI + ", fragment - " + fragment)
+}

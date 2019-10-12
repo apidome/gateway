@@ -1,20 +1,11 @@
 {
     "$id": "http://api.example.com/profile2.json#",
     "type": ["object", "array"],
-    "const": {
-        "a": 6
-    },
     "properties": {
         "name": {
-            "$ref": "#",
             "type": "string",
             "minLength": 1,
             "maxLength": 64
-        }
-    },
-    "patternProperties": {
-        "^ag": {
-            "type": "integer"
         }
     },
     "additionalProperties": true

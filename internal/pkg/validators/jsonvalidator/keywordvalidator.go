@@ -2,7 +2,6 @@ package jsonvalidator
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/Creespye/caf/internal/pkg/validators/formatchecker"
 	"math"
 	"regexp"
@@ -101,20 +100,26 @@ func (r ref) validateByRef(jsonPath string, jsonData []byte, rootSchemaID string
 		// If the fragment is an empty fragment, validate the data against the root-schema.
 		// Else, validate the data against the sub-schema that the fragment points to.
 		if fragment != "" {
-			// If the referenced sub-schema exists, validate the data againt it.
+			// If the referenced sub-schema exists, validate the data against it.
 			// Else, return an error
 			if subSchema, ok := rootSchema.subSchemaMap[fragment]; ok {
 				return subSchema.validateJsonData(jsonPath, jsonData, rootSchemaID)
 			} else {
-				return errors.New("TODO: implement new error type - sub-schema " + fragment +
-					"in root schema " + schemaURI + " does not exist")
-
+				return InvalidReferenceError{
+					schemaURI: schemaURI,
+					fragment:  fragment,
+					err:       "could not find fragment in the referenced root schema",
+				}
 			}
 		} else {
 			return rootSchema.validateJsonData(jsonPath, jsonData, rootSchemaID)
 		}
 	} else {
-		return errors.New("TODO: implement new error type - root-schema " + schemaURI + "does not exist")
+		return InvalidReferenceError{
+			schemaURI: schemaURI,
+			fragment:  fragment,
+			err:       "could not find the referenced root schema",
+		}
 	}
 }
 
