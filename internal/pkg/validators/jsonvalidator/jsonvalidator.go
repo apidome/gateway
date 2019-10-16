@@ -13,8 +13,8 @@ type JsonValidator struct {
 }
 
 // NewJsonValidator returns a new instance of JsonValidator
-func NewJsonValidator(draft string) JsonValidator {
-	return JsonValidator{
+func NewJsonValidator(draft string) *JsonValidator {
+	return &JsonValidator{
 		draft,
 		make(map[string]map[string]*RootJsonSchema),
 	}
