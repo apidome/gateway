@@ -13,11 +13,11 @@ type JsonValidator struct {
 }
 
 // NewJsonValidator returns a new instance of JsonValidator
-func NewJsonValidator(draft string) *JsonValidator {
+func NewJsonValidator(draft string) (*JsonValidator, error) {
 	return &JsonValidator{
 		draft,
 		make(map[string]map[string]*RootJsonSchema),
-	}
+	}, nil
 }
 
 // LoadSchema is a function that handles addition of new schema to the
