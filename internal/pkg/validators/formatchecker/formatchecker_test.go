@@ -47,3 +47,42 @@ func TestIsValidDateTime(t *testing.T) {
 		}
 	}
 }
+
+func TestIsValidDate(t *testing.T) {
+	testCases := []test{
+		{
+			data:  "1963-06-19",
+			valid: true,
+		},
+		{
+			data:  "06/19/1963",
+			valid: false,
+		},
+		{
+			data:  "02-2002",
+			valid: false,
+		},
+		{
+			data:  "2010-350",
+			valid: false,
+		},
+	}
+
+	t.Log("Given the need to test date format")
+	{
+		for index, testCase := range testCases {
+			t.Logf("\tTest %d: When trying to format %s", index, testCase.data)
+			{
+				if valid, _ := formatchecker.IsValidDate(testCase.data); valid != testCase.valid {
+					var validate string
+					if !testCase.valid {
+						validate = " not"
+					}
+					t.Errorf("\t%s\tShould%s be valid", failed, validate)
+				} else {
+					t.Logf("\t%s\tvalid = %t", succeed, testCase.valid)
+				}
+			}
+		}
+	}
+}
