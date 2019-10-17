@@ -1,9 +1,5 @@
 {
-    "general": {
-        "jsonMetaSchema": {
-            "draft-07": "meta-schemas/draft-07.json"
-        }
-    },
+    "general": {},
     "out": {
         "port": "3000",
         "ssl": true,

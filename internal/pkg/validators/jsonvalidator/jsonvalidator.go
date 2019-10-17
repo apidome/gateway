@@ -1,8 +1,11 @@
 package jsonvalidator
 
 import (
-	"github.com/Creespye/caf/internal/pkg/configs"
 	"github.com/pkg/errors"
+	"io/ioutil"
+	"os"
+	"path"
+	"runtime"
 )
 
 // JsonValidator is a struct that implements the Validator interface
@@ -57,19 +60,32 @@ func (jv JsonValidator) Validate(path string, method string, body []byte) error 
 // validateJsonSchema is a function that validates the schema's
 // structure according to Json Schema.
 func validateJsonSchema(draft string, rawSchema []byte) error {
-	config, err := configs.GetConfiguration()
+	// Get the path of the current go file (including the path inside
+	// the project).
+	var absolutePath string
+	if _, filename, _, ok := runtime.Caller(0); ok {
+		absolutePath = path.Dir(filename)
+	}
+
+	// Open the meta-schema file.
+	file, err := os.Open(absolutePath + "/meta-schemas/" + draft)
 	if err != nil {
-		return errors.Wrap(err, "could not access configuration module")
+		return errors.Wrap(err, "json schema version \""+draft+"\" is not supported")
 	}
 
-	if rawMetaSchema, ok := config.General.JsonMetaSchema[draft]; ok {
-		metaSchema, err := NewRootJsonSchema([]byte(rawMetaSchema))
-		if err != nil {
-			return errors.Wrap(err, "failed to create a RootJsonSchema instance for meta-schema - "+draft)
-		}
+	defer file.Close()
 
-		return metaSchema.validateBytes(rawSchema)
-	} else {
-		return InvalidDraftError(draft)
+	// Read the data from the file.
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return errors.Wrap(err, "could not read meta-schema from file")
 	}
+
+	// Create a new RootJsonSchema.
+	metaSchema, err := NewRootJsonSchema(bytes)
+	if err != nil {
+		return errors.Wrap(err, "failed to create a RootJsonSchema instance for meta-schema - "+draft)
+	}
+
+	return metaSchema.validateBytes(rawSchema)
 }

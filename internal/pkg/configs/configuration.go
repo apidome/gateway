@@ -76,17 +76,6 @@ func readConf(config *Configuration) error {
 		}
 	}
 
-	for draft, metaSchemaPath := range config.General.JsonMetaSchema {
-		// Read the data from file.
-		metaSchema, err := readDataFromFile(SettingsFolderPath + metaSchemaPath)
-		if err != nil {
-			return err
-		}
-
-		// Set the actual schema in the endpoint.
-		config.General.JsonMetaSchema[draft] = string(metaSchema)
-	}
-
 	config.Out.CertificatePath =
 		SettingsFolderPath + config.Out.CertificatePath
 
