@@ -1,35 +1,88 @@
-package formatchecker
+package formatchecker_test
 
-import "testing"
+import (
+	"github.com/Creespye/caf/internal/pkg/validators/formatchecker"
+	"testing"
+)
 
-type data struct {
+type test struct {
 	data  string
 	valid bool
 }
 
-func TestIsValidDateTime(t *testing.T) {
-	slideData := make([]data, 0)
-	t1 := data{
-		data:  "1985-04-12T23:20:50.52Z",
-		valid: true,
-	}
-	t2 := data{
-		data:  "1996-12-19T16:39:57-08:00",
-		valid: true,
-	}
-	t3 := data{
-		data:  "06/19/1963 08:30:06 PST",
-		valid: false,
-	}
-	slideData = append(slideData, t1, t2, t3)
+const succeed = "V"
+const failed = "X"
 
-	for _, d := range slideData {
-		if valid, _ := IsValidDateTime(d.data); valid != d.valid {
-			var valid string
-			if !d.valid {
-				valid = " not"
+func TestIsValidDateTime(t *testing.T) {
+	testCases := []test{
+		{
+			data:  "1985-04-12T23:20:50.52Z",
+			valid: true,
+		},
+		{
+			data:  "1996-12-19T16:39:57-08:00",
+			valid: true,
+		},
+		{
+			data:  "06/19/1963 08:30:06 PST",
+			valid: false,
+		},
+	}
+
+	t.Log("Given the need to test date-time format")
+	{
+		for index, testCase := range testCases {
+			t.Logf("\tTest %d: When trying to format %s", index, testCase.data)
+			{
+				if valid, _ := formatchecker.IsValidDateTime(testCase.data); valid != testCase.valid {
+					var validate string
+					if !testCase.valid {
+						validate = " not"
+					}
+					t.Errorf("\t%s\tShould%s be valid", failed, validate)
+				} else {
+					t.Logf("\t%s\tvalid = %t", succeed, testCase.valid)
+				}
 			}
-			t.Errorf("validate %s against date-time expected to%s be valid", d.data, valid)
+		}
+	}
+}
+
+func TestIsValidDate(t *testing.T) {
+	testCases := []test{
+		{
+			data:  "1963-06-19",
+			valid: true,
+		},
+		{
+			data:  "06/19/1963",
+			valid: false,
+		},
+		{
+			data:  "02-2002",
+			valid: false,
+		},
+		{
+			data:  "2010-350",
+			valid: false,
+		},
+	}
+
+	t.Log("Given the need to test date format")
+	{
+		for index, testCase := range testCases {
+			t.Logf("\tTest %d: When trying to format %s", index, testCase.data)
+			{
+				if valid, _ := formatchecker.IsValidDate(testCase.data); valid != testCase.valid {
+					var validate string
+					if !testCase.valid {
+						validate = " not"
+					}
+					t.Errorf("\t%s\tShould%s be valid", failed, validate)
+				} else {
+					t.Logf("\t%s\tvalid = %t", succeed, testCase.valid)
+				}
+			}
 		}
 	}
 }
