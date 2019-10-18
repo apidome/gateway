@@ -55,8 +55,8 @@ func TestNewJsonValidator(t *testing.T) {
 func TestLoadSchema(t *testing.T) {
 	testCases := []struct {
 		description string
-		path        string
 		method      string
+		path        string
 		schema      string
 		valid       bool
 	}{

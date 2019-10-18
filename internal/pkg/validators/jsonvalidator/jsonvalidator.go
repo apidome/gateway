@@ -4,8 +4,6 @@ import (
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
-	"path"
-	"runtime"
 )
 
 // JsonValidator is a struct that implements the Validator interface
@@ -16,8 +14,8 @@ type JsonValidator struct {
 }
 
 // NewJsonValidator returns a new instance of JsonValidator
-func NewJsonValidator(draft string) (*JsonValidator, error) {
-	return &JsonValidator{
+func NewJsonValidator(draft string) (JsonValidator, error) {
+	return JsonValidator{
 		draft,
 		make(map[string]map[string]*RootJsonSchema),
 	}, nil
@@ -62,10 +60,10 @@ func (jv JsonValidator) Validate(path string, method string, body []byte) error 
 func validateJsonSchema(draft string, rawSchema []byte) error {
 	// Get the path of the current go file (including the path inside
 	// the project).
-	var absolutePath string
-	if _, filename, _, ok := runtime.Caller(0); ok {
-		absolutePath = path.Dir(filename)
-	}
+	var absolutePath = "C:/Users/Itay/Projects/src/github.com/Creespye/caf/internal/pkg/validators/jsonvalidator"
+	//if _, filename, _, ok := runtime.Caller(0); ok {
+	//	absolutePath = path.Dir(filename)
+	//}
 
 	// Open the meta-schema file.
 	file, err := os.Open(absolutePath + "/meta-schemas/" + draft)
