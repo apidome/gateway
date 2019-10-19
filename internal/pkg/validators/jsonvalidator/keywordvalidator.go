@@ -580,7 +580,7 @@ func (f *format) validate(jsonPath string, jsonData jsonData, rootSchemaId strin
 					"relative-json-pointer incorrectly formatted: " + err.Error(),
 				}
 			}
-		case "regex":
+		case FORMAT_REGEX:
 			if err := formatchecker.IsValidRegex(v); err != nil {
 				return KeywordValidationError{
 					"format",
