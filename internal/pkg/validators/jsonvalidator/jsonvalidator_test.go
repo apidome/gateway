@@ -89,11 +89,11 @@ func TestLoadSchema(t *testing.T) {
 			true,
 		},
 		{
-			"a json object that is not a json schema",
+			"a json object that contains only a non-standard keywords",
 			"GET",
 			"/v1/a",
 			"{\"someNonStandardKeyword\": 4}",
-			false,
+			true,
 		},
 		{
 			"any json string",
@@ -142,5 +142,178 @@ func TestLoadSchema(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
+	testCases := []struct {
+		description string
+		method      string
+		path        string
+		schema      string
+		data        string
+		valid       bool
+	}{
+		{
+			"",
+			"GET",
+			"/v1/a",
+			`
+				{
+					
+				}
+			`,
+			`
+				{
+					
+				}	
+			`,
+			true,
+		},
+		{
+			"",
+			"GET",
+			"/v1/b",
+			`
+				{
+					
+				}
+			`,
+			`
+				{
+					
+				}	
+			`,
+			true,
+		},
+		{
+			"",
+			"GET",
+			"/v1/c",
+			`
+				{
+					
+				}
+			`,
+			`
+				{
+					
+				}	
+			`,
+			true,
+		},
+		{
+			"",
+			"GET",
+			"/v1/d",
+			`
+				{
+					
+				}
+			`,
+			`
+				{
+					
+				}	
+			`,
+			true,
+		},
+		{
+			"",
+			"GET",
+			"/v1/e",
+			`
+				{
+					
+				}
+			`,
+			`
+				{
+					
+				}	
+			`,
+			true,
+		},
+		{
+			"",
+			"GET",
+			"/v1/f",
+			`
+				{
+					
+				}
+			`,
+			`
+				{
+					
+				}	
+			`,
+			true,
+		},
+		{
+			"",
+			"GET",
+			"/v1/g",
+			`
+				{
+					
+				}
+			`,
+			`
+				{
+					
+				}	
+			`,
+			true,
+		},
+		{
+			"",
+			"GET",
+			"/v1/h",
+			`
+				{
+					
+				}
+			`,
+			`
+				{
+					
+				}	
+			`,
+			true,
+		},
+	}
 
+	t.Log("Given the need to test json validation against json schema according to method and endpoint")
+	{
+		for index, testCase := range testCases {
+			t.Logf("\tTest %d: When trying to validate %s against the schema belongs to %s %s",
+				index, testCase.description, testCase.method, testCase.path)
+			{
+				jv, err := jsonvalidator.NewJsonValidator("draft-07")
+				if err != nil {
+					t.Fatalf("\t%s\tShould be able to create a new JsonValidator: %v", failed, err)
+				}
+				t.Logf("\t%s\tShould be able to create a new JsonValidator", succeed)
+
+				err = jv.LoadSchema(testCase.path, testCase.method, []byte(testCase.schema))
+				if err != nil {
+					t.Errorf("\t%s\tShould be able to Load schema: %v", failed, err)
+				} else {
+					t.Logf("\t%s\tShould be able to Load schema", succeed)
+				}
+
+				err = jv.Validate(testCase.path, testCase.method, []byte(testCase.data))
+				if testCase.valid {
+					if err != nil {
+						t.Errorf("\t%s\tData should be valid against the specified json schema: %v", failed, err)
+					} else {
+						t.Logf("\t%s\tData should be valid against the specified json schema", succeed)
+					}
+				} else {
+					if err != nil {
+						t.Logf("\t%s\tShould not be valid against the specified json schema: %v", succeed, err)
+					} else {
+						t.Errorf("\t%s\tShould not be valid against the specified json schema", failed)
+					}
+				}
+			}
+		}
+	}
 }

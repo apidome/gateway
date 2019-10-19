@@ -37,9 +37,10 @@ func NewRootJsonSchema(bytes []byte) (*RootJsonSchema, error) {
 	// rootSchemaPool
 	if rootSchema.Id != nil {
 		rootSchemaId = string(*rootSchema.Id)
-	} else {
-		fmt.Println("[RootJsonSchema DEBUG] created a RootJsonSchema instance with no $id")
 	}
+	//else {
+	//	fmt.Println("[RootJsonSchema DEBUG] created a RootJsonSchema instance with no $id")
+	//}
 
 	if _, ok := rootSchemaPool[rootSchemaId]; !ok {
 		rootSchemaPool[rootSchemaId] = rootSchema
