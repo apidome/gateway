@@ -183,7 +183,23 @@ func TestIsValidHostname(t *testing.T) {
 }
 
 func TestIsValidIdnHostname(t *testing.T) {
-
+	testCases := []test{
+		{
+			data:  "실례.테스트",
+			valid: true,
+		},
+		{
+			// illegal first char
+			data:  "〮실례.테스트",
+			valid: false,
+		},
+		{
+			// contains illegal char
+			data:  "실〮례.테스트",
+			valid: false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_IDN_HOSTNAME, formatchecker.IsValidIdnHostname)
 }
 
 func TestIsValidIPv4(t *testing.T) {

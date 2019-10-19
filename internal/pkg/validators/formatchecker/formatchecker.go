@@ -96,7 +96,7 @@ func IsValidIdnHostname(idnHostname string) error {
 		}
 	}
 
-	return IsValidHostname(idnHostname)
+	return nil
 }
 
 // RFC 2673, section 3.2 [RFC2673].
@@ -165,7 +165,8 @@ func IsValidIriRef(iriRef string) error {
 // Template specification.
 // https://tools.ietf.org/html/rfc6570
 func IsValidURITemplate(uriTemplate string) error {
-	uriTemplatePattern := regexp.MustCompile(`\{[^\{\}\\]*\}`)
+	//uriTemplatePattern := regexp.MustCompile(`\{[^\{\}\\]*\}`)
+	uriTemplatePattern := regexp.MustCompile(`{[^{}\\]*}`)
 	arbitraryValue := "tmp"
 	uriRef := uriTemplatePattern.ReplaceAllString(uriTemplate, arbitraryValue)
 	if strings.Contains(uriRef, "{") || strings.Contains(uriRef, "}") {
