@@ -469,119 +469,119 @@ func (f *format) validate(jsonPath string, jsonData jsonData, rootSchemaId strin
 	if v, ok := jsonData.value.(string); ok {
 		switch string(*f) {
 		case FORMAT_DATE_TIME:
-			if _, err := formatchecker.IsValidDateTime(v); err != nil {
+			if err := formatchecker.IsValidDateTime(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"date-time incorrectly formatted " + err.Error(),
 				}
 			}
 		case FORMAT_DATE:
-			if _, err := formatchecker.IsValidDate(v); err != nil {
+			if err := formatchecker.IsValidDate(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"date incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_TIME:
-			if _, err := formatchecker.IsValidTime(v); err != nil {
+			if err := formatchecker.IsValidTime(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"time incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_EMAIL:
-			if _, err := formatchecker.IsValidEmail(v); err != nil {
+			if err := formatchecker.IsValidEmail(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"email incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_IDN_EMAIL:
-			if _, err := formatchecker.IsValidIdnEmail(v); err != nil {
+			if err := formatchecker.IsValidIdnEmail(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"idn-email incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_HOSTNAME:
-			if _, err := formatchecker.IsValidHostname(v); err != nil {
+			if err := formatchecker.IsValidHostname(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"hostname incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_IDN_HOSTNAME:
-			if _, err := formatchecker.IsValidIdnHostname(v); err != nil {
+			if err := formatchecker.IsValidIdnHostname(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"idn-hostname incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_IPV4:
-			if _, err := formatchecker.IsValidIPv4(v); err != nil {
+			if err := formatchecker.IsValidIPv4(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"ipv4 incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_IPV6:
-			if _, err := formatchecker.IsValidIPv6(v); err != nil {
+			if err := formatchecker.IsValidIPv6(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"ipv6 incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_URI:
-			if _, err := formatchecker.IsValidURI(v); err != nil {
+			if err := formatchecker.IsValidURI(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"uri incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_URI_REFERENCE:
-			if _, err := formatchecker.IsValidUriRef(v); err != nil {
+			if err := formatchecker.IsValidUriRef(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"uri-reference incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_IRI:
-			if _, err := formatchecker.IsValidIri(v); err != nil {
+			if err := formatchecker.IsValidIri(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"iri incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_IRI_REFERENCE:
-			if _, err := formatchecker.IsValidIriRef(v); err != nil {
+			if err := formatchecker.IsValidIriRef(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"iri-reference incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_URI_TEMPLATE:
-			if _, err := formatchecker.IsValidURITemplate(v); err != nil {
+			if err := formatchecker.IsValidURITemplate(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"uri-template incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_JSON_POINTER:
-			if _, err := formatchecker.IsValidJSONPointer(v); err != nil {
+			if err := formatchecker.IsValidJSONPointer(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"json-pointer incorrectly formatted: " + err.Error(),
 				}
 			}
 		case FORMAT_RELATIVE_JSON_POINTER:
-			if _, err := formatchecker.IsValidRelJSONPointer(v); err != nil {
+			if err := formatchecker.IsValidRelJSONPointer(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"relative-json-pointer incorrectly formatted: " + err.Error(),
 				}
 			}
 		case "regex":
-			if _, err := formatchecker.IsValidRegex(v); err != nil {
+			if err := formatchecker.IsValidRegex(v); err != nil {
 				return KeywordValidationError{
 					"format",
 					"regex incorrectly formatted: " + err.Error(),

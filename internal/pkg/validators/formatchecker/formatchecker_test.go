@@ -6,9 +6,12 @@ import (
 )
 
 type test struct {
-	data  string
-	valid bool
+	format string
+	data   string
+	valid  bool
 }
+
+type format func(string) error
 
 const succeed = "V"
 const failed = "X"
@@ -29,23 +32,7 @@ func TestIsValidDateTime(t *testing.T) {
 		},
 	}
 
-	t.Log("Given the need to test date-time format")
-	{
-		for index, testCase := range testCases {
-			t.Logf("\tTest %d: When trying to format %s", index, testCase.data)
-			{
-				if valid, _ := formatchecker.IsValidDateTime(testCase.data); valid != testCase.valid {
-					var validate string
-					if !testCase.valid {
-						validate = " not"
-					}
-					t.Errorf("\t%s\tShould%s be valid", failed, validate)
-				} else {
-					t.Logf("\t%s\tvalid = %t", succeed, testCase.valid)
-				}
-			}
-		}
-	}
+	isValidFormat(t, testCases, formatchecker.IsValidDateTime)
 }
 
 func TestIsValidDate(t *testing.T) {
@@ -67,18 +54,24 @@ func TestIsValidDate(t *testing.T) {
 			valid: false,
 		},
 	}
+	isValidFormat(t, testCases, formatchecker.IsValidDate)
+}
 
+func isValidFormat(t *testing.T, tests []test, fn format) {
 	t.Log("Given the need to test date format")
 	{
-		for index, testCase := range testCases {
+		for index, testCase := range tests {
 			t.Logf("\tTest %d: When trying to format %s", index, testCase.data)
 			{
-				if valid, _ := formatchecker.IsValidDate(testCase.data); valid != testCase.valid {
-					var validate string
-					if !testCase.valid {
-						validate = " not"
-					}
-					t.Errorf("\t%s\tShould%s be valid", failed, validate)
+				var valid bool
+				if err := fn(testCase.data); err != nil {
+					valid = false
+				} else {
+					valid = true
+				}
+
+				if valid != testCase.valid {
+					t.Errorf("\t%s\tShould get valid = %t but got valid = %t", failed, testCase.valid, valid)
 				} else {
 					t.Logf("\t%s\tvalid = %t", succeed, testCase.valid)
 				}
