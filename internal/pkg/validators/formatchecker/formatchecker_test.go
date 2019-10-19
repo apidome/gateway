@@ -98,12 +98,30 @@ func TestIsValidTime(t *testing.T) {
 			data:  "45:60:62",
 			valid: false,
 		},
+		{
+			data:  "1234",
+			valid: false,
+		},
 	}
 	isValidFormat(t, testCases, FORMAT_TIME, formatchecker.IsValidTime)
 }
 
 func TestIsValidEmail(t *testing.T) {
-
+	testCases := []test{
+		{
+			data:  "john@example.com",
+			valid: true,
+		},
+		{
+			data:  "@",
+			valid: false,
+		},
+		{
+			data:  "john(at)example.com",
+			valid: false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_EMAIL, formatchecker.IsValidEmail)
 }
 
 func TestIsValidIdnEmail(t *testing.T) {
