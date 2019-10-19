@@ -155,7 +155,31 @@ func TestIsValidIdnEmail(t *testing.T) {
 }
 
 func TestIsValidHostname(t *testing.T) {
-
+	testCases := []test{
+		{
+			data:  "www.example.com",
+			valid: true,
+		},
+		{
+			data:  "xn--4gbwdl.xn--wgbh1c",
+			valid: true,
+		},
+		{
+			data:  "not_a_valid_host_name",
+			valid: false,
+		},
+		{
+			data:  "-a-host-name-that-starts-with--",
+			valid: false,
+		},
+		{
+			data: "a-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+				"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+				"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-long-host-name-component",
+			valid: false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_HOSTNAME, formatchecker.IsValidHostname)
 }
 
 func TestIsValidIdnHostname(t *testing.T) {

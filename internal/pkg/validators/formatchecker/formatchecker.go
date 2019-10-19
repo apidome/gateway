@@ -59,11 +59,12 @@ func IsValidIdnEmail(idnEmail string) error {
 // https://tools.ietf.org/html/rfc1034#section-3.1
 func IsValidHostname(hostname string) error {
 	hostnamePattern := `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
+	hostnamePatternCompiled := regexp.MustCompile(hostnamePattern)
 	if len(hostname) > 255 {
 		return errors.New("hostname is too long (more then 255 characters)")
 	}
-	if _, err := regexp.MatchString(hostnamePattern, hostname); err != nil {
-		return err
+	if valid := hostnamePatternCompiled.MatchString(hostname); !valid {
+		return errors.New(hostname + "is not valid hostname")
 	}
 	return nil
 }
