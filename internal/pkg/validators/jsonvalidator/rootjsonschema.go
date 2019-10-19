@@ -21,6 +21,7 @@ type RootJsonSchema struct {
 // NewJsonSchema creates a new RootJsonSchema instance, Unmarshals the byte array
 // into the instance, and returns a pointer to the instance.
 func NewRootJsonSchema(bytes []byte) (*RootJsonSchema, error) {
+	var rootSchemaId string
 	var rootSchema *RootJsonSchema
 
 	// Check if the string s is a valid json.
@@ -35,14 +36,16 @@ func NewRootJsonSchema(bytes []byte) (*RootJsonSchema, error) {
 	// If the field $id in the rootSchema exists, add the rootSchema to the
 	// rootSchemaPool
 	if rootSchema.Id != nil {
-		if _, ok := rootSchemaPool[string(*rootSchema.Id)]; !ok {
-			rootSchemaPool[string(*rootSchema.Id)] = rootSchema
-		}
+		rootSchemaId = string(*rootSchema.Id)
 	} else {
 		fmt.Println("[RootJsonSchema DEBUG] created a RootJsonSchema instance with no $id")
 	}
 
-	err = rootSchema.scanSchema("", string(*rootSchema.Id))
+	if _, ok := rootSchemaPool[rootSchemaId]; !ok {
+		rootSchemaPool[rootSchemaId] = rootSchema
+	}
+
+	err = rootSchema.scanSchema("", rootSchemaId)
 	if err != nil {
 		fmt.Println("[RootJsonSchema DEBUG] scanSchema() " +
 			"failed: " + err.Error())
