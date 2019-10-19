@@ -34,12 +34,15 @@ func TestIsValidDateTime(t *testing.T) {
 		for index, testCase := range testCases {
 			t.Logf("\tTest %d: When trying to format %s", index, testCase.data)
 			{
-				if valid, _ := formatchecker.IsValidDateTime(testCase.data); valid != testCase.valid {
-					var validate string
-					if !testCase.valid {
-						validate = " not"
-					}
-					t.Errorf("\t%s\tShould%s be valid", failed, validate)
+				var valid bool
+				if err := formatchecker.IsValidDateTime(testCase.data); err != nil {
+					valid = false
+				} else {
+					valid = true
+				}
+
+				if valid != testCase.valid {
+					t.Errorf("\t%s\tShould get valid = %t but got valid = %t, %s", failed, testCase.valid, valid)
 				} else {
 					t.Logf("\t%s\tvalid = %t", succeed, testCase.valid)
 				}
@@ -73,12 +76,15 @@ func TestIsValidDate(t *testing.T) {
 		for index, testCase := range testCases {
 			t.Logf("\tTest %d: When trying to format %s", index, testCase.data)
 			{
-				if valid, _ := formatchecker.IsValidDate(testCase.data); valid != testCase.valid {
-					var validate string
-					if !testCase.valid {
-						validate = " not"
-					}
-					t.Errorf("\t%s\tShould%s be valid", failed, validate)
+				var valid bool
+				if err := formatchecker.IsValidDate(testCase.data); err != nil {
+					valid = false
+				} else {
+					valid = true
+				}
+
+				if valid != testCase.valid {
+					t.Errorf("\t%s\tShould get valid = %t but got valid = %t", failed, testCase.valid, valid)
 				} else {
 					t.Logf("\t%s\tvalid = %t", succeed, testCase.valid)
 				}
