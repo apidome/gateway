@@ -120,12 +120,38 @@ func TestIsValidEmail(t *testing.T) {
 			data:  "john(at)example.com",
 			valid: false,
 		},
+		{
+			data:  "1234",
+			valid: false,
+		},
+		{
+			data:  "",
+			valid: false,
+		},
 	}
 	isValidFormat(t, testCases, FORMAT_EMAIL, formatchecker.IsValidEmail)
 }
 
 func TestIsValidIdnEmail(t *testing.T) {
-
+	testCases := []test{
+		{
+			data:  "실례@실례.테스트",
+			valid: true,
+		},
+		{
+			data:  "john@example.com",
+			valid: true,
+		},
+		{
+			data:  "1234",
+			valid: false,
+		},
+		{
+			data:  "",
+			valid: false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_IDN_EMAIL, formatchecker.IsValidIdnEmail)
 }
 
 func TestIsValidHostname(t *testing.T) {
