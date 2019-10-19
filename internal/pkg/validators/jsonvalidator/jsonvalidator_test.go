@@ -123,10 +123,18 @@ func TestLoadSchema(t *testing.T) {
 				t.Logf("\t%s\tShould be able to create a new JsonValidator", succeed)
 
 				err = jv.LoadSchema(testCase.path, testCase.method, []byte(testCase.schema))
-				if err != nil {
-					t.Errorf("\t%s\tShould be able to Load schema: %v", failed, err)
+				if testCase.valid {
+					if err != nil {
+						t.Errorf("\t%s\tShould be able to Load schema: %v", failed, err)
+					} else {
+						t.Logf("\t%s\tShould be able to Load schema", succeed)
+					}
 				} else {
-					t.Logf("\t%s\tShould be able to Load schema", succeed)
+					if err != nil {
+						t.Logf("\t%s\tShould not be able to Load schema: %v", succeed, err)
+					} else {
+						t.Errorf("\t%s\tShould not be able to Load schema", failed)
+					}
 				}
 			}
 		}
