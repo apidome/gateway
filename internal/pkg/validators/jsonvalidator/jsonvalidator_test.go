@@ -155,15 +155,15 @@ func TestLoadSchema(t *testing.T) {
 
 	t.Log("Given the need to test loading of new json schema to JsonValidator")
 	{
+		jv, err := jsonvalidator.NewJsonValidator("draft-07")
+		if err != nil {
+			t.Fatalf("\t%s\tShould be able to create a new JsonValidator: %v", failed, err)
+		}
+		t.Logf("\t%s\tShould be able to create a new JsonValidator", succeed)
+
 		for index, testCase := range testCases {
 			t.Logf("\tTest %d: When trying to load %s", index, testCase.description)
 			{
-				jv, err := jsonvalidator.NewJsonValidator("draft-07")
-				if err != nil {
-					t.Fatalf("\t%s\tShould be able to create a new JsonValidator: %v", failed, err)
-				}
-				t.Logf("\t%s\tShould be able to create a new JsonValidator", succeed)
-
 				err = jv.LoadSchema(testCase.path, testCase.method, []byte(testCase.schema))
 				if testCase.valid {
 					if err != nil {
@@ -922,26 +922,72 @@ func TestValidate(t *testing.T) {
 			`{}`,
 			false,
 		},
+		{
+			"enum",
+			"a json schema that accepts only empty object or true",
+			"an empty json object",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"enum": [{}, true]
+				}
+			`,
+			`{}`,
+			true,
+		},
+		{
+			"enum",
+			"a json schema that accepts only empty object or true",
+			"json boolean \"true\"",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"enum": [{}, true]
+				}
+			`,
+			`true`,
+			true,
+		},
+		{
+			"enum",
+			"a json schema that accepts only empty object or true",
+			"a non-empty json object",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"enum": [{}, true]
+				}
+			`,
+			`{
+					"a": "b"
+			}`,
+			true,
+		},
 	}
 
 	t.Log("Given the need to test json validation against json schema according to method and endpoint")
 	{
+		jv, err := jsonvalidator.NewJsonValidator("draft-07")
+		if err != nil {
+			t.Fatalf("\t%s\tShould be able to create a new JsonValidator: %v", failed, err)
+		}
+		t.Logf("\t%s\tShould be able to create a new JsonValidator", succeed)
+
 		for index, testCase := range testCases {
 			t.Logf("\tTest %d: When trying to validate %s against %s",
 				index, testCase.dataDescription, testCase.schemaDescription)
 			{
-				jv, err := jsonvalidator.NewJsonValidator("draft-07")
-				if err != nil {
-					t.Fatalf("\t%s\tShould be able to create a new JsonValidator: %v", failed, err)
-				}
-				t.Logf("\t%s\tShould be able to create a new JsonValidator", succeed)
 
 				err = jv.LoadSchema(testCase.path, testCase.method, []byte(testCase.schema))
 				if err != nil {
 					t.Errorf("\t%s\tShould be able to Load schema: %v", failed, err)
-				} else {
-					t.Logf("\t%s\tShould be able to Load schema", succeed)
 				}
+				//else {
+				//	t.Logf("\t%s\tShould be able to Load schema", succeed)
+				//}
 
 				err = jv.Validate(testCase.path, testCase.method, []byte(testCase.data))
 				if testCase.valid {
