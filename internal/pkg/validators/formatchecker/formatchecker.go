@@ -59,11 +59,12 @@ func IsValidIdnEmail(idnEmail string) error {
 // https://tools.ietf.org/html/rfc1034#section-3.1
 func IsValidHostname(hostname string) error {
 	hostnamePattern := `^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`
+	hostnamePatternCompiled := regexp.MustCompile(hostnamePattern)
 	if len(hostname) > 255 {
 		return errors.New("hostname is too long (more then 255 characters)")
 	}
-	if _, err := regexp.MatchString(hostnamePattern, hostname); err != nil {
-		return err
+	if valid := hostnamePatternCompiled.MatchString(hostname); !valid {
+		return errors.New(hostname + "is not valid hostname")
 	}
 	return nil
 }
@@ -95,7 +96,7 @@ func IsValidIdnHostname(idnHostname string) error {
 		}
 	}
 
-	return IsValidHostname(idnHostname)
+	return nil
 }
 
 // RFC 2673, section 3.2 [RFC2673].
@@ -164,7 +165,8 @@ func IsValidIriRef(iriRef string) error {
 // Template specification.
 // https://tools.ietf.org/html/rfc6570
 func IsValidURITemplate(uriTemplate string) error {
-	uriTemplatePattern := regexp.MustCompile(`\{[^\{\}\\]*\}`)
+	//uriTemplatePattern := regexp.MustCompile(`\{[^\{\}\\]*\}`)
+	uriTemplatePattern := regexp.MustCompile(`{[^{}\\]*}`)
 	arbitraryValue := "tmp"
 	uriRef := uriTemplatePattern.ReplaceAllString(uriTemplate, arbitraryValue)
 	if strings.Contains(uriRef, "{") || strings.Contains(uriRef, "}") {

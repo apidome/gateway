@@ -6,15 +6,34 @@ import (
 )
 
 type test struct {
-	format string
-	data   string
-	valid  bool
+	data  string
+	valid bool
 }
 
 type format func(string) error
 
 const succeed = "V"
 const failed = "X"
+
+const (
+	FORMAT_DATE_TIME             = "date-time"
+	FORMAT_TIME                  = "time"
+	FORMAT_DATE                  = "date"
+	FORMAT_EMAIL                 = "email"
+	FORMAT_IDN_EMAIL             = "idn-email"
+	FORMAT_HOSTNAME              = "hostname"
+	FORMAT_IDN_HOSTNAME          = "idn-hostname"
+	FORMAT_IPV4                  = "ipv4"
+	FORMAT_IPV6                  = "ipv6"
+	FORMAT_URI                   = "uri"
+	FORMAT_URI_REFERENCE         = "uri-reference"
+	FORMAT_IRI                   = "iri"
+	FORMAT_IRI_REFERENCE         = "iri-reference"
+	FORMAT_URI_TEMPLATE          = "uri-template"
+	FORMAT_JSON_POINTER          = "json-pointer"
+	FORMAT_RELATIVE_JSON_POINTER = "relative-json-pointer"
+	FORMAT_REGEX                 = "regex"
+)
 
 func TestIsValidDateTime(t *testing.T) {
 	testCases := []test{
@@ -32,7 +51,7 @@ func TestIsValidDateTime(t *testing.T) {
 		},
 	}
 
-	isValidFormat(t, testCases, formatchecker.IsValidDateTime)
+	isValidFormat(t, testCases, FORMAT_DATE_TIME, formatchecker.IsValidDateTime)
 }
 
 func TestIsValidDate(t *testing.T) {
@@ -54,11 +73,176 @@ func TestIsValidDate(t *testing.T) {
 			valid: false,
 		},
 	}
-	isValidFormat(t, testCases, formatchecker.IsValidDate)
+	isValidFormat(t, testCases, FORMAT_DATE, formatchecker.IsValidDate)
 }
 
-func isValidFormat(t *testing.T, tests []test, fn format) {
-	t.Log("Given the need to test date format")
+func TestIsValidTime(t *testing.T) {
+	testCases := []test{
+		{
+			data:  "08:30:06.283185Z",
+			valid: true,
+		},
+		{
+			data:  "10:05:08+01:00",
+			valid: true,
+		},
+		{
+			data:  "09:45:10 PST",
+			valid: false,
+		},
+		{
+			data:  "01:02:03,121212",
+			valid: false,
+		},
+		{
+			data:  "45:60:62",
+			valid: false,
+		},
+		{
+			data:  "1234",
+			valid: false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_TIME, formatchecker.IsValidTime)
+}
+
+func TestIsValidEmail(t *testing.T) {
+	testCases := []test{
+		{
+			data:  "john@example.com",
+			valid: true,
+		},
+		{
+			data:  "@",
+			valid: false,
+		},
+		{
+			data:  "john(at)example.com",
+			valid: false,
+		},
+		{
+			data:  "1234",
+			valid: false,
+		},
+		{
+			data:  "",
+			valid: false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_EMAIL, formatchecker.IsValidEmail)
+}
+
+func TestIsValidIdnEmail(t *testing.T) {
+	testCases := []test{
+		{
+			data:  "실례@실례.테스트",
+			valid: true,
+		},
+		{
+			data:  "john@example.com",
+			valid: true,
+		},
+		{
+			data:  "1234",
+			valid: false,
+		},
+		{
+			data:  "",
+			valid: false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_IDN_EMAIL, formatchecker.IsValidIdnEmail)
+}
+
+func TestIsValidHostname(t *testing.T) {
+	testCases := []test{
+		{
+			data:  "www.example.com",
+			valid: true,
+		},
+		{
+			data:  "xn--4gbwdl.xn--wgbh1c",
+			valid: true,
+		},
+		{
+			data:  "not_a_valid_host_name",
+			valid: false,
+		},
+		{
+			data:  "-a-host-name-that-starts-with--",
+			valid: false,
+		},
+		{
+			data: "a-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+				"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+				"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-long-host-name-component",
+			valid: false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_HOSTNAME, formatchecker.IsValidHostname)
+}
+
+func TestIsValidIdnHostname(t *testing.T) {
+	testCases := []test{
+		{
+			data:  "실례.테스트",
+			valid: true,
+		},
+		{
+			// illegal first char
+			data:  "〮실례.테스트",
+			valid: false,
+		},
+		{
+			// contains illegal char
+			data:  "실〮례.테스트",
+			valid: false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_IDN_HOSTNAME, formatchecker.IsValidIdnHostname)
+}
+
+func TestIsValidIPv4(t *testing.T) {
+}
+
+func TestIsValidIPv6(t *testing.T) {
+
+}
+
+func TestIsValidURI(t *testing.T) {
+
+}
+
+func TestIsValidUriRef(t *testing.T) {
+
+}
+
+func TestIsValidIri(t *testing.T) {
+
+}
+
+func TestIsValidIriRef(t *testing.T) {
+
+}
+
+func TestIsValidURITemplate(t *testing.T) {
+
+}
+
+func TestIsValidJSONPointer(t *testing.T) {
+
+}
+
+func TestIsValidRelJSONPointer(t *testing.T) {
+
+}
+
+func TestIsValidRegex(t *testing.T) {
+
+}
+
+func isValidFormat(t *testing.T, tests []test, formatType string, fn format) {
+	t.Logf("Given the need to test %s format", formatType)
 	{
 		for index, testCase := range tests {
 			t.Logf("\tTest %d: When trying to format %s", index, testCase.data)
