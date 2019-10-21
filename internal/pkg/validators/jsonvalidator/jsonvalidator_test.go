@@ -964,7 +964,63 @@ func TestValidate(t *testing.T) {
 			`{
 					"a": "b"
 			}`,
+			false,
+		},
+		{
+			"const",
+			"a json schema that accepts only the array [1, 2, 3, 4]",
+			"the array [1, 2, 3, 4]",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"const": [1, 2, 3, 4]
+				}
+			`,
+			`[1, 2, 3, 4]`,
 			true,
+		},
+		{
+			"const",
+			"a json schema that accepts only the array [1, 2, 3, 4]",
+			"the array [1, 2, 3, 4, 5]",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"const": [1, 2, 3, 4]
+				}
+			`,
+			`[1, 2, 3, 4, 5]`,
+			false,
+		},
+		{
+			"const",
+			"a json schema that accepts only the string \"CAF is the shit\"",
+			"the string \"CAF is the shit\"",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"const": "CAF is the shit"
+				}
+			`,
+			`"CAF is the shit"`,
+			true,
+		},
+		{
+			"const",
+			"a json schema that accepts only the string \"CAF is the shit\"",
+			"the string \"CAF is the shitttttttttt\"",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"const": "CAF is the shit"
+				}
+			`,
+			`CAF is the shitttttttttt`,
+			false,
 		},
 	}
 
