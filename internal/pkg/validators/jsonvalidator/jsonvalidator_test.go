@@ -185,148 +185,750 @@ func TestLoadSchema(t *testing.T) {
 
 func TestValidate(t *testing.T) {
 	testCases := []struct {
-		description string
-		method      string
-		path        string
-		schema      string
-		data        string
-		valid       bool
+		testedJsonSchemaKeyword string
+		schemaDescription       string
+		dataDescription         string
+		method                  string
+		path                    string
+		schema                  string
+		data                    string
+		valid                   bool
 	}{
 		{
-			"",
+			"type",
+			"a json schema that accepts any json string",
+			"a json string",
 			"GET",
 			"/v1/a",
 			`
 				{
-					
+					"type": "string"
 				}
 			`,
-			`
-				{
-					
-				}	
-			`,
+			`"some json string"`,
 			true,
 		},
 		{
-			"",
+			"type",
+			"a json schema that accepts any json string",
+			"a json object",
+			"GET",
+			"/v1/a",
+			`
+				{
+					"type": "string"
+				}
+			`,
+			`{}`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json string",
+			"a json array",
+			"GET",
+			"/v1/a",
+			`
+				{
+					"type": "string"
+				}
+			`,
+			`[3, 4]`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json string",
+			"a json boolean",
+			"GET",
+			"/v1/a",
+			`
+				{
+					"type": "string"
+				}
+			`,
+			`true`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json string",
+			"a json null",
+			"GET",
+			"/v1/a",
+			`
+				{
+					"type": "string"
+				}
+			`,
+			`null`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json string",
+			"a json number",
+			"GET",
+			"/v1/a",
+			`
+				{
+					"type": "string"
+				}
+			`,
+			`78.2`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json string",
+			"a json integer",
+			"GET",
+			"/v1/a",
+			`
+				{
+					"type": "string"
+				}
+			`,
+			`8`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json number (float and integer)",
+			"a json number",
 			"GET",
 			"/v1/b",
 			`
 				{
-					
+					"type": "number"
 				}
 			`,
-			`
-				{
-					
-				}	
-			`,
+			`78.9`,
 			true,
 		},
 		{
-			"",
+			"type",
+			"a json schema that accepts any json number (float and integer)",
+			"a json integer",
 			"GET",
-			"/v1/c",
+			"/v1/b",
 			`
 				{
-					
+					"type": "number"
 				}
 			`,
-			`
-				{
-					
-				}	
-			`,
+			`99`,
 			true,
 		},
 		{
-			"",
+			"type",
+			"a json schema that accepts any json number (float and integer)",
+			"a json object",
 			"GET",
-			"/v1/d",
+			"/v1/b",
 			`
 				{
-					
+					"type": "number"
 				}
 			`,
+			`{}`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json number (float and integer)",
+			"a json array",
+			"GET",
+			"/v1/b",
 			`
 				{
-					
-				}	
+					"type": "number"
+				}
 			`,
+			`["a", "b", "c"]`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json number (float and integer)",
+			"a json string",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "number"
+				}
+			`,
+			`"some json string"`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json number (float and integer)",
+			"a json boolean",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "number"
+				}
+			`,
+			`false`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json number (float and integer)",
+			"a json null",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "number"
+				}
+			`,
+			`null`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json integer",
+			"a json object",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "integer"
+				}
+			`,
+			`{}`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json integer",
+			"a json array",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "integer"
+				}
+			`,
+			`["", "4"]`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json integer",
+			"a json string",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "integer"
+				}
+			`,
+			`"some json string"`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json integer",
+			"a json boolean",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "integer"
+				}
+			`,
+			`true`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json integer",
+			"a json null",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "integer"
+				}
+			`,
+			`null`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json integer",
+			"a json integer",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "integer"
+				}
+			`,
+			`45`,
 			true,
 		},
 		{
-			"",
+			"type",
+			"a json schema that accepts any json integer",
+			"a json number (which is not an integer)",
 			"GET",
-			"/v1/e",
+			"/v1/b",
 			`
 				{
-					
+					"type": "integer"
 				}
 			`,
+			`33.3`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts json boolean",
+			"a json object",
+			"GET",
+			"/v1/b",
 			`
 				{
-					
-				}	
+					"type": "boolean"
+				}
 			`,
+			`{}`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts json boolean",
+			"a json array",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "boolean"
+				}
+			`,
+			`[]`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts json boolean",
+			"a json string",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "boolean"
+				}
+			`,
+			`"some json string"`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts json boolean",
+			"a json number",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "boolean"
+				}
+			`,
+			`78.85`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts json boolean",
+			"a json integer",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "boolean"
+				}
+			`,
+			`7`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts json boolean",
+			"a json null",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "boolean"
+				}
+			`,
+			`null`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts json boolean",
+			"a json boolean",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "boolean"
+				}
+			`,
+			`false`,
 			true,
 		},
 		{
-			"",
+			"type",
+			"a json schema that accepts any json object",
+			"a json boolean",
 			"GET",
-			"/v1/f",
+			"/v1/b",
 			`
 				{
-					
+					"type": "object"
 				}
 			`,
+			`true`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json object",
+			"a json string",
+			"GET",
+			"/v1/b",
 			`
 				{
-					
-				}	
+					"type": "object"
+				}
 			`,
+			`"some json string"`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json object",
+			"a json array",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "object"
+				}
+			`,
+			`[]`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json object",
+			"a json integer",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "object"
+				}
+			`,
+			`9`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json object",
+			"a json number",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "object"
+				}
+			`,
+			`78.5`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json object",
+			"a json null",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "object"
+				}
+			`,
+			`null`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json object",
+			"a json ",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "object"
+				}
+			`,
+			`{}`,
 			true,
 		},
 		{
-			"",
+			"type",
+			"a json schema that accepts any json object",
+			"a json array",
 			"GET",
-			"/v1/g",
+			"/v1/b",
 			`
 				{
-					
+					"type": "array"
 				}
 			`,
+			`[4, "a", null]`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json array",
+			"a json boolean",
+			"GET",
+			"/v1/b",
 			`
 				{
-					
-				}	
+					"type": "array"
+				}
 			`,
+			`true`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json array",
+			"a json object",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "array"
+				}
+			`,
+			`{}`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json array",
+			"a json number",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "array"
+				}
+			`,
+			`34.5`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json array",
+			"a json integer",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "array"
+				}
+			`,
+			`45`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json array",
+			"a json string",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "array"
+				}
+			`,
+			`"some json string"`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json array",
+			"a json null",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "array"
+				}
+			`,
+			`null`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts only null",
+			"a json null",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "null"
+				}
+			`,
+			`null`,
 			true,
 		},
 		{
-			"",
+			"type",
+			"a json schema that accepts only null",
+			"a json integer",
 			"GET",
-			"/v1/h",
+			"/v1/b",
 			`
 				{
-					
+					"type": "null"
 				}
 			`,
+			`13`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts only null",
+			"a json number",
+			"GET",
+			"/v1/b",
 			`
 				{
-					
-				}	
+					"type": "null"
+				}
 			`,
+			`6.6`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts only null",
+			"a json array",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "null"
+				}
+			`,
+			`[true]`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts only null",
+			"a json object",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "null"
+				}
+			`,
+			`{}`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts only null",
+			"a json string",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "null"
+				}
+			`,
+			`"some json string"`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts only null",
+			"a json boolean",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": "null"
+				}
+			`,
+			`true`,
+			false,
+		},
+		{
+			"type",
+			"a json schema that accepts any json object or array",
+			"a json object",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": ["object", "array"]
+				}
+			`,
+			`{}`,
 			true,
+		},
+		{
+			"type",
+			"a json schema that accepts any json object or array",
+			"a json array",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": ["object", "array"]
+				}
+			`,
+			`[]`,
+			true,
+		},
+		{
+			"type",
+			"a json schema that accepts any json object or array",
+			"a json boolean",
+			"GET",
+			"/v1/b",
+			`
+				{
+					"type": ["object", "array"]
+				}
+			`,
+			`{}`,
+			false,
 		},
 	}
 
 	t.Log("Given the need to test json validation against json schema according to method and endpoint")
 	{
 		for index, testCase := range testCases {
-			t.Logf("\tTest %d: When trying to validate %s against the schema belongs to %s %s",
-				index, testCase.description, testCase.method, testCase.path)
+			t.Logf("\tTest %d: When trying to validate %s against %s",
+				index, testCase.dataDescription, testCase.schemaDescription)
 			{
 				jv, err := jsonvalidator.NewJsonValidator("draft-07")
 				if err != nil {
@@ -350,9 +952,9 @@ func TestValidate(t *testing.T) {
 					}
 				} else {
 					if err != nil {
-						t.Logf("\t%s\tShould not be valid against the specified json schema: %v", succeed, err)
+						t.Logf("\t%s\tData should not be valid against the specified json schema: %v", succeed, err)
 					} else {
-						t.Errorf("\t%s\tShould not be valid against the specified json schema", failed)
+						t.Errorf("\t%s\tData should not be valid against the specified json schema", failed)
 					}
 				}
 			}
