@@ -61,52 +61,94 @@ func TestLoadSchema(t *testing.T) {
 		valid       bool
 	}{
 		{
-			"the json boolean \"true\"",
+			"the json boolean \"true\" as a schema",
 			"GET",
 			"/v1/a",
 			"true",
 			true,
 		},
 		{
-			"the json boolean \"false\"",
+			"the json boolean \"false\" as a schema",
 			"GET",
 			"/v1/a",
 			"false",
 			true,
 		},
 		{
-			"empty schema",
+			"empty json object as a schema",
 			"GET",
 			"/v1/a",
 			"{}",
 			true,
 		},
 		{
-			"a valid json schema",
+			"a valid json schema as a schema",
 			"GET",
 			"/v1/a",
 			"{\"type\": \"string\"}",
 			true,
 		},
 		{
-			"a json object that contains only a non-standard keywords",
+			"a json object that contains only a non-standard keywords as a schema",
 			"GET",
 			"/v1/a",
 			"{\"someNonStandardKeyword\": 4}",
 			true,
 		},
 		{
-			"any json string",
+			"any json string as a schema",
 			"GET",
 			"/v1/a",
 			"'someJsonString'",
 			false,
 		},
 		{
-			"any json number",
+			"any json number as a schema",
 			"GET",
 			"/v1/a",
 			"45.7",
+			false,
+		},
+		{
+			"\"GET\" as method",
+			"GET",
+			"/v1/a",
+			"{}",
+			true,
+		},
+		{
+			"\"POST\" as method",
+			"POST",
+			"/v1/a",
+			"{}",
+			true,
+		},
+		{
+			"\"PUT\" as method",
+			"PUT",
+			"/v1/a",
+			"{}",
+			true,
+		},
+		{
+			"\"PATCH\" as method",
+			"PATCH",
+			"/v1/a",
+			"{}",
+			true,
+		},
+		{
+			"\"DELETE\" as method",
+			"DELETE",
+			"/v1/a",
+			"{}",
+			true,
+		},
+		{
+			"a non-standard http method - \"GET1\" as method",
+			"GET1",
+			"/v1/a",
+			"{}",
 			false,
 		},
 	}
@@ -114,7 +156,7 @@ func TestLoadSchema(t *testing.T) {
 	t.Log("Given the need to test loading of new json schema to JsonValidator")
 	{
 		for index, testCase := range testCases {
-			t.Logf("\tTest %d: When trying to load %s as a schema", index, testCase.description)
+			t.Logf("\tTest %d: When trying to load %s", index, testCase.description)
 			{
 				jv, err := jsonvalidator.NewJsonValidator("draft-07")
 				if err != nil {
