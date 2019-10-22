@@ -242,12 +242,10 @@ func TestValidate(t *testing.T) {
 		t.Logf("\t%s\tShould be able to create a new JsonValidator", succeed)
 
 		for i, testCase := range testCases {
-			t.Logf("\tSchema %d: %s",
-				i, testCase.Descriptions)
+			t.Logf("\tSchema %d: %s", i, testCase.Descriptions)
 			{
 				for j, test := range testCase.Tests {
-					t.Logf("\t\tTest %d.%d: When trying to validate %s against the given schema",
-						i, j, test.Description)
+					t.Logf("\t\tTest %d.%d: When trying to validate %s against the given schema", i, j, test.Description)
 					{
 						err = jv.LoadSchema(testCase.Path, testCase.Method, testCase.Schema)
 						if err != nil {
