@@ -1,0 +1,32 @@
+[
+    {
+        "description": "a json schema that accepts only the array [1, 2, 3, 4]",
+        "path": "/v1/a",
+        "method": "GET",
+        "schema": {
+            "const": [1, 2, 3, 4]
+        },
+        "tests": [
+            {
+                "description": "[1, 2, 3, 4]",
+                "data": [1, 2, 3, 4],
+                "valid": true
+            },
+            {
+                "description": "[1, 2, 3, 4, 5]",
+                "data": [1, 2, 3, 4, 5],
+                "valid": false
+            },
+            {
+                "description": "'CAF is the shit'",
+                "data": "CAF is the shit",
+                "valid": false
+            },
+            {
+                "description": "the boolean \"true\"",
+                "data": true,
+                "valid": false
+            }
+        ]
+    }
+]

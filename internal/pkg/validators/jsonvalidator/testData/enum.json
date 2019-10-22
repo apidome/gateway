@@ -1,0 +1,32 @@
+[
+    {
+        "description": "a json schema that accepts only empty object or true",
+        "path": "/v1/a",
+        "method": "GET",
+        "schema": {
+            "enum": [{}, true]
+        },
+        "tests": [
+            {
+                "description": "an empty json object",
+                "data": {},
+                "valid": true
+            },
+            {
+                "description": "json boolean \"true\"",
+                "data": true,
+                "valid": true
+            },
+            {
+                "description": "json boolean \"false\"",
+                "data": false,
+                "valid": false
+            },
+            {
+                "description": "a non-empty json object",
+                "data": {"a": 4},
+                "valid": false
+            }
+        ]
+    }
+]

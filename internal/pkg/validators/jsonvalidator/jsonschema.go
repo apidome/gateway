@@ -380,7 +380,7 @@ func (js *JsonSchema) scanSchema(schemaPath string, rootSchemaID string) error {
 		// Check the type of "items"
 		switch v := items.(type) {
 		// In this case, "items" is an object which means its a single schema.
-		case map[string]interface{}:
+		case map[string]interface{}, bool:
 			{
 				// Marshal the dependency in order to Unmarshal it into JsonSchema struct.
 				rawSubSchema, err := json.Marshal(v)
