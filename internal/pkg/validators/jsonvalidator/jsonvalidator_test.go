@@ -15,6 +15,18 @@ import (
 const succeed = "V"
 const failed = "X"
 
+type testCase struct {
+	Descriptions string          `json:"description"`
+	Schema       json.RawMessage `json:"schema"`
+	Path         string          `json:"path"`
+	Method       string          `json:"Method"`
+	Tests        []struct {
+		Description string          `json:"description"`
+		Data        json.RawMessage `json:"data"`
+		Valid       bool            `json:"valid"`
+	} `json:"tests"`
+}
+
 func TestNewJsonValidator(t *testing.T) {
 	testCases := []struct {
 		draft string
@@ -197,20 +209,11 @@ func TestLoadSchema(t *testing.T) {
 	}
 }
 
-type testCase struct {
-	Descriptions string          `json:"description"`
-	Schema       json.RawMessage `json:"schema"`
-	Path         string          `json:"path"`
-	Method       string          `json:"Method"`
-	Tests        []struct {
-		Description string          `json:"description"`
-		Data        json.RawMessage `json:"data"`
-		Valid       bool            `json:"valid"`
-	} `json:"tests"`
-}
-
 func TestValidate(t *testing.T) {
-	keywords := []string{"type", "enum", "const"}
+	keywords := []string{"type", "enum", "const", "minLength", "maxLength", "pattern", "format", "multipleOf",
+		"minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "properties", "additionalProperties",
+		"required", "propertyNames", "minProperties", "maxProperties", "items", "contains", "additionalItems",
+		"minItems", "maxItems", "uniqueItems", "anyOf", "allOf", "oneOf", "not", "if", "then", "else"}
 	testCases := make([]testCase, 0)
 
 	// Read all the test data from the files and append them to the main slice.
@@ -223,7 +226,8 @@ func TestValidate(t *testing.T) {
 
 		err = json.Unmarshal(rawTestData, &testData)
 		if err != nil {
-			t.Fatalf("Could not unmarshal test data to test cases slice, probably one or more cases is not in the correct format: %v", err)
+			t.Fatalf("Could not unmarshal test data to test cases slice, "+
+				"probably one or more cases is not in the correct format in %s.json: %v", keyword, err)
 		}
 
 		testCases = append(testCases, testData...)
