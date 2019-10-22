@@ -247,34 +247,38 @@ func TestValidate(t *testing.T) {
 		t.Logf("\t%s\tShould be able to create a new JsonValidator", succeed)
 
 		for i, testCase := range testCases {
-			t.Logf("\t[%s] Test Schema %d: %s", testCase.Keyword, i, testCase.Descriptions)
-			{
-				for j, test := range testCase.Tests {
-					t.Logf("\t\tTest %d.%d: When trying to validate %s against the given schema", i, j, test.Description)
-					{
-						err = jv.LoadSchema(testCase.Path, testCase.Method, testCase.Schema)
-						if err != nil {
-							t.Errorf("\t\t%s\tShould be able to Load schema: %v", failed, err)
-						}
-
-						err = jv.Validate(testCase.Path, testCase.Method, test.Data)
-						if test.Valid {
+			subTest := func(t *testing.T) {
+				t.Logf("\t[%s] Test Schema %d: %s", testCase.Keyword, i, testCase.Descriptions)
+				{
+					for j, test := range testCase.Tests {
+						t.Logf("\t\tTest %d.%d: When trying to validate %s against the given schema", i, j, test.Description)
+						{
+							err = jv.LoadSchema(testCase.Path, testCase.Method, testCase.Schema)
 							if err != nil {
-								t.Errorf("\t\t%s\tData should be valid against the specified json schema: %v", failed, err)
-							} else {
-								t.Logf("\t\t%s\tData should be valid against the specified json schema", succeed)
+								t.Errorf("\t\t%s\tShould be able to Load schema: %v", failed, err)
 							}
-						} else {
-							if err != nil {
-								t.Logf("\t\t%s\tData should not be valid against the specified json schema: %v", succeed, err)
+
+							err = jv.Validate(testCase.Path, testCase.Method, test.Data)
+							if test.Valid {
+								if err != nil {
+									t.Errorf("\t\t%s\tData should be valid against the specified json schema: %v", failed, err)
+								} else {
+									t.Logf("\t\t%s\tData should be valid against the specified json schema", succeed)
+								}
 							} else {
-								t.Errorf("\t\t%s\tData should not be valid against the specified json schema", failed)
+								if err != nil {
+									t.Logf("\t\t%s\tData should not be valid against the specified json schema: %v", succeed, err)
+								} else {
+									t.Errorf("\t\t%s\tData should not be valid against the specified json schema", failed)
+								}
 							}
 						}
 					}
 				}
+				t.Log()
 			}
-			t.Log()
+
+			t.Run(testCase.Keyword, subTest)
 		}
 	}
 }
