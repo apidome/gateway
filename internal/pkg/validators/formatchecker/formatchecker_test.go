@@ -203,10 +203,51 @@ func TestIsValidIdnHostname(t *testing.T) {
 }
 
 func TestIsValidIPv4(t *testing.T) {
+	testCases := []test{
+		{
+			data:  "192.168.0.1",
+			valid: true,
+		},
+		{
+			data:  "127.0.0.0.1",
+			valid: false,
+		},
+		{
+			data:  "192.168.1.1.1",
+			valid: false,
+		},
+		{
+			data:  "256.256.256.256",
+			valid: false,
+		},
+		{
+			data:  "127",
+			valid: false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_IPV4, formatchecker.IsValidIPv4)
 }
 
 func TestIsValidIPv6(t *testing.T) {
-
+	testCases := []test{
+		{
+			data:  "::1",
+			valid: true,
+		},
+		{
+			data:  "12345::",
+			valid: false,
+		},
+		{
+			data:  "1:1:1:1:1",
+			valid: false,
+		},
+		{
+			data:  "::string",
+			valid: false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_IPV6, formatchecker.IsValidIPv6)
 }
 
 func TestIsValidURI(t *testing.T) {
