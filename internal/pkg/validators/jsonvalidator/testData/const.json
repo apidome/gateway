@@ -1,7 +1,7 @@
 [
     {
         "description": "a json schema that accepts only the array [1, 2, 3, 4]",
-        "path": "/v1/a",
+        "path": "/v1/const",
         "method": "GET",
         "schema": {
             "const": [1, 2, 3, 4]
@@ -46,7 +46,7 @@
     },
     {
         "description": "a json schema that accepts only the object {\"name\": \"Itay\"}",
-        "path": "/v1/a",
+        "path": "/v1/const",
         "method": "GET",
         "schema": {
             "const": {"name": "Itay"}
@@ -91,7 +91,7 @@
     },
     {
         "description": "a json schema that accepts only the boolean \"true\"",
-        "path": "/v1/a",
+        "path": "/v1/const",
         "method": "GET",
         "schema": {
             "const": true
@@ -136,7 +136,7 @@
     },
     {
         "description": "a json schema that accepts only null",
-        "path": "/v1/a",
+        "path": "/v1/const",
         "method": "GET",
         "schema": {
             "const": null
@@ -181,7 +181,7 @@
     },
     {
         "description": "a json schema that accepts only the string \"CAF\"",
-        "path": "/v1/a",
+        "path": "/v1/const",
         "method": "GET",
         "schema": {
             "const": "CAF"
@@ -226,7 +226,7 @@
     },
     {
         "description": "a json schema that accepts only the number 6.6",
-        "path": "/v1/a",
+        "path": "/v1/const",
         "method": "GET",
         "schema": {
             "const": 6.6
@@ -276,7 +276,7 @@
     },
     {
         "description": "a json schema that accepts only the integer 99",
-        "path": "/v1/a",
+        "path": "/v1/const",
         "method": "GET",
         "schema": {
             "const": 99

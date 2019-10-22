@@ -1,7 +1,7 @@
 [
     {
         "description": "a json schema that accepts only empty object or true",
-        "path": "/v1/a",
+        "path": "/v1/enum",
         "method": "GET",
         "schema": {
             "enum": [{}, true]
@@ -36,7 +36,7 @@
     },
     {
         "description": "a json schema that accepts only standard http methods",
-        "path": "/v1/a",
+        "path": "/v1/enum",
         "method": "GET",
         "schema": {
             "enum": ["GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS", "CONNECT", "UPGRADE"]
@@ -71,7 +71,7 @@
     },
     {
         "description": "a json schema that contains enum with all json types",
-        "path": "/v1/a",
+        "path": "/v1/enum",
         "method": "GET",
         "schema": {
             "enum": ["string", 4, true, 5.5, null, {"a": true}, [true, 4, 16, "name"]]
