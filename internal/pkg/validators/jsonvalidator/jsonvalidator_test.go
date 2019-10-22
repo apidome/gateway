@@ -16,6 +16,7 @@ const succeed = "V"
 const failed = "X"
 
 type testCase struct {
+	Keyword      string
 	Descriptions string          `json:"description"`
 	Schema       json.RawMessage `json:"schema"`
 	Path         string          `json:"path"`
@@ -230,6 +231,10 @@ func TestValidate(t *testing.T) {
 				"probably one or more cases is not in the correct format in %s.json: %v", keyword, err)
 		}
 
+		for index := range testData {
+			testData[index].Keyword = keyword
+		}
+
 		testCases = append(testCases, testData...)
 	}
 
@@ -242,7 +247,7 @@ func TestValidate(t *testing.T) {
 		t.Logf("\t%s\tShould be able to create a new JsonValidator", succeed)
 
 		for i, testCase := range testCases {
-			t.Logf("\tSchema %d: %s", i, testCase.Descriptions)
+			t.Logf("\t[%s] Test Schema %d: %s", testCase.Keyword, i, testCase.Descriptions)
 			{
 				for j, test := range testCase.Tests {
 					t.Logf("\t\tTest %d.%d: When trying to validate %s against the given schema", i, j, test.Description)
@@ -269,6 +274,7 @@ func TestValidate(t *testing.T) {
 					}
 				}
 			}
+			t.Log()
 		}
 	}
 }

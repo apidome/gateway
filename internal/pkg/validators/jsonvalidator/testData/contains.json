@@ -4,7 +4,7 @@
         "path": "/v1/maximum",
         "method": "GET",
         "schema": {
-            "contains": "CAF"
+            "contains": {"const": "CAF"}
         },
         "tests": [
             {
@@ -20,7 +20,7 @@
             {
                 "description": "an array that contains the string \"caf\"",
                 "data": ["caf", 3, true, ""],
-                "valid": true
+                "valid": false
             },
             {
                 "description": "an array that does not contain the string \"CAF\"",
@@ -30,17 +30,17 @@
             {
                 "description": "the string \"CAF\"",
                 "data": "CAF",
-                "valid": true
+                "valid": false
             },
             {
                 "description": "an object that does not contain a property called \"CAF\"",
                 "data": {"a": "CAF"},
-                "valid": true
+                "valid": false
             },
             {
                 "description": "null",
                 "data": null,
-                "valid": true
+                "valid": false
             }
         ]
     }
