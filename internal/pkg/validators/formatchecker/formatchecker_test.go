@@ -431,15 +431,106 @@ func TestIsValidURITemplate(t *testing.T) {
 }
 
 func TestIsValidJSONPointer(t *testing.T) {
-
+	testCases := []test{
+		{
+			description: "a valid JSON-pointer",
+			data:        "/foo/bar~0/baz~1/%a",
+			valid:       true,
+		},
+		{
+			description: "valid JSON-pointer",
+			data:        "",
+			valid:       true,
+		},
+		{
+			description: "valid JSON-pointer",
+			data:        "/foo/0",
+			valid:       true,
+		},
+		{
+			description: "valid JSON-pointer",
+			data:        "/",
+			valid:       true,
+		},
+		{
+			description: "valid JSON-pointer",
+			data:        "/a~1b",
+			valid:       true,
+		},
+		{
+			description: "valid JSON-pointer",
+			data:        "/ ",
+			valid:       true,
+		},
+		{
+			description: "invalid JSON-pointer (~ not escaped)",
+			data:        "/foo/bar~",
+			valid:       false,
+		},
+		{
+			description: "invalid JSON-pointer (URI Fragment Identifier)",
+			data:        "#/",
+			valid:       false,
+		},
+		{
+			description: "invalid JSON-pointer (URI Fragment Identifier)",
+			data:        "#a",
+			valid:       false,
+		},
+		{
+			description: "not a valid JSON-pointer (isn't empty nor starts with /)",
+			data:        "0",
+			valid:       false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_JSON_POINTER, formatchecker.IsValidJSONPointer)
 }
 
 func TestIsValidRelJSONPointer(t *testing.T) {
-
+	testCases := []test{
+		{
+			description: "a valid relative json pointer",
+			data:        "0/a/b",
+			valid:       true,
+		},
+		{
+			description: "a valid relative json pointer",
+			data:        "5/a/b#",
+			valid:       true,
+		},
+		{
+			description: "a valid relative json pointer",
+			data:        "2#",
+			valid:       true,
+		},
+		{
+			description: "a valid relative json pointer",
+			data:        "2",
+			valid:       true,
+		},
+		{
+			description: "an invalid relative json pointer",
+			data:        "/a/b",
+			valid:       false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_RELATIVE_JSON_POINTER, formatchecker.IsValidRelJSONPointer)
 }
 
 func TestIsValidRegex(t *testing.T) {
-
+	testCases := []test{
+		{
+			description: "a valid regex",
+			data:        "^[a-z]+$",
+			valid:       true,
+		},
+		{
+			description: "incomplete group",
+			data:        "(a",
+			valid:       false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_REGEX, formatchecker.IsValidRegex)
 }
 
 func isValidFormat(t *testing.T, tests []test, formatType string, fn format) {

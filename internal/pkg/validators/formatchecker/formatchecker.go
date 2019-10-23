@@ -183,8 +183,11 @@ func IsValidURITemplate(uriTemplate string) error {
 // RFC 6901, section 5 [RFC6901].
 // https://tools.ietf.org/html/rfc6901#section-5
 func IsValidJSONPointer(jsonPointer string) error {
-	unescapedTildaPattern := `\~[^01]`
-	endingTildaPattern := `\~$`
+	unescapedTilda := `\~[^01]`
+	endingTilda := `\~$`
+	unescaptedTildaPattern := regexp.MustCompile(unescapedTilda)
+	endingTildaPattern := regexp.MustCompile(endingTilda)
+
 	if len(jsonPointer) == 0 {
 		return nil
 	}
@@ -192,11 +195,11 @@ func IsValidJSONPointer(jsonPointer string) error {
 		return errors.New("non-empty references must begin with a '/' character: " + jsonPointer)
 	}
 	str := jsonPointer[1:]
-	if _, err := regexp.MatchString(unescapedTildaPattern, str); err != nil {
-		return err
+	if unescaptedTildaPattern.MatchString(str) {
+		return errors.New("unescaped tilda error")
 	}
-	if _, err := regexp.MatchString(endingTildaPattern, str); err != nil {
-		return err
+	if endingTildaPattern.MatchString(str) {
+		return errors.New("ending tilda error")
 	}
 	return nil
 }
