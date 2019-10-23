@@ -6,8 +6,9 @@ import (
 )
 
 type test struct {
-	data  string
-	valid bool
+	data        string
+	valid       bool
+	description string
 }
 
 type format func(string) error
@@ -38,16 +39,19 @@ const (
 func TestIsValidDateTime(t *testing.T) {
 	testCases := []test{
 		{
-			data:  "1985-04-12T23:20:50.52Z",
-			valid: true,
+			description: "a valid date-time string",
+			data:        "1985-04-12T23:20:50.52Z",
+			valid:       true,
 		},
 		{
-			data:  "1996-12-19T16:39:57-08:00",
-			valid: true,
+			description: "a valid date-time string",
+			data:        "1996-12-19T16:39:57-08:00",
+			valid:       true,
 		},
 		{
-			data:  "06/19/1963 08:30:06 PST",
-			valid: false,
+			description: "an invalid date-time string",
+			data:        "06/19/1963 08:30:06 PST",
+			valid:       false,
 		},
 	}
 
@@ -57,20 +61,24 @@ func TestIsValidDateTime(t *testing.T) {
 func TestIsValidDate(t *testing.T) {
 	testCases := []test{
 		{
-			data:  "1963-06-19",
-			valid: true,
+			description: "a valid date string",
+			data:        "1963-06-19",
+			valid:       true,
 		},
 		{
-			data:  "06/19/1963",
-			valid: false,
+			description: "an invalid date string (/ is invalid)",
+			data:        "06/19/1963",
+			valid:       false,
 		},
 		{
-			data:  "02-2002",
-			valid: false,
+			description: "an invalid RFC3339 date",
+			data:        "02-2002",
+			valid:       false,
 		},
 		{
-			data:  "2010-350",
-			valid: false,
+			description: "an invalid month 350",
+			data:        "2010-350",
+			valid:       false,
 		},
 	}
 	isValidFormat(t, testCases, FORMAT_DATE, formatchecker.IsValidDate)
@@ -79,28 +87,34 @@ func TestIsValidDate(t *testing.T) {
 func TestIsValidTime(t *testing.T) {
 	testCases := []test{
 		{
-			data:  "08:30:06.283185Z",
-			valid: true,
+			description: "a valid time",
+			data:        "08:30:06.283185Z",
+			valid:       true,
 		},
 		{
-			data:  "10:05:08+01:00",
-			valid: true,
+			description: "a valid time",
+			data:        "10:05:08+01:00",
+			valid:       true,
 		},
 		{
-			data:  "09:45:10 PST",
-			valid: false,
+			description: "an invalid time",
+			data:        "09:45:10 PST",
+			valid:       false,
 		},
 		{
-			data:  "01:02:03,121212",
-			valid: false,
+			description: "an invalid RFC3339 time",
+			data:        "01:02:03,121212",
+			valid:       false,
 		},
 		{
-			data:  "45:60:62",
-			valid: false,
+			description: "an invalid seconds",
+			data:        "45:59:62",
+			valid:       false,
 		},
 		{
-			data:  "1234",
-			valid: false,
+			description: "an invalid time",
+			data:        "1234",
+			valid:       false,
 		},
 	}
 	isValidFormat(t, testCases, FORMAT_TIME, formatchecker.IsValidTime)
@@ -109,24 +123,29 @@ func TestIsValidTime(t *testing.T) {
 func TestIsValidEmail(t *testing.T) {
 	testCases := []test{
 		{
-			data:  "john@example.com",
-			valid: true,
+			description: "a valid email",
+			data:        "john@example.com",
+			valid:       true,
 		},
 		{
-			data:  "@",
-			valid: false,
+			description: "an invalid email address",
+			data:        "@",
+			valid:       false,
 		},
 		{
-			data:  "john(at)example.com",
-			valid: false,
+			description: "@ is missing",
+			data:        "john(at)example.com",
+			valid:       false,
 		},
 		{
-			data:  "1234",
-			valid: false,
+			description: "an invalid email address",
+			data:        "1234",
+			valid:       false,
 		},
 		{
-			data:  "",
-			valid: false,
+			description: "an invalid email address",
+			data:        "",
+			valid:       false,
 		},
 	}
 	isValidFormat(t, testCases, FORMAT_EMAIL, formatchecker.IsValidEmail)
@@ -135,20 +154,24 @@ func TestIsValidEmail(t *testing.T) {
 func TestIsValidIdnEmail(t *testing.T) {
 	testCases := []test{
 		{
-			data:  "실례@실례.테스트",
-			valid: true,
+			description: "a valid idn email (example@example.test in Hangul)",
+			data:        "실례@실례.테스트",
+			valid:       true,
 		},
 		{
-			data:  "john@example.com",
-			valid: true,
+			description: "a valid idn email",
+			data:        "john@example.com",
+			valid:       true,
 		},
 		{
-			data:  "1234",
-			valid: false,
+			description: "an invalid idn email",
+			data:        "1234",
+			valid:       false,
 		},
 		{
-			data:  "",
-			valid: false,
+			description: "an invalid idn email",
+			data:        "",
+			valid:       false,
 		},
 	}
 	isValidFormat(t, testCases, FORMAT_IDN_EMAIL, formatchecker.IsValidIdnEmail)
@@ -157,22 +180,27 @@ func TestIsValidIdnEmail(t *testing.T) {
 func TestIsValidHostname(t *testing.T) {
 	testCases := []test{
 		{
-			data:  "www.example.com",
-			valid: true,
+			description: "a valid host name",
+			data:        "www.example.com",
+			valid:       true,
 		},
 		{
-			data:  "xn--4gbwdl.xn--wgbh1c",
-			valid: true,
+			description: "a valid host name",
+			data:        "xn--4gbwdl.xn--wgbh1c",
+			valid:       true,
 		},
 		{
-			data:  "not_a_valid_host_name",
-			valid: false,
+			description: "a host name containing illegal characters (_)",
+			data:        "not_a_valid_host_name",
+			valid:       false,
 		},
 		{
-			data:  "-a-host-name-that-starts-with--",
-			valid: false,
+			description: "a host name starting with an illegal character",
+			data:        "-a-host-name-that-starts-with--",
+			valid:       false,
 		},
 		{
+			description: "a host name with a component too long",
 			data: "a-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
 				"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
 				"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-long-host-name-component",
@@ -185,18 +213,19 @@ func TestIsValidHostname(t *testing.T) {
 func TestIsValidIdnHostname(t *testing.T) {
 	testCases := []test{
 		{
-			data:  "실례.테스트",
-			valid: true,
+			description: "a valid host name (example.test in Hangul)",
+			data:        "실례.테스트",
+			valid:       true,
 		},
 		{
-			// illegal first char
-			data:  "〮실례.테스트",
-			valid: false,
+			description: "illegal first char",
+			data:        "〮실례.테스트",
+			valid:       false,
 		},
 		{
-			// contains illegal char
-			data:  "실〮례.테스트",
-			valid: false,
+			description: "contains illegal",
+			data:        "실〮례.테스트",
+			valid:       false,
 		},
 	}
 	isValidFormat(t, testCases, FORMAT_IDN_HOSTNAME, formatchecker.IsValidIdnHostname)
@@ -205,24 +234,24 @@ func TestIsValidIdnHostname(t *testing.T) {
 func TestIsValidIPv4(t *testing.T) {
 	testCases := []test{
 		{
-			data:  "192.168.0.1",
-			valid: true,
+			description: "a valid IPv4 address",
+			data:        "192.168.0.1",
+			valid:       true,
 		},
 		{
-			data:  "127.0.0.0.1",
-			valid: false,
+			description: "too many components",
+			data:        "127.0.0.0.1",
+			valid:       false,
 		},
 		{
-			data:  "192.168.1.1.1",
-			valid: false,
+			description: "IPv4 out of range",
+			data:        "256.256.256.256",
+			valid:       false,
 		},
 		{
-			data:  "256.256.256.256",
-			valid: false,
-		},
-		{
-			data:  "127",
-			valid: false,
+			description: "not enough components (4 needed)",
+			data:        "127",
+			valid:       false,
 		},
 	}
 	isValidFormat(t, testCases, FORMAT_IPV4, formatchecker.IsValidIPv4)
@@ -231,20 +260,24 @@ func TestIsValidIPv4(t *testing.T) {
 func TestIsValidIPv6(t *testing.T) {
 	testCases := []test{
 		{
-			data:  "::1",
-			valid: true,
+			description: "a valid IPv6 address",
+			data:        "::1",
+			valid:       true,
 		},
 		{
-			data:  "12345::",
-			valid: false,
+			description: "IPv6 out of range",
+			data:        "12345::",
+			valid:       false,
 		},
 		{
-			data:  "1:1:1:1:1",
-			valid: false,
+			description: "too many components",
+			data:        "1:1:1:1:1",
+			valid:       false,
 		},
 		{
-			data:  "::string",
-			valid: false,
+			description: "IPv6 containing illegal characters",
+			data:        "::string",
+			valid:       false,
 		},
 	}
 	isValidFormat(t, testCases, FORMAT_IPV6, formatchecker.IsValidIPv6)
@@ -286,7 +319,7 @@ func isValidFormat(t *testing.T, tests []test, formatType string, fn format) {
 	t.Logf("Given the need to test %s format", formatType)
 	{
 		for index, testCase := range tests {
-			t.Logf("\tTest %d: When trying to format %s", index, testCase.data)
+			t.Logf("\tTest %d: When trying to format %s => %s", index, testCase.data, testCase.description)
 			{
 				var valid bool
 				if err := fn(testCase.data); err != nil {
