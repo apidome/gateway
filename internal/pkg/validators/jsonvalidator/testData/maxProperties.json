@@ -1,6 +1,6 @@
 [
     {
-        "description": "a json schema that accepts only json objects that contain at most 3 properties, if the inspected value is a number",
+        "description": "a json schema that accepts only json objects that contain at most 3 properties, if the inspected value is an object",
         "path": "/v1/maxProperties",
         "method": "GET",
         "schema": {
@@ -34,7 +34,7 @@
                     "b": 2,
                     "c": 3
                 },
-                "valid": false
+                "valid": true
             },
             {
                 "description": "null",
