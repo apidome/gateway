@@ -284,23 +284,150 @@ func TestIsValidIPv6(t *testing.T) {
 }
 
 func TestIsValidURI(t *testing.T) {
+	testCases := []test{
+		{
+			description: "a valid URL",
+			data:        "http://foo.bar/?baz=qux#quux",
+			valid:       true,
+		},
+		{
+			description: "a valid URL with URL-encoded",
+			data:        "http://foo.bar/?q=Test%20URL-encoded%20stuff",
+			valid:       true,
+		},
+		{
+			description: "a valid URL with  special characters",
+			data:        "http://-.~_!$&'()*+,;=:%40:80%2f::::::@example.com",
+			valid:       true,
+		},
+		{
+			description: "a valid URL for a simple text file",
+			data:        "http: //www.fff.com/rfc/rfc2396.txt",
+			valid:       true,
+		},
+		{
+			description: "an invalid URI with spaces",
+			data:        "http:// shouldfail.com",
+			valid:       false,
+		},
+		{
+			description: "an invalid URI missing scheme",
+			data:        ":// houldfail",
+			valid:       false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_URI, formatchecker.IsValidURI)
 
 }
 
 func TestIsValidUriRef(t *testing.T) {
+	testCases := []test{
+		{
+			description: "a valid uri reference",
+			data:        "aaa/bbb.html",
+			valid:       true,
+		},
+		{
+			description: "a valid uri reference",
+			data:        "?a=b",
+			valid:       true,
+		},
+		{
+			description: "a valid uri reference",
+			data:        "#fragment",
+			valid:       true,
+		},
+		{
+			description: "a valid uri reference",
+			data:        "http://example.com",
+			valid:       true,
+		},
+		{
+			description: "an invalid URI fragment",
+			data:        "#frag\\ment",
+			valid:       false,
+		},
+		{
+			description: "an invalid URI Reference",
+			data:        "\\\\WINDOWS\\fileshare",
+			valid:       false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_URI_REFERENCE, formatchecker.IsValidUriRef)
 
 }
 
 func TestIsValidIri(t *testing.T) {
-
+	testCases := []test{
+		{
+			description: "a valid IRI with anchor tag",
+			data:        "http://ƒøø.ßår/?∂éœ=πîx#πîüx",
+			valid:       true,
+		},
+		{
+			description: "a valid IRI with anchor tag and parantheses",
+			data:        "http://ƒøø.com/blah_(wîkïpédiå)_blah#ßité-1",
+			valid:       true,
+		},
+		{
+			description: "an invalid IRI",
+			data:        "http:// ƒøø.com",
+			valid:       false,
+		},
+		{
+			description: "an invalid relative IRI Reference",
+			data:        "/abc",
+			valid:       false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_IRI, formatchecker.IsValidIri)
 }
 
 func TestIsValidIriRef(t *testing.T) {
-
+	testCases := []test{
+		{
+			description: "a valid IRI",
+			data:        "http://ƒøø.ßår/?∂éœ=πîx#πîüx",
+			valid:       true,
+		},
+		{
+			description: "a valid IRI fragment",
+			data:        "#ƒrägmênt",
+			valid:       true,
+		},
+		{
+			description: "a valid IRI",
+			data:        "http://ƒøø.com/blah_(wîkïpédiå)_blah#ßité-1",
+			valid:       true,
+		},
+		{
+			description: "an invalid IRI Reference",
+			data:        "\\\\WINDOWS\\filëßåré",
+			valid:       false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_IRI_REFERENCE, formatchecker.IsValidIriRef)
 }
 
 func TestIsValidURITemplate(t *testing.T) {
-
+	testCases := []test{
+		{
+			description: "a valid URI template",
+			data:        "http://example.com/dictionary/{term:1}/{term}",
+			valid:       true,
+		},
+		{
+			description: "a valid relative URI template",
+			data:        "dictionary/{term:1}/{term}",
+			valid:       true,
+		},
+		{
+			description: "an invalid URI template",
+			data:        "http://example.com/dictionary/{term:1}/{term",
+			valid:       false,
+		},
+	}
+	isValidFormat(t, testCases, FORMAT_URI_TEMPLATE, formatchecker.IsValidURITemplate)
 }
 
 func TestIsValidJSONPointer(t *testing.T) {

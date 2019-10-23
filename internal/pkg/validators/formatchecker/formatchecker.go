@@ -126,8 +126,13 @@ func IsValidIPv6(ipv6 string) error {
 // RFC3986
 // https://tools.ietf.org/html/rfc3986
 func IsValidURI(uri string) error {
+	schemePrefix := `^[^\:]+\:`
+	schemePrefixPattern := regexp.MustCompile(schemePrefix)
 	if _, err := url.Parse(uri); err != nil {
 		return err
+	}
+	if !schemePrefixPattern.MatchString(uri) {
+		return fmt.Errorf("uri missing scheme prefix")
 	}
 	return nil
 }
