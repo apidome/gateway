@@ -8,7 +8,7 @@
                 "^M": {
                     "type": "string"
                 },
-                "^F*B": {
+                "^FC*B": {
                     "type": "number"
                 }
             }
@@ -40,8 +40,13 @@
                 "valid": true
             },
             {
+                "description": "an object that contains both properties and one of them is not valid against its schema",
+                "data": {"MTA": "4", "FCB": "5"},
+                "valid": false
+            },
+            {
                 "description": "an object that contains two properties that match the same pattern and one of them is not valid",
-                "data": {"MTA": "4", "FCB": 5, "FTB": true},
+                "data": {"MTA": "4", "FCB": 5, "FCCB": true},
                 "valid": false
             },
             {

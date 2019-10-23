@@ -212,9 +212,10 @@ func TestLoadSchema(t *testing.T) {
 
 func TestValidate(t *testing.T) {
 	keywords := []string{"type", "enum", "const", "minLength", "maxLength", "pattern", "format", "multipleOf",
-		"minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "properties", "additionalProperties",
-		"required", "propertyNames", "minProperties", "maxProperties", "items", "contains", "additionalItems",
-		"minItems", "maxItems", "uniqueItems", "anyOf", "allOf", "oneOf", "not", "if", "then", "else"}
+		"minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "properties", "patternProperties",
+		"additionalProperties", "required", "propertyNames", "minProperties", "maxProperties", "items", "contains",
+		"additionalItems", "minItems", "maxItems", "uniqueItems", "anyOf", "allOf", "oneOf", "not",
+		"if", "then", "else"}
 	testCases := make([]testCase, 0)
 
 	// Read all the test data from the files and append them to the main slice.
