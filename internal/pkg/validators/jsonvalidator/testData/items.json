@@ -215,7 +215,7 @@
                 "data": [
                     "aaaa",
                     12,
-                    null
+                    false
                 ],
                 "valid": false
             },
