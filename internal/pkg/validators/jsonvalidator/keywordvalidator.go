@@ -781,32 +781,46 @@ func (ap *additionalProperties) validate(jsonPath string, jsonData jsonData, roo
 				// Check if the property does not have corresponding schema in
 				// "properties" field
 				if _, ok := (*ap.siblingProperties)[property]; !ok {
-					// Iterate over the patterns in "patternProperties" field.
-					for pattern := range *ap.siblingPatternProperties {
-						// Check if the inspected property matches to the pattern.
-						match, err := regexp.MatchString(pattern, property)
+					if (*ap).siblingPatternProperties != nil {
+						// Iterate over the patterns in "patternProperties" field.
+						for pattern := range *ap.siblingPatternProperties {
+							// Check if the inspected property matches to the pattern.
+							match, err := regexp.MatchString(pattern, property)
 
-						// The pattern or the value is not in the right format (string)
-						if err != nil {
-							return KeywordValidationError{
-								"additionalProperties",
-								err.Error(),
-							}
-						}
-
-						// If there is no match, validate the value of the property against
-						// the given schema in "additionalProperties" field.
-						if !match {
-							err := (*ap).validateJsonData(jsonPath+"/"+property, jsonData.raw, rootSchemaId)
-
-							// If the validation fails, return an error.
+							// The pattern or the value is not in the right format (string)
 							if err != nil {
 								return KeywordValidationError{
 									"additionalProperties",
-									"property \"" +
-										property +
-										"\" failed in validation: \n" + err.Error(),
+									err.Error(),
 								}
+							}
+
+							// If there is no match, validate the value of the property against
+							// the given schema in "additionalProperties" field.
+							if !match {
+								err := (*ap).validateJsonData(jsonPath+"/"+property, jsonData.raw, rootSchemaId)
+
+								// If the validation fails, return an error.
+								if err != nil {
+									return KeywordValidationError{
+										"additionalProperties",
+										"property \"" +
+											property +
+											"\" failed in validation: \n" + err.Error(),
+									}
+								}
+							}
+						}
+					} else {
+						err := (*ap).validateJsonData(jsonPath+"/"+property, jsonData.raw, rootSchemaId)
+
+						// If the validation fails, return an error.
+						if err != nil {
+							return KeywordValidationError{
+								"additionalProperties",
+								"property \"" +
+									property +
+									"\" failed in validation: \n" + err.Error(),
 							}
 						}
 					}

@@ -16,6 +16,7 @@ const succeed = "V"
 const failed = "X"
 
 type testCase struct {
+	Keyword      string
 	Descriptions string          `json:"description"`
 	Schema       json.RawMessage `json:"schema"`
 	Path         string          `json:"path"`
@@ -211,9 +212,10 @@ func TestLoadSchema(t *testing.T) {
 
 func TestValidate(t *testing.T) {
 	keywords := []string{"type", "enum", "const", "minLength", "maxLength", "pattern", "format", "multipleOf",
-		"minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "properties", "additionalProperties",
-		"required", "propertyNames", "minProperties", "maxProperties", "items", "contains", "additionalItems",
-		"minItems", "maxItems", "uniqueItems", "anyOf", "allOf", "oneOf", "not", "if", "then", "else"}
+		"minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "properties", "patternProperties",
+		"additionalProperties", "required", "propertyNames", "minProperties", "maxProperties", "items", "contains",
+		"additionalItems", "minItems", "maxItems", "uniqueItems", "anyOf", "allOf", "oneOf", "not",
+		"if", "then", "else"}
 	testCases := make([]testCase, 0)
 
 	// Read all the test data from the files and append them to the main slice.
@@ -230,6 +232,10 @@ func TestValidate(t *testing.T) {
 				"probably one or more cases is not in the correct format in %s.json: %v", keyword, err)
 		}
 
+		for index := range testData {
+			testData[index].Keyword = keyword
+		}
+
 		testCases = append(testCases, testData...)
 	}
 
@@ -242,33 +248,38 @@ func TestValidate(t *testing.T) {
 		t.Logf("\t%s\tShould be able to create a new JsonValidator", succeed)
 
 		for i, testCase := range testCases {
-			t.Logf("\tSchema %d: %s", i, testCase.Descriptions)
-			{
-				for j, test := range testCase.Tests {
-					t.Logf("\t\tTest %d.%d: When trying to validate %s against the given schema", i, j, test.Description)
-					{
-						err = jv.LoadSchema(testCase.Path, testCase.Method, testCase.Schema)
-						if err != nil {
-							t.Errorf("\t\t%s\tShould be able to Load schema: %v", failed, err)
-						}
-
-						err = jv.Validate(testCase.Path, testCase.Method, test.Data)
-						if test.Valid {
+			subTest := func(t *testing.T) {
+				t.Logf("\t[%s] Test Schema %d: %s", testCase.Keyword, i, testCase.Descriptions)
+				{
+					for j, test := range testCase.Tests {
+						t.Logf("\t\tTest %d.%d: When trying to validate %s against the given schema", i, j, test.Description)
+						{
+							err = jv.LoadSchema(testCase.Path, testCase.Method, testCase.Schema)
 							if err != nil {
-								t.Errorf("\t\t%s\tData should be valid against the specified json schema: %v", failed, err)
-							} else {
-								t.Logf("\t\t%s\tData should be valid against the specified json schema", succeed)
+								t.Errorf("\t\t%s\tShould be able to Load schema: %v", failed, err)
 							}
-						} else {
-							if err != nil {
-								t.Logf("\t\t%s\tData should not be valid against the specified json schema: %v", succeed, err)
+
+							err = jv.Validate(testCase.Path, testCase.Method, test.Data)
+							if test.Valid {
+								if err != nil {
+									t.Errorf("\t\t%s\tData should be valid against the specified json schema: %v", failed, err)
+								} else {
+									t.Logf("\t\t%s\tData should be valid against the specified json schema", succeed)
+								}
 							} else {
-								t.Errorf("\t\t%s\tData should not be valid against the specified json schema", failed)
+								if err != nil {
+									t.Logf("\t\t%s\tData should not be valid against the specified json schema: %v", succeed, err)
+								} else {
+									t.Errorf("\t\t%s\tData should not be valid against the specified json schema", failed)
+								}
 							}
 						}
 					}
 				}
+				t.Log()
 			}
+
+			t.Run(testCase.Keyword, subTest)
 		}
 	}
 }
