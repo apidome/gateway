@@ -42,7 +42,7 @@ func (e SchemaCompilationError) Error() string {
 type InvalidDraftError string
 
 func (e InvalidDraftError) Error() string {
-	return fmt.Sprintf("draft " + string(e) + " does not exist")
+	return fmt.Sprintf("draft " + string(e) + " is not supported by JsonValidator")
 }
 
 type InvalidReferenceError struct {
