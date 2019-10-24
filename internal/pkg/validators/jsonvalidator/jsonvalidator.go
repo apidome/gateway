@@ -3,9 +3,24 @@ package jsonvalidator
 import (
 	"github.com/pkg/errors"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"runtime"
+)
+
+var (
+	methods = []string{
+		http.MethodConnect,
+		http.MethodDelete,
+		http.MethodGet,
+		http.MethodHead,
+		http.MethodOptions,
+		http.MethodPatch,
+		http.MethodPost,
+		http.MethodPut,
+		http.MethodTrace,
+	}
 )
 
 // JsonValidator is a struct that implements the Validator interface
@@ -34,29 +49,36 @@ func NewJsonValidator(draft string) (JsonValidator, error) {
 // LoadSchema is a function that handles addition of new schema to the
 // JsonValidator's schemas list
 func (jv JsonValidator) LoadSchema(path, method string, rawSchema []byte) error {
-	// Validate the given schema against draft-07 meta-schema.
-	err := validateJsonSchema(jv.draft, rawSchema)
-	if err != nil {
-		return errors.Wrap(err, "validation against meta-schema failed")
+	// Check if the given method is correct
+	for _, httpMethod := range methods {
+		if method == httpMethod {
+			// Validate the given schema against draft-07 meta-schema.
+			err := validateJsonSchema(jv.draft, rawSchema)
+			if err != nil {
+				return errors.Wrap(err, "validation against meta-schema failed")
+			}
+
+			// If the schema is valid make a new map and insert the new schema to it.
+			if jv.schemaDict[path] == nil {
+				// Create a new empty method-JsonSchema map for the current path.
+				jv.schemaDict[path] = make(map[string]*RootJsonSchema)
+			}
+
+			// Create a new JsonSchema object.
+			schema, err := NewRootJsonSchema(rawSchema)
+			if err != nil {
+				return errors.Wrap(err, "failed to create a RootJsonSchema instance")
+			}
+
+			// Add the schema to the appropriate map according to its path and
+			// method.
+			jv.schemaDict[path][method] = schema
+
+			return nil
+		}
 	}
 
-	// If the schema is valid make a new map and insert the new schema to it.
-	if jv.schemaDict[path] == nil {
-		// Create a new empty method-JsonSchema map for the current path.
-		jv.schemaDict[path] = make(map[string]*RootJsonSchema)
-	}
-
-	// Create a new JsonSchema object.
-	schema, err := NewRootJsonSchema(rawSchema)
-	if err != nil {
-		return errors.Wrap(err, "failed to create a RootJsonSchema instance")
-	}
-
-	// Add the schema to the appropriate map according to its path and
-	// method.
-	jv.schemaDict[path][method] = schema
-
-	return nil
+	return errors.New("could not load schema to path " + path + ": unknown method \"" + method + "\"")
 }
 
 // Validate is the function that actually perform validation of json value
