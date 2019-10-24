@@ -240,7 +240,18 @@ func assertJsonType(jsonType string, jsonData interface{}) error {
 				}
 			}
 		}
-	case TYPE_NUMBER, TYPE_INTEGER:
+	case TYPE_INTEGER:
+		{
+			if value, ok := jsonData.(float64); ok && value == float64(int(value)) {
+				return nil
+			} else {
+				return KeywordValidationError{
+					"type",
+					"inspected value expected to be a json integer",
+				}
+			}
+		}
+	case TYPE_NUMBER:
 		{
 			if _, ok := jsonData.(float64); ok {
 				return nil

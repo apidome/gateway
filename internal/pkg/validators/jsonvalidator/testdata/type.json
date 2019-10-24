@@ -1,7 +1,7 @@
 [
     {
         "description": "a json schema that accepts any json string",
-        "path": "/v1/a",
+        "path": "/v1/type",
         "method": "GET",
         "schema": {
             "type": "string"
@@ -46,7 +46,7 @@
     },
     {
         "description": "a json schema that accepts any json number (float and integer)",
-        "path": "/v1/a",
+        "path": "/v1/type",
         "method": "GET",
         "schema": {
             "type": "number"
@@ -91,7 +91,7 @@
     },
     {
         "description": "a json schema that accepts any json integer",
-        "path": "/v1/a",
+        "path": "/v1/type",
         "method": "GET",
         "schema": {
             "type": "integer"
@@ -113,7 +113,7 @@
                 "valid": false
             },
             {
-                "description": "a json number",
+                "description": "a json float",
                 "data": 4.4,
                 "valid": false
             },
@@ -136,7 +136,7 @@
     },
     {
         "description": "a json schema that accepts json boolean",
-        "path": "/v1/a",
+        "path": "/v1/type",
         "method": "GET",
         "schema": {
             "type": "boolean"
@@ -181,7 +181,7 @@
     },
     {
         "description": "a json schema that accepts any json object",
-        "path": "/v1/a",
+        "path": "/v1/type",
         "method": "GET",
         "schema": {
             "type": "object"
@@ -226,7 +226,7 @@
     },
     {
         "description": "a json schema that accepts any json array",
-        "path": "/v1/a",
+        "path": "/v1/type",
         "method": "GET",
         "schema": {
             "type": "array"
@@ -271,7 +271,7 @@
     },
     {
         "description": "a json schema that accepts json null",
-        "path": "/v1/a",
+        "path": "/v1/type",
         "method": "GET",
         "schema": {
             "type": "null"
