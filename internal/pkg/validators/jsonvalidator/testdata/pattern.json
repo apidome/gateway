@@ -1,10 +1,10 @@
 [
     {
-        "description": "a json schema that accepts a string, only if it matches the pattern ^CAA+F$",
+        "description": "a json schema that accepts a string, only if it matches the pattern ^CA+F$",
         "path": "/v1/pattern",
         "method": "GET",
         "schema": {
-            "pattern": "^CAA+F$"
+            "pattern": "^CA+F$"
         },
         "tests": [
             {
