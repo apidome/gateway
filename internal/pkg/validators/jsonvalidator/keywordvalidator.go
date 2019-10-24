@@ -1501,16 +1501,22 @@ func (i *_if) validate(jsonPath string, jsonData jsonData, rootSchemaId string) 
 	}
 
 	// Validate the data against the given schema in "if".
-	err := i.validateJsonData("", jsonData.raw, rootSchemaId)
+	err := (*i).validateJsonData("", jsonData.raw, rootSchemaId)
 
 	// If the validation succeeded, validate the data against the given schema
 	// in "then".
 	// Else, validate the data against the given schema in "else".
 	if err == nil {
-		return i.siblingThen.validateJsonData(jsonPath, jsonData.raw, rootSchemaId)
+		if (*i).siblingThen != nil {
+			return (*i).siblingThen.validateJsonData(jsonPath, jsonData.raw, rootSchemaId)
+		}
 	} else {
-		return i.siblingElse.validateJsonData(jsonPath, jsonData.raw, rootSchemaId)
+		if (*i).siblingElse != nil {
+			return (*i).siblingElse.validateJsonData(jsonPath, jsonData.raw, rootSchemaId)
+		}
 	}
+
+	return nil
 }
 
 type _then struct {
