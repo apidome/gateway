@@ -1,11 +1,14 @@
 {
-    "$id": "http://api.example.com/profile2.json#",
-    "type": ["object", "array"],
+    "$id": "test",
     "properties": {
-        "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64
+        "FCB": {
+            "type": "number"
         }
-    }
+    },
+    "patternProperties": {
+        "^M": {
+            "type": "string"
+        }
+    },
+    "additionalProperties": false
 }

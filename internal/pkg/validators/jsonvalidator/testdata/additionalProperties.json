@@ -215,13 +215,13 @@
                 "valid": true
             },
             {
-                "description": "an object that contains ont property called 'MTA' which is a number",
+                "description": "an object that contains one property called 'MTA' which is a number",
                 "data": {"MTA": 4},
                 "valid": false
             },
             {
-                "description": "an object that does not contain a property called 'MTA' but contains other properties",
-                "data": {"a": 4, "b": ""},
+                "description": "an object that does not contain a property that matches the pattern but contains other properties",
+                "data": {"a": 4, "b": "4"},
                 "valid": false
             },
             {
