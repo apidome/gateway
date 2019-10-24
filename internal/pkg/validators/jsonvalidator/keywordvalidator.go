@@ -262,19 +262,17 @@ func assertJsonType(jsonType string, jsonData interface{}) error {
 				}
 			}
 		}
-	//case TYPE_NULL:
-	//	{
-	//		if v, ok := jsonData.value.(string); ok {
-	//			if v == "null" {
-	//				return true, nil
-	//			}
-	//		} else {
-	//			return false, KeywordValidationError{
-	//				"type",
-	//				"inspected value expected to be a json null",
-	//			}
-	//		}
-	//	}
+	case TYPE_NULL:
+		{
+			if jsonData == nil {
+				return nil
+			} else {
+				return KeywordValidationError{
+					"type",
+					"inspected value expected to be a json null",
+				}
+			}
+		}
 	default:
 		{
 			return KeywordValidationError{
