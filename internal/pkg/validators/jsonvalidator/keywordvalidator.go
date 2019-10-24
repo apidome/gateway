@@ -1116,11 +1116,6 @@ func (ai *additionalItems) validate(jsonPath string, jsonData jsonData, rootSche
 
 			// If we arrived here it means that no item failed in validation.
 			return nil
-		} else {
-			return KeywordValidationError{
-				"additionalItems",
-				"inspected value expected to be a json array",
-			}
 		}
 	}
 
