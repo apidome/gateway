@@ -79,8 +79,8 @@ func evaluateToken(token string, jsonData interface{}) (interface{}, error) {
 	switch v := jsonData.(type) {
 	case map[string]interface{}:
 		{
-			if v[token] != nil {
-				return v[token], nil
+			if prop, ok := v[token]; ok {
+				return prop, nil
 			}
 
 			return nil, MissingJsonTokenError(token)

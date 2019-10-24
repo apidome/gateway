@@ -84,7 +84,7 @@
             },
             {
                 "description": "the boolean \"true\"",
-                "data": 1,
+                "data": true,
                 "valid": false
             }
         ]
@@ -129,7 +129,7 @@
             },
             {
                 "description": "the boolean \"true\"",
-                "data": 1,
+                "data": true,
                 "valid": true
             }
         ]
@@ -145,27 +145,27 @@
             {
                 "description": "{\"name\": \"Itay\"}",
                 "data": {"name": "Itay"},
-                "valid": false
+                "valid": true
             },
             {
                 "description": "[1, 2, 5]",
                 "data": [1, 2, 5],
-                "valid": false
+                "valid": true
             },
             {
                 "description": "\"CAF\"",
                 "data": "CAF",
-                "valid": false
+                "valid": true
             },
             {
                 "description": "the integer 1",
                 "data": 1,
-                "valid": false
+                "valid": true
             },
             {
                 "description": "the number 6.6",
                 "data": 6.6,
-                "valid": false
+                "valid": true
             },
             {
                 "description": "null",
@@ -174,8 +174,8 @@
             },
             {
                 "description": "the boolean \"true\"",
-                "data": 1,
-                "valid": false
+                "data": true,
+                "valid": true
             }
         ]
     },
@@ -219,7 +219,7 @@
             },
             {
                 "description": "the boolean \"true\"",
-                "data": 1,
+                "data": true,
                 "valid": false
             }
         ]
@@ -269,7 +269,7 @@
             },
             {
                 "description": "the boolean \"true\"",
-                "data": 1,
+                "data": true,
                 "valid": false
             }
         ]
@@ -314,7 +314,7 @@
             },
             {
                 "description": "the boolean \"true\"",
-                "data": 1,
+                "data": true,
                 "valid": false
             }
         ]
