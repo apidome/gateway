@@ -67,7 +67,8 @@ func (jv JsonValidator) LoadSchema(path, method string, rawSchema []byte) error 
 			// Create a new JsonSchema object.
 			schema, err := NewRootJsonSchema(rawSchema)
 			if err != nil {
-				return errors.Wrap(err, "failed to create a RootJsonSchema instance")
+				return errors.Wrap(err, "failed to create a RootJsonSchema "+
+					"instance")
 			}
 
 			// Add the schema to the appropriate map according to its path and
@@ -78,13 +79,31 @@ func (jv JsonValidator) LoadSchema(path, method string, rawSchema []byte) error 
 		}
 	}
 
-	return errors.New("could not load schema to path " + path + ": unknown method \"" + method + "\"")
+	return errors.New("could not load schema to path " +
+		path +
+		": unknown method \"" +
+		method +
+		"\"")
 }
 
 // Validate is the function that actually perform validation of json value
 // according to a specific json schema
 func (jv JsonValidator) Validate(path string, method string, body []byte) error {
-	return jv.schemaDict[path][method].validateBytes(body)
+	if _, isPathExist := jv.schemaDict[path]; isPathExist {
+		if _, isMethodExist := jv.schemaDict[path][method]; isMethodExist {
+			return jv.schemaDict[path][method].validateBytes(body)
+		} else {
+			return errors.New("could not validate request: unknown path \"" +
+				path +
+				"\"")
+		}
+	} else {
+		return errors.New("could not validate to path " +
+			path +
+			": no schema exist for method \"" +
+			method +
+			"\"")
+	}
 }
 
 // validateJsonSchema is a function that validates the schema's
@@ -100,7 +119,9 @@ func validateJsonSchema(draft string, rawSchema []byte) error {
 	// Open the meta-schema file.
 	file, err := os.Open(absolutePath + "/meta-schemas/" + draft)
 	if err != nil {
-		return errors.Wrap(err, "json schema version \""+draft+"\" is not supported")
+		return errors.Wrap(err, "json schema version \""+
+			draft+
+			"\" is not supported")
 	}
 
 	defer file.Close()
@@ -114,7 +135,9 @@ func validateJsonSchema(draft string, rawSchema []byte) error {
 	// Create a new RootJsonSchema.
 	metaSchema, err := NewRootJsonSchema(bytes)
 	if err != nil {
-		return errors.Wrap(err, "failed to create a RootJsonSchema instance for meta-schema - "+draft)
+		return errors.Wrap(err, "failed to create a RootJsonSchema instance "+
+			"for meta-schema - "+
+			draft)
 	}
 
 	return metaSchema.validateBytes(rawSchema)
