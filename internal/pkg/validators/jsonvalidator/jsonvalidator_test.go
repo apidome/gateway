@@ -293,7 +293,7 @@ func readTestDataFromFile(fileName string) ([]byte, error) {
 	}
 
 	// Open the meta-schema file.
-	file, err := os.Open(absolutePath + "/testData/" + fileName)
+	file, err := os.Open(absolutePath + "/testdata/" + fileName)
 	if err != nil {
 		return nil, err
 	}
