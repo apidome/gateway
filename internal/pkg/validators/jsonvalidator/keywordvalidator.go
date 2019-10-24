@@ -144,11 +144,6 @@ func (d *_default) UnmarshalJSON(data []byte) error {
 type _type json.RawMessage
 
 func (t *_type) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if t == nil {
-		return nil
-	}
-
 	var data interface{}
 
 	// First we need to unmarshal the json data.
@@ -302,11 +297,6 @@ func (t *_type) MarshalJSON() ([]byte, error) {
 type enum []interface{}
 
 func (e enum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if e == nil {
-		return nil
-	}
-
 	// Iterate over the items in "enum" array.
 	for _, item := range e {
 		// Marshal the item from "enum" array back comparable value that does
@@ -334,11 +324,6 @@ func (e enum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) 
 type _const json.RawMessage
 
 func (c *_const) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if c == nil {
-		return nil
-	}
-
 	// Convert both of the byte arrays to string for more convenient
 	// comparison. If they are equal, the data is valid against "const".
 	if string(*c) == string(jsonData.raw) {
@@ -379,11 +364,6 @@ func (c *_const) UnmarshalJSON(data []byte) error {
 type minLength int
 
 func (ml *minLength) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if ml == nil {
-		return nil
-	}
-
 	// If jsonData is a string, validate its length,
 	// else, return a KeywordValidationError
 	if v, ok := jsonData.value.(string); ok {
@@ -403,11 +383,6 @@ func (ml *minLength) validate(jsonPath string, jsonData jsonData, rootSchemaId s
 type maxLength int
 
 func (ml *maxLength) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if ml == nil {
-		return nil
-	}
-
 	// If jsonData is a string, validate its length,
 	// else, return a KeywordValidationError
 	if v, ok := jsonData.value.(string); ok {
@@ -427,11 +402,6 @@ func (ml *maxLength) validate(jsonPath string, jsonData jsonData, rootSchemaId s
 type pattern string
 
 func (p *pattern) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if p == nil {
-		return nil
-	}
-
 	// If jsonData is a string, validate its length,
 	// else, return a KeywordValidationError
 	if v, ok := jsonData.value.(string); ok {
@@ -461,11 +431,6 @@ func (p *pattern) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 type format string
 
 func (f *format) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if f == nil {
-		return nil
-	}
-
 	if v, ok := jsonData.value.(string); ok {
 		switch string(*f) {
 		case FORMAT_DATE_TIME:
@@ -602,11 +567,6 @@ func (f *format) validate(jsonPath string, jsonData jsonData, rootSchemaId strin
 type multipleOf float64
 
 func (mo *multipleOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if mo == nil {
-		return nil
-	}
-
 	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.value.(float64); ok {
 		if math.Mod(v, float64(*mo)) == 0 {
@@ -628,11 +588,6 @@ func (mo *multipleOf) validate(jsonPath string, jsonData jsonData, rootSchemaId 
 type minimum float64
 
 func (m *minimum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if m == nil {
-		return nil
-	}
-
 	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.value.(float64); ok {
 		if v >= float64(*m) {
@@ -654,11 +609,6 @@ func (m *minimum) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 type maximum float64
 
 func (m *maximum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if m == nil {
-		return nil
-	}
-
 	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.value.(float64); ok {
 		if v <= float64(*m) {
@@ -680,11 +630,6 @@ func (m *maximum) validate(jsonPath string, jsonData jsonData, rootSchemaId stri
 type exclusiveMinimum float64
 
 func (em *exclusiveMinimum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if em == nil {
-		return nil
-	}
-
 	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.value.(float64); ok {
 		if v > float64(*em) {
@@ -706,11 +651,6 @@ func (em *exclusiveMinimum) validate(jsonPath string, jsonData jsonData, rootSch
 type exclusiveMaximum float64
 
 func (em *exclusiveMaximum) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if em == nil {
-		return nil
-	}
-
 	// If jsonData is float64, validate it. Else, return KeywordValidationError
 	if v, ok := jsonData.value.(float64); ok {
 		if v < float64(*em) {
@@ -736,11 +676,6 @@ func (em *exclusiveMaximum) validate(jsonPath string, jsonData jsonData, rootSch
 type properties map[string]*JsonSchema
 
 func (p properties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if p == nil {
-		return nil
-	}
-
 	// First, we need to verify that jsonData is a json object
 	if object, ok := jsonData.value.(map[string]interface{}); ok {
 		// For each "property" validate it according to its JsonSchema.
@@ -768,11 +703,6 @@ type additionalProperties struct {
 }
 
 func (ap *additionalProperties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if ap == nil {
-		return nil
-	}
-
 	// First we need to verify that jsonData is a json object.
 	if object, isObject := jsonData.value.(map[string]interface{}); isObject {
 		// Iterate over the properties of the inspected object.
@@ -837,11 +767,6 @@ func (ap *additionalProperties) validate(jsonPath string, jsonData jsonData, roo
 type required []string
 
 func (r required) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if r == nil {
-		return nil
-	}
-
 	// First, we must verify that jsonData is a json object.
 	if object, ok := jsonData.value.(map[string]interface{}); ok {
 		// For each property in the required list, check if it exists.
@@ -864,11 +789,6 @@ type propertyNames struct {
 }
 
 func (pn *propertyNames) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if pn == nil {
-		return nil
-	}
-
 	// First, we need to verify that jsonData is a json object
 	if object, ok := jsonData.value.(map[string]interface{}); ok {
 		// Iterate over the object's properties.
@@ -894,11 +814,6 @@ func (pn *propertyNames) validate(jsonPath string, jsonData jsonData, rootSchema
 type dependencies map[string]interface{}
 
 func (d dependencies) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if d == nil {
-		return nil
-	}
-
 	// First we need to verify that jsonData is a json object.
 	if object, ok := jsonData.value.(map[string]interface{}); ok {
 
@@ -977,11 +892,6 @@ func (d dependencies) validate(jsonPath string, jsonData jsonData, rootSchemaId 
 type patternProperties map[string]*JsonSchema
 
 func (pp patternProperties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if pp == nil {
-		return nil
-	}
-
 	// First we need to verify that jsonData is a json object.
 	if object, ok := jsonData.value.(map[string]interface{}); ok {
 		// Iterate over the given patterns.
@@ -1028,11 +938,6 @@ func (pp patternProperties) validate(jsonPath string, jsonData jsonData, rootSch
 type minProperties int
 
 func (mp *minProperties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if mp == nil {
-		return nil
-	}
-
 	// First, we must verify that jsonData is a json object.
 	// If it is not a json object, we return an error.
 	if v, ok := jsonData.value.(map[string]interface{}); ok {
@@ -1055,11 +960,6 @@ func (mp *minProperties) validate(jsonPath string, jsonData jsonData, rootSchema
 type maxProperties int
 
 func (mp *maxProperties) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if mp == nil {
-		return nil
-	}
-
 	// First, we must verify that jsonData is a json object.
 	// If it is not a json object, we return an error.
 	if v, ok := jsonData.value.(map[string]interface{}); ok {
@@ -1088,11 +988,6 @@ func (mp *maxProperties) validate(jsonPath string, jsonData jsonData, rootSchema
 type items json.RawMessage
 
 func (i items) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if i == nil {
-		return nil
-	}
-
 	// First, we need to verify that json Data is an array
 	if array, ok := jsonData.value.([]interface{}); ok {
 		var data interface{}
@@ -1196,11 +1091,6 @@ type additionalItems struct {
 }
 
 func (ai *additionalItems) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if ai == nil {
-		return nil
-	}
-
 	// Unmarshal the sibling field "items" in order to check it's json type.
 	var siblingItems interface{}
 	err := json.Unmarshal(*ai.siblingItems, &siblingItems)
@@ -1249,11 +1139,6 @@ type contains struct {
 }
 
 func (c *contains) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if c == nil {
-		return nil
-	}
-
 	// First, we need to verify that jsonData is a json array.
 	if array, ok := jsonData.value.([]interface{}); ok {
 		// Go over all the items in the array in order to inspect them.
@@ -1278,11 +1163,6 @@ func (c *contains) validate(jsonPath string, jsonData jsonData, rootSchemaId str
 type minItems int
 
 func (mi *minItems) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if mi == nil {
-		return nil
-	}
-
 	// First, we need to verify that jsonData is an array.
 	if v, ok := jsonData.value.([]interface{}); ok {
 		// Check that the number of items in the array is equal to
@@ -1303,11 +1183,6 @@ func (mi *minItems) validate(jsonPath string, jsonData jsonData, rootSchemaId st
 type maxItems int
 
 func (mi *maxItems) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if mi == nil {
-		return nil
-	}
-
 	// First, we need to verify that jsonData is an array.
 	if v, ok := jsonData.value.([]interface{}); ok {
 		// Check that the number of items in the array is equal to
@@ -1328,11 +1203,6 @@ func (mi *maxItems) validate(jsonPath string, jsonData jsonData, rootSchemaId st
 type uniqueItems bool
 
 func (ui *uniqueItems) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if ui == nil {
-		return nil
-	}
-
 	// First, we need to verify that jsonData is an array.
 	if array, ok := jsonData.value.([]interface{}); ok {
 		// Create a map that will help us to check if we already met the
@@ -1386,11 +1256,6 @@ type contentEncoding string
 type anyOf []*JsonSchema
 
 func (af anyOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if af == nil {
-		return nil
-	}
-
 	// Validate jsonData.raw against each of the schemas until on of them succeeds.
 	for _, schema := range af {
 		err := schema.validateJsonData("", jsonData.raw, rootSchemaId)
@@ -1409,11 +1274,6 @@ func (af anyOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 type allOf []*JsonSchema
 
 func (af allOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if af == nil {
-		return nil
-	}
-
 	// Validate jsonData.raw against each of the schemas.
 	// If one of them fails, return error.
 	for _, schema := range af {
@@ -1434,11 +1294,6 @@ func (af allOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string
 type oneOf []*JsonSchema
 
 func (of oneOf) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if of == nil {
-		return nil
-	}
-
 	var oneValidationAlreadySucceeded bool
 
 	// Validate jsonData.raw against each of the schemas until on of them succeeds.
@@ -1472,11 +1327,6 @@ type not struct {
 }
 
 func (n *not) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if n == nil {
-		return nil
-	}
-
 	err := (*n).validateJsonData(jsonPath, jsonData.raw, rootSchemaId)
 	if err != nil {
 		return nil
@@ -1495,11 +1345,6 @@ type _if struct {
 }
 
 func (i *_if) validate(jsonPath string, jsonData jsonData, rootSchemaId string) error {
-	// If the receiver is nil, dont validate it (return true)
-	if i == nil {
-		return nil
-	}
-
 	// Validate the data against the given schema in "if".
 	err := (*i).validateJsonData("", jsonData.raw, rootSchemaId)
 
