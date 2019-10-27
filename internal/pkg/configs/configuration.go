@@ -16,8 +16,9 @@ Configuration is a struct that represents a JSON object
 that contains the configuration of our project.
 */
 type Configuration struct {
-	In               In  `json:"in"`
-	Out              Out `json:"out"`
+	General          General `json:"general"`
+	In               In      `json:"in"`
+	Out              Out     `json:"out"`
 	SettingsFilePath string
 }
 

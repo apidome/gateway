@@ -1,3 +1,24 @@
 {
-    "type": "object"
+    "$id": "http://api.example.com/profile2.json#",
+    "type": [
+        "object",
+        "array"
+    ],
+    "properties": {
+        "formatt": {
+            "type": "string",
+            "format": "ipv6"
+        },
+        "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+        }
+    },
+    "patternProperties": {
+        "^ag": {
+            "type": "integer"
+        }
+    },
+    "additionalProperties": true
 }

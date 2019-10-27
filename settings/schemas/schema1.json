@@ -9,8 +9,31 @@
         "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
     },
     "dependencies": {
-        "name": ["age"],
-        "age": ["name"]
+        "age": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[a-zA-Z0-9\\-]+(\\s[a-zA-Z0-9\\-]+)*$"
+                }
+            },
+            "patternProperties": {
+                "^ag": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": true
+        }
+    },
+    "patternProperties": {
+        "^ag": {
+            "type": "integer"
+        }
+    },
+    "additionalProperties": {
+        "type": "string"
     },
     "properties": {
         "name": {
@@ -21,8 +44,9 @@
         },
         "age": {
             "type": "integer",
-            "minimum": 18,
-            "maximum": 100
+            "exclusiveMinimum": 18,
+            "exclusiveMaximum": 100,
+            "multipleOf": 0.25
         },
         "email": {
             "type": "string",
@@ -39,6 +63,8 @@
         },
         "location": {
             "type": "object",
+            "minProperties": 2,
+            "maxProperties": 2,
             "properties": {
                 "country": {
                     "enum": [
@@ -55,8 +81,7 @@
             "required": [
                 "country",
                 "address"
-            ],
-            "additionalProperties": false
+            ]
         },
         "available_for_hire": {
             "type": "boolean"
@@ -69,18 +94,40 @@
             "items": {
                 "type": "string",
                 "maxLength": 120
+            },
+            "additionalItems": {
+                "type": "string",
+                "maxLength": 2
             }
         },
         "skills": {
             "type": "array",
-            "maxItems": 100,
             "uniqueItems": true,
+            "minItems": 2,
+            "maxItems": 2,
+            "contains": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "pattern": "^[a-zA-Z0-9\\-]+(\\s[a-zA-Z0-9\\-]+)*$"
+                    }
+                },
+                "patternProperties": {
+                    "^ag": {
+                        "type": "integer"
+                    }
+                },
+                "additionalProperties": {}
+            },
             "items": {
                 "type": "object",
                 "properties": {
                     "name": {
                         "type": "string",
-                        "minLenght": 1,
+                        "minLength": 10,
                         "maxLength": 64
                     },
                     "value": {
@@ -93,8 +140,7 @@
                 "required": [
                     "name",
                     "value"
-                ],
-                "additionalProperties": false
+                ]
             }
         }
     },
@@ -107,5 +153,15 @@
         "interests",
         "skills"
     ],
-    "additionalProperties": false
+    "if": {
+        "type": "object"
+    },
+    "then": {
+        "minProperties": 9,
+        "maxProperties": 9
+    },
+    "else": {
+        "minProperties": 8,
+        "maxProperties": 8
+    }
 }
