@@ -108,22 +108,22 @@
         "valid": true
       },
       {
-        "description": "mail: no angle-addr",
+        "description": "no angle-addr",
         "data": "@",
         "valid": false
       },
       {
-        "description": "mail: no angle-addr",
+        "description": "no angle-addr",
         "data": "john(at)example.com",
         "valid": false
       },
       {
-        "description": "mail: missing '@' or angle-addr",
+        "description": "missing '@' or angle-addr",
         "data": "1234",
         "valid": false
       },
       {
-        "description": "mail: no address",
+        "description": "no address",
         "data": "",
         "valid": false
       }
@@ -188,7 +188,7 @@
         "valid": false
       },
       {
-        "description": "invalid hostname hostname is too long (more then 255 characters)",
+        "description": "hostname is too long (more then 255 characters)",
         "data": "a-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-long-host-name-component",
         "valid": false
       }
@@ -208,12 +208,12 @@
         "valid": true
       },
       {
-        "description": "invalid hostname: contains illegal character U+302E '〮'",
+        "description": "contains illegal character U+302E '〮'",
         "data": "〮실례.테스트",
         "valid": false
       },
       {
-        "description": "invalid hostname: contains illegal character U+302E '〮' ",
+        "description": "contains illegal character U+302E '〮' ",
         "data": "실〮례.테스트",
         "valid": false
       }
@@ -233,17 +233,17 @@
         "valid": true
       },
       {
-        "description": "invalid ipv4 address 127.0.0.0.1 too many components",
+        "description": "too many components",
         "data": "127.0.0.0.1",
         "valid": false
       },
       {
-        "description": "invalid ipv4 address 256.256.256.256, IPv4 out of range",
+        "description": "IPv4 out of range",
         "data": "256.256.256.256",
         "valid": false
       },
       {
-        "description": "invalid ipv4 address 127, not enough components (4 needed)",
+        "description": "not enough components (4 needed)",
         "data": "127",
         "valid": false
       }
@@ -263,17 +263,17 @@
         "valid": true
       },
       {
-        "description": "ipv6 incorrectly formatted: invalid ipv6 address 12345::, IPv6 out of range",
+        "description": "invalid ipv6 address 12345::, IPv6 out of range",
         "data": "12345::",
         "valid": false
       },
       {
-        "description": "ipv6 incorrectly formatted: invalid ipv6 address 1:1:1:1:1, too many components",
+        "description": "invalid ipv6 address 1:1:1:1:1, too many components",
         "data": "1:1:1:1:1",
         "valid": false
       },
       {
-        "description": "ipv6 incorrectly formatted: invalid ipv6 address ::string, IPv6 containing illegal characters",
+        "description": "invalid ipv6 address ::string, IPv6 containing illegal characters",
         "data": "::string",
         "valid": false
       }
@@ -313,7 +313,7 @@
         "valid": false
       },
       {
-        "description": "uri incorrectly formatted: parse :// houldfail: missing protocol scheme",
+        "description": "parse :// houldfail: missing protocol scheme",
         "data": ":// houldfail",
         "valid": false
       }
@@ -348,12 +348,12 @@
         "valid": true
       },
       {
-        "description": "uri-reference incorrectly formatted: invalid uri-ref #frag\\ment",
+        "description": "invalid uri-ref #frag\\ment",
         "data": "#frag\\ment",
         "valid": false
       },
       {
-        "description": "uri-reference incorrectly formatted: invalid uri-ref \\\\WINDOWS\\fileshare",
+        "description": "invalid uri-ref \\\\WINDOWS\\fileshare",
         "data": "\\\\WINDOWS\\fileshare",
         "valid": false
       }
@@ -383,7 +383,7 @@
         "valid": false
       },
       {
-        "description": "iri incorrectly formatted: uri missing scheme prefix",
+        "description": "uri missing scheme prefix",
         "data": "/abc",
         "valid": false
       }
@@ -413,7 +413,7 @@
         "valid": true
       },
       {
-        "description": "iri-reference incorrectly formatted: invalid uri-ref \\\\WINDOWS\\filëßåré ",
+        "description": "invalid uri-ref \\\\WINDOWS\\filëßåré ",
         "data": "\\\\WINDOWS\\filëßåré",
         "valid": false
       }
@@ -438,7 +438,7 @@
         "valid": true
       },
       {
-        "description": "uri-template incorrectly formatted: invalid uri template http://example.com/dictionary/{term:1}/{term",
+        "description": "invalid uri template http://example.com/dictionary/{term:1}/{term",
         "data": "http://example.com/dictionary/{term:1}/{term",
         "valid": false
       }
@@ -483,12 +483,12 @@
         "valid": true
       },
       {
-        "description": "json-pointer incorrectly formatted: ending tilda error",
+        "description": "ending tilda error",
         "data": "/foo/bar~",
         "valid": false
       },
       {
-        "description": "json-pointer incorrectly formatted: non-empty references must begin with a '/' character: #/ ",
+        "description": "non-empty references must begin with a '/' character: #/ ",
         "data": "#/",
         "valid": false
       },
@@ -498,7 +498,7 @@
         "valid": false
       },
       {
-        "description": "json-pointer incorrectly formatted: non-empty references must begin with a '/' character: 0 ",
+        "description": "non-empty references must begin with a '/' character: 0 ",
         "data": "0",
         "valid": false
       }
@@ -533,7 +533,7 @@
         "valid": true
       },
       {
-        "description": "relative-json-pointer incorrectly formatted: strconv.Atoi: parsing \"\": invalid syntax",
+        "description": "strconv.Atoi: parsing \"\": invalid syntax",
         "data": "/a/b",
         "valid": false
       }
@@ -553,7 +553,7 @@
         "valid": true
       },
       {
-        "description": "regex incorrectly formatted: error parsing regexp: missing closing ): `(a`",
+        "description": "error parsing regexp: missing closing ): `(a`",
         "data": "(a",
         "valid": false
       }
