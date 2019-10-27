@@ -313,7 +313,7 @@
         "valid": false
       },
       {
-        "description": "an invalid URI missing scheme",
+        "description": "uri incorrectly formatted: parse :// houldfail: missing protocol scheme",
         "data": ":// houldfail",
         "valid": false
       }
@@ -348,12 +348,12 @@
         "valid": true
       },
       {
-        "description": "an invalid URI fragment",
+        "description": "uri-reference incorrectly formatted: invalid uri-ref #frag\\ment",
         "data": "#frag\\ment",
         "valid": false
       },
       {
-        "description": "an invalid URI Reference",
+        "description": "uri-reference incorrectly formatted: invalid uri-ref \\\\WINDOWS\\fileshare",
         "data": "\\\\WINDOWS\\fileshare",
         "valid": false
       }
@@ -383,7 +383,7 @@
         "valid": false
       },
       {
-        "description": "an invalid relative IRI Reference",
+        "description": "iri incorrectly formatted: uri missing scheme prefix",
         "data": "/abc",
         "valid": false
       }
@@ -413,7 +413,7 @@
         "valid": true
       },
       {
-        "description": "an invalid IRI Reference",
+        "description": "iri-reference incorrectly formatted: invalid uri-ref \\\\WINDOWS\\filëßåré ",
         "data": "\\\\WINDOWS\\filëßåré",
         "valid": false
       }
@@ -438,7 +438,7 @@
         "valid": true
       },
       {
-        "description": "an invalid URI template",
+        "description": "uri-template incorrectly formatted: invalid uri template http://example.com/dictionary/{term:1}/{term",
         "data": "http://example.com/dictionary/{term:1}/{term",
         "valid": false
       }
@@ -483,22 +483,22 @@
         "valid": true
       },
       {
-        "description": "invalid JSON-pointer (~ not escaped)",
+        "description": "json-pointer incorrectly formatted: ending tilda error",
         "data": "/foo/bar~",
         "valid": false
       },
       {
-        "description": "invalid JSON-pointer (URI Fragment Identifier)",
+        "description": "json-pointer incorrectly formatted: non-empty references must begin with a '/' character: #/ ",
         "data": "#/",
         "valid": false
       },
       {
-        "description": "invalid JSON-pointer (URI Fragment Identifier)",
+        "description": "non-empty references must begin with a '/' character: #a ",
         "data": "#a",
         "valid": false
       },
       {
-        "description": "not a valid JSON-pointer (isn't empty nor starts with /)",
+        "description": "json-pointer incorrectly formatted: non-empty references must begin with a '/' character: 0 ",
         "data": "0",
         "valid": false
       }
@@ -533,7 +533,7 @@
         "valid": true
       },
       {
-        "description": "an invalid relative json pointer",
+        "description": "relative-json-pointer incorrectly formatted: strconv.Atoi: parsing \"\": invalid syntax",
         "data": "/a/b",
         "valid": false
       }
@@ -553,7 +553,7 @@
         "valid": true
       },
       {
-        "description": "incomplete group",
+        "description": "regex incorrectly formatted: error parsing regexp: missing closing ): `(a`",
         "data": "(a",
         "valid": false
       }
