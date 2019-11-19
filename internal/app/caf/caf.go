@@ -34,13 +34,9 @@ func Start() {
 		":"+config.Out.Port,
 		middlewareErrorHandler)
 
-	reverseProxy.All("/.*", func(res http.ResponseWriter, req *http.Request, store middleman.Store, end middleman.End) error {
-
-		return nil
-	})
-
 	requestProxying(&reverseProxy, &prx)
-	responseProxying(&reverseProxy)
+
+	responseProxying(&reverseProxy, &prx)
 
 	reverseProxy.All("/.*", defaultMiddleware())
 
@@ -75,10 +71,10 @@ func requestProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
 	AddValidationMiddlewares(reverseProxy, config.In.Targets)
 
 	reverseProxy.All("/.*", proxymiddlewares.CreateRequest(pr))
-	reverseProxy.All("/.*", proxymiddlewares.SendRequest(pr))
 }
 
-func responseProxying(reverseProxy *middleman.Middleman) {
+func responseProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
+	reverseProxy.All("/.*", proxymiddlewares.SendRequest(pr))
 	reverseProxy.All("/.*", proxymiddlewares.ReadResponseBody())
 	reverseProxy.All("/.*", proxymiddlewares.SendResponse())
 }
