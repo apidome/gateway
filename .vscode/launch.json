@@ -18,7 +18,7 @@
             "mode": "debug",
             "program": "${file}",
             "args": [
-                "${workspaceFolder}/settings/"
+                "${workspaceFolder}/settings/config.dev.json"
             ]
         }
     ]
