@@ -3,10 +3,12 @@ package jsonvalidator
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Creespye/caf/internal/pkg/jsonwalker"
-	"github.com/pkg/errors"
+
 	"strconv"
 	"strings"
+
+	"github.com/omeryahud/caf/internal/pkg/jsonwalker"
+	"github.com/pkg/errors"
 )
 
 // Valid Json Schema types

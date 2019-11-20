@@ -2,11 +2,13 @@ package jsonvalidator
 
 import (
 	"encoding/json"
-	"github.com/Creespye/caf/internal/pkg/validators/formatchecker"
+
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/omeryahud/caf/internal/pkg/validators/formatchecker"
 )
 
 /*

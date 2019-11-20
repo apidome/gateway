@@ -1,6 +1,6 @@
 package main
 
-import "github.com/Creespye/caf/internal/app/caf"
+import "github.com/omeryahud/caf/internal/app/caf"
 
 func main() {
 	caf.Start()

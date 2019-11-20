@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Creespye/caf/internal/pkg/configs"
-	"github.com/Creespye/caf/internal/pkg/middleman"
-	"github.com/Creespye/caf/internal/pkg/proxymiddlewares"
-	"github.com/Creespye/caf/internal/pkg/validators"
-	"github.com/Creespye/caf/internal/pkg/validators/jsonvalidator"
+	"github.com/omeryahud/caf/internal/pkg/configs"
+	"github.com/omeryahud/caf/internal/pkg/middleman"
+	"github.com/omeryahud/caf/internal/pkg/proxymiddlewares"
+	"github.com/omeryahud/caf/internal/pkg/validators"
+	"github.com/omeryahud/caf/internal/pkg/validators/jsonvalidator"
 	"github.com/pkg/errors"
 )
 

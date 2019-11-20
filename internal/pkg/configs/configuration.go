@@ -11,10 +11,8 @@ import (
 
 var config *Configuration
 
-/*
-Configuration is a struct that represents a JSON object
-that contains the configuration of our project.
-*/
+// Configuration is a struct that represents a JSON object
+// that contains the configuration of our project.
 type Configuration struct {
 	General          General `json:"general"`
 	In               In      `json:"in"`
@@ -22,17 +20,16 @@ type Configuration struct {
 	SettingsFilePath string
 }
 
-/*
-GetConf function gets a pointer to a Configuration struct and populates it
-with configuration from a JSON file.
-*/
+// GetConfiguration function gets a pointer to a Configuration
+// struct and populates it with configuration from a JSON file.
 func GetConfiguration() (*Configuration, error) {
 	// if first time GetConfiguration called
 	if config == nil {
 		args := os.Args
 
 		if len(args) < 2 {
-			log.Panicln("Not enough arguments, probably missing configuration file path.")
+			log.Panicln("Not enough arguments, probably " +
+				"missing configuration file path.")
 		}
 
 		config = &Configuration{
@@ -48,6 +45,8 @@ func GetConfiguration() (*Configuration, error) {
 	return config, nil
 }
 
+// readConf reads configurations from a file and stores it in the
+// received Configuration pointer.
 func readConf(config *Configuration) error {
 	bytes, err := ioutil.ReadFile(config.SettingsFilePath)
 
@@ -57,15 +56,20 @@ func readConf(config *Configuration) error {
 		return err
 	}
 
-	// Create settings folder path from setting file path for extracting relative certs path
-	SettingsFolderPath := path.Dir(strings.ReplaceAll(config.SettingsFilePath, "\\", "/")) + "/"
+	// Create settings folder path from setting file path
+	// for extracting relative certs path
+	SettingsFolderPath :=
+		path.Dir(strings.ReplaceAll(config.SettingsFilePath, "\\", "/")) + "/"
 
-	// Read the schema of each endpoint from file and set it in the schema field.
+	// Read the schema of each endpoint from
+	// file and set it in the schema field.
 	for _, target := range config.In.Targets {
 		for _, api := range target.Apis {
 			for _, endpoint := range api.Endpoints {
 				// Read the data from file.
-				schema, err := ioutil.ReadFile(SettingsFolderPath + endpoint.Schema)
+				schema, err :=
+					ioutil.ReadFile(SettingsFolderPath + endpoint.Schema)
+
 				if err != nil {
 					return err
 				}

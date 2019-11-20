@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Creespye/caf/internal/pkg/configs"
-	"github.com/Creespye/caf/internal/pkg/middleman"
-	"github.com/Creespye/caf/internal/pkg/proxy"
+	"github.com/omeryahud/caf/internal/pkg/configs"
+	"github.com/omeryahud/caf/internal/pkg/middleman"
+	"github.com/omeryahud/caf/internal/pkg/proxy"
 )
 
 var config *configs.Configuration

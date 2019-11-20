@@ -2,12 +2,13 @@ package jsonvalidator_test
 
 import (
 	"encoding/json"
-	"github.com/Creespye/caf/internal/pkg/validators/jsonvalidator"
 	"io/ioutil"
 	"os"
 	"path"
 	"runtime"
 	"testing"
+
+	"github.com/omeryahud/caf/internal/pkg/validators/jsonvalidator"
 )
 
 //const succeed = "\u2713"

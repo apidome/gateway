@@ -1,8 +1,8 @@
 package caf
 
 import (
-	"github.com/Creespye/caf/internal/pkg/middleman"
-	"github.com/Creespye/caf/internal/pkg/proxy"
+	"github.com/omeryahud/caf/internal/pkg/middleman"
+	"github.com/omeryahud/caf/internal/pkg/proxy"
 )
 
 // requestProxying assembles all client request middlewares

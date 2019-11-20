@@ -1,8 +1,9 @@
 package formatchecker_test
 
 import (
-	"github.com/Creespye/caf/internal/pkg/validators/formatchecker"
 	"testing"
+
+	"github.com/omeryahud/caf/internal/pkg/validators/formatchecker"
 )
 
 type test struct {

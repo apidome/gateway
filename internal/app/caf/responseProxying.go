@@ -1,9 +1,9 @@
 package caf
 
 import (
-	"github.com/Creespye/caf/internal/pkg/middleman"
-	"github.com/Creespye/caf/internal/pkg/proxy"
-	"github.com/Creespye/caf/internal/pkg/proxymiddlewares"
+	"github.com/omeryahud/caf/internal/pkg/middleman"
+	"github.com/omeryahud/caf/internal/pkg/proxy"
+	"github.com/omeryahud/caf/internal/pkg/proxymiddlewares"
 )
 
 // responseProxying assembles all target response middlewares
