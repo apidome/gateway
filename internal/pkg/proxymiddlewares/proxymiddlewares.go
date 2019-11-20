@@ -1,10 +1,11 @@
 package proxymiddlewares
 
 import (
-	"github.com/Creespye/caf/internal/pkg/httputils"
-	"github.com/Creespye/caf/internal/pkg/validators"
 	"log"
 	"net/http"
+
+	"github.com/Creespye/caf/internal/pkg/httputils"
+	"github.com/Creespye/caf/internal/pkg/validators"
 
 	"github.com/Creespye/caf/internal/pkg/proxy"
 
@@ -65,6 +66,8 @@ func SendResponse() middleman.Middleware {
 		err := proxy.CopyResponseToClient(res,
 			store["targetResponse"].(*http.Response),
 			store["targetResponseBody"].([]byte))
+
+		end()
 
 		return err
 	}

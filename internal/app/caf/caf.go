@@ -36,7 +36,10 @@ func Start() {
 		middlewareErrorHandler)
 
 	requestProxying(&reverseProxy, &prx)
-	responseProxying(&reverseProxy)
+
+	responseProxying(&reverseProxy, &prx)
+
+	reverseProxy.All("/.*", defaultMiddleware())
 
 	log.Println("[Reverse proxy is listening on]:", config.Out.Port)
 
@@ -57,6 +60,11 @@ func requestProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
 	// Log all incoming requests' routes
 	reverseProxy.All("/.*", middleman.RouteLogger())
 
+	// Read variables from the request path and parameters from the
+	// request query
+	reverseProxy.All("/.*", middleman.VariablesReader())
+	reverseProxy.All("/.*", middleman.ParametersReader())
+
 	// Read the request body and store it in store["reqeustBody"]
 	// for all middlewares to use
 	reverseProxy.All("/.*", middleman.BodyReader())
@@ -64,10 +72,10 @@ func requestProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
 	AddValidationMiddlewares(reverseProxy, config.In.Targets)
 
 	reverseProxy.All("/.*", proxymiddlewares.CreateRequest(pr))
-	reverseProxy.All("/.*", proxymiddlewares.SendRequest(pr))
 }
 
-func responseProxying(reverseProxy *middleman.Middleman) {
+func responseProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
+	reverseProxy.All("/.*", proxymiddlewares.SendRequest(pr))
 	reverseProxy.All("/.*", proxymiddlewares.ReadResponseBody())
 	reverseProxy.All("/.*", proxymiddlewares.SendResponse())
 }
@@ -78,6 +86,14 @@ func middlewareErrorHandler(path, method string, err error) bool {
 		"[Method]:", method)
 
 	return false
+}
+
+func defaultMiddleware() middleman.Middleware {
+	return func(res http.ResponseWriter, req *http.Request,
+		store middleman.Store, end middleman.End) error {
+		res.WriteHeader(404)
+		return nil
+	}
 }
 
 // AddValidationMiddlewares gets a reference to a Middleman and a slice of targets
