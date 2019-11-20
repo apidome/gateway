@@ -1,5 +1,10 @@
 package language
 
+import (
+	"errors"
+	"strings"
+)
+
 // tokenKind is a type to represent types of tokens
 type tokenKind int
 
@@ -82,12 +87,64 @@ func (tk tokenKind) String() string {
 	return tokenDescription[tk]
 }
 
-func Lex(doc string) ([]Token, error) {
-	for index := range doc {
-		switch doc[index] {
+func createToken(start, end int, kind tokenKind, value string) Token {
+	return Token{
+		Start: start,
+		End:   end,
+		Kind:  kind,
+		Value: value,
+	}
+}
 
+func readSpread(doc string, index int) (string, int, error) {
+	var tokenVal strings.Builder
+
+	if index+2 > len(doc) {
+		return "", index, errors.New("End of document reached")
+	}
+
+	for i := 0; i < index+3; i++ {
+		tokenVal.WriteByte(doc[index+i])
+	}
+
+	tokenStr := tokenVal.String()
+
+	if tokenStr != "..." {
+		return "", index, errors.New("Not a spread token")
+	}
+
+	return tokenStr, index + 2, nil
+}
+
+func Lex(doc string) ([]Token, error) {
+	var (
+		tokens []Token
+	)
+	for index := 0; index < len(doc); index++ {
+		switch doc[index] {
+		case '!', '$', '(', ')', ':', '=',
+			'@', '[', ']', '{', '}', '|', '&':
+			token := createToken(index, index+1,
+				BANG, string(doc[index]))
+
+			tokens = append(tokens, token)
+			break
+		case '.':
+			tokenVal, newIndex, err := readSpread(doc, index)
+
+			if err != nil {
+				return nil, err
+			}
+
+			token := createToken(index, newIndex,
+				SPREAD, tokenVal)
+
+			index = newIndex
+
+			tokens = append(tokens, token)
+			break
 		}
 	}
 
-	return nil, nil
+	return tokens, nil
 }
