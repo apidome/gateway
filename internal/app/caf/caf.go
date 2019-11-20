@@ -3,15 +3,10 @@ package caf
 import (
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/Creespye/caf/internal/pkg/configs"
 	"github.com/Creespye/caf/internal/pkg/middleman"
 	"github.com/Creespye/caf/internal/pkg/proxy"
-	"github.com/Creespye/caf/internal/pkg/proxymiddlewares"
-	"github.com/Creespye/caf/internal/pkg/validators"
-	"github.com/Creespye/caf/internal/pkg/validators/jsonvalidator"
-	"github.com/pkg/errors"
 )
 
 var config *configs.Configuration
@@ -57,29 +52,6 @@ func Start() {
 	}
 }
 
-func requestProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
-	// Log all incoming requests' routes
-	reverseProxy.All("/.*", middleman.RouteLogger())
-
-	// Read variables from the request path and parameters from the
-	// request query
-	reverseProxy.All("/.*", middleman.VariablesReader())
-	reverseProxy.All("/.*", middleman.ParametersReader())
-
-	// Read the request body and store it in store["reqeustBody"]
-	// for all middlewares to use
-	reverseProxy.All("/.*", middleman.BodyReader())
-
-	AddValidationMiddlewares(reverseProxy, config.In.Targets)
-}
-
-func responseProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
-	reverseProxy.All("/.*", proxymiddlewares.CreateRequest(pr))
-	reverseProxy.All("/.*", proxymiddlewares.SendRequest(pr))
-	reverseProxy.All("/.*", proxymiddlewares.ReadResponseBody())
-	reverseProxy.All("/.*", proxymiddlewares.SendResponse())
-}
-
 func middlewareErrorHandler(path, method string, err error) bool {
 	log.Println("[Middleman Error]:", err.Error(), "\n",
 		"[Path]:", path, "\n",
@@ -94,69 +66,4 @@ func defaultMiddleware() middleman.Middleware {
 		res.WriteHeader(404)
 		return nil
 	}
-}
-
-// AddValidationMiddlewares gets a reference to a Middleman and a slice of targets
-// and creates a new middleware for each endpoint in the targets' apis.
-func AddValidationMiddlewares(mm *middleman.Middleman, targets []configs.Target) error {
-	// Loop over the targets slice
-	for _, target := range targets {
-		// For each target loop over its apis
-		for index, api := range target.Apis {
-			var err error
-			var validator validators.Validator
-
-			// Each api has a validator that filter the api's traffic.
-			// Here we decide which validator to create according to the api's type.
-			switch api.Type {
-			case configs.TypeRest:
-				validator, err = jsonvalidator.NewJsonValidator(api.Version)
-				if err != nil {
-					return errors.Wrap(err, "failed to created validator for number - "+strconv.Itoa(index))
-				}
-			default:
-				log.Print("[Proxy WARNING]: Invalid API Type - " + api.Type)
-			}
-
-			// For each api loop over its endpoints
-			for _, endpoint := range api.Endpoints {
-				//Add the endpoint's schema to the api's validator.
-				err := validator.LoadSchema(endpoint.Path, endpoint.Method, []byte(endpoint.Schema))
-				if err != nil {
-					log.Print("[Proxy ERROR]: Failed to load schema for endpoint - " + endpoint.Path + ", Error: " + err.Error())
-					return err
-				}
-
-				// Creating a new ValidateRequest middleware with the appropriate HTTP method.
-				switch endpoint.Method {
-				case http.MethodGet:
-					mm.Get(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
-						endpoint.Method,
-						validator))
-				case http.MethodPost:
-					mm.Post(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
-						endpoint.Method,
-						validator))
-				case http.MethodPut:
-					mm.Put(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
-						endpoint.Method,
-						validator))
-				case http.MethodDelete:
-					mm.Delete(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
-						endpoint.Method,
-						validator))
-				case "ALL":
-					mm.All(endpoint.Path, proxymiddlewares.ValidateRequest(endpoint.Path,
-						endpoint.Method,
-						validator))
-				default:
-					log.Print("[Proxy WARNING]: Invalid method - " + endpoint.Method + " for endpoint - " + endpoint.Path)
-				}
-
-				log.Print("[Proxy DEBUG]: Added middleware for - " + endpoint.Method + " " + endpoint.Path)
-			}
-		}
-	}
-
-	return nil
 }

@@ -49,7 +49,7 @@ func GetConfiguration() (*Configuration, error) {
 }
 
 func readConf(config *Configuration) error {
-	bytes, err := readDataFromFile(config.SettingsFilePath)
+	bytes, err := ioutil.ReadFile(config.SettingsFilePath)
 
 	// Unmarshal the json bytes into the.
 	err = json.Unmarshal(bytes, config)
@@ -65,7 +65,7 @@ func readConf(config *Configuration) error {
 		for _, api := range target.Apis {
 			for _, endpoint := range api.Endpoints {
 				// Read the data from file.
-				schema, err := readDataFromFile(SettingsFolderPath + endpoint.Schema)
+				schema, err := ioutil.ReadFile(SettingsFolderPath + endpoint.Schema)
 				if err != nil {
 					return err
 				}
@@ -83,25 +83,4 @@ func readConf(config *Configuration) error {
 
 	// Return the error
 	return err
-}
-
-func readDataFromFile(filePath string) ([]byte, error) {
-	// Open the configuration file.
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-
-	// Read the data from the file.
-	bytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-
-	err = file.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes, nil
 }
