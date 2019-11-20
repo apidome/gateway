@@ -1,6 +1,10 @@
 package caf
 
 import (
+	"log"
+	"net/http"
+	"strconv"
+
 	"github.com/Creespye/caf/internal/pkg/configs"
 	"github.com/Creespye/caf/internal/pkg/middleman"
 	"github.com/Creespye/caf/internal/pkg/proxy"
@@ -8,9 +12,6 @@ import (
 	"github.com/Creespye/caf/internal/pkg/validators"
 	"github.com/Creespye/caf/internal/pkg/validators/jsonvalidator"
 	"github.com/pkg/errors"
-	"log"
-	"net/http"
-	"strconv"
 )
 
 var config *configs.Configuration
@@ -70,11 +71,10 @@ func requestProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
 	reverseProxy.All("/.*", middleman.BodyReader())
 
 	AddValidationMiddlewares(reverseProxy, config.In.Targets)
-
-	reverseProxy.All("/.*", proxymiddlewares.CreateRequest(pr))
 }
 
 func responseProxying(reverseProxy *middleman.Middleman, pr *proxy.Proxy) {
+	reverseProxy.All("/.*", proxymiddlewares.CreateRequest(pr))
 	reverseProxy.All("/.*", proxymiddlewares.SendRequest(pr))
 	reverseProxy.All("/.*", proxymiddlewares.ReadResponseBody())
 	reverseProxy.All("/.*", proxymiddlewares.SendResponse())
