@@ -96,6 +96,8 @@ func createToken(start, end int, kind tokenKind, value string) Token {
 	}
 }
 
+// readSpread reads a spread token from the document and
+// returns the value of the token and the end index of it
 func readSpread(doc string, index int) (string, int, error) {
 	var tokenVal strings.Builder
 
