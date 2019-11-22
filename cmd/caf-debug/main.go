@@ -1,9 +1,34 @@
 package main
 
 import (
-	"github.com/omeryahud/caf/internal/pkg/graphql/language"
+	"fmt"
+	"strings"
+	"text/scanner"
 )
 
 func main() {
-	language.Lex(`"""Hello There!"""`)
+	query := `
+	{
+		#commet
+		empireHero: hero(episode: EMPIRE) {
+		  name
+		}
+		jediHero: hero(episode: JEDI) {
+		  name
+		}
+	}
+	`
+
+	var sc scanner.Scanner
+
+	sc.Mode = scanner.ScanIdents | scanner.ScanInts |
+		scanner.ScanFloats | scanner.ScanChars |
+		scanner.ScanStrings | scanner.ScanRawStrings |
+		scanner.ScanComments
+
+	sc.Init(strings.NewReader(query))
+
+	for sc.Scan() != scanner.EOF {
+		fmt.Println(sc.TokenText())
+	}
 }
