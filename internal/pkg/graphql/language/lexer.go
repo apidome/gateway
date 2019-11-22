@@ -87,18 +87,17 @@ func (tk tokenKind) String() string {
 	return tokenDescription[tk]
 }
 
-func createToken(start, end int, kind tokenKind, value string) Token {
+func createToken(start, end int, value string) Token {
 	return Token{
 		Start: start,
 		End:   end,
-		Kind:  kind,
 		Value: value,
 	}
 }
 
 // readSpread reads a spread token from the document and
 // returns the value of the token and the end index of it
-func readSpread(doc string, index int) (string, int, error) {
+func readSpread(doc []rune, index int) (string, int, error) {
 	var tokenVal strings.Builder
 
 	if index+2 > len(doc) {
@@ -106,7 +105,7 @@ func readSpread(doc string, index int) (string, int, error) {
 	}
 
 	for i := 0; i < index+3; i++ {
-		tokenVal.WriteByte(doc[index+i])
+		tokenVal.WriteRune(doc[index+i])
 	}
 
 	tokenStr := tokenVal.String()
@@ -118,30 +117,89 @@ func readSpread(doc string, index int) (string, int, error) {
 	return tokenStr, index + 2, nil
 }
 
+// readString reads a string or a block string from the document
+// and returns the value of the string and the end index of it
+func readString(doc []rune, index int) (string, int, error) {
+	var tokenVal strings.Builder
+
+	// Count '"' leading the string
+	var quotesCount int
+
+	for index = index; index < len(doc); index++ {
+		if doc[index] == '"' {
+			quotesCount++
+
+			tokenVal.WriteRune(doc[index])
+
+			if quotesCount == 3 {
+				break
+			}
+		} else {
+			break
+		}
+	}
+
+	if quotesCount == 2 {
+		return "", index - 1, nil
+	}
+
+	// Read the actual string
+	for index = index; index < len(doc); index++ {
+		if doc[index] == '"' {
+			quotesCount--
+
+			tokenVal.WriteRune(doc[index])
+
+			if quotesCount == 0 {
+				break
+			}
+		}
+
+		tokenVal.WriteRune(doc[index])
+	}
+
+	return tokenVal.String(), index, nil
+}
+
 func Lex(doc string) ([]Token, error) {
 	var (
-		tokens []Token
+		tokens   []Token
+		runedDoc []rune = []rune(doc)
 	)
-	for index := 0; index < len(doc); index++ {
-		switch doc[index] {
+
+	for index := range runedDoc {
+		switch runedDoc[index] {
+		case ' ', '\n', '\t', '\r':
+			break
 		case '!', '$', '(', ')', ':', '=',
 			'@', '[', ']', '{', '}', '|', '&':
-			token := createToken(index, index+1,
-				BANG, string(doc[index]))
+			token := createToken(index, index, string(doc[index]))
 
 			tokens = append(tokens, token)
 			break
 		case '.':
-			tokenVal, newIndex, err := readSpread(doc, index)
+			tokenVal, endIndex, err := readSpread(runedDoc, index)
 
 			if err != nil {
 				return nil, err
 			}
 
-			token := createToken(index, newIndex,
-				SPREAD, tokenVal)
+			token := createToken(index, endIndex, tokenVal)
 
-			index = newIndex
+			index = endIndex + 1
+
+			tokens = append(tokens, token)
+			break
+		case '"':
+			tokenVal, endIndex, err := readString(runedDoc, index)
+
+			if err != nil {
+				return nil, err
+			}
+
+			token := createToken(index, endIndex, tokenVal)
+
+			index = endIndex + 1
 
 			tokens = append(tokens, token)
 			break
