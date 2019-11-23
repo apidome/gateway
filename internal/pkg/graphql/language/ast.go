@@ -1,5 +1,9 @@
 package language
 
+import (
+	"flag"
+)
+
 type DirectiveLocation int
 
 const (
@@ -67,7 +71,7 @@ func (nt NamedType) GetTypeKind() TypeKind {
 }
 
 type ListType struct {
-	Type Type
+	OfType Type
 }
 
 func (lt ListType) GetTypeKind() TypeKind {
@@ -75,9 +79,275 @@ func (lt ListType) GetTypeKind() TypeKind {
 }
 
 type NonNullType struct {
-	Type Type
+	OfType Type
 }
 
 func (nt NonNullType) GetTypeKind() TypeKind {
 	return NON_NULL_TYPE
+}
+
+type InputValueDefinition struct {
+	Description  *string
+	Name         name
+	DefaultValue *DefaultValue
+	Directives   *Directives
+}
+
+type DefaultValue flag.Value
+
+type Value interface {
+	Kind()
+	String() string
+}
+
+type Directives []Directive
+
+type Directive struct {
+	Name      name
+	Arguments *Arguments
+}
+
+type Arguments []Argument
+
+type Argument struct {
+	Name  name
+	Value Value
+}
+
+type InputFieldsDefinition []InputValueDefinition
+
+type InputObjectTypeExtension struct {
+	Name                  name
+	Directives            *Directives
+	InputFieldsDefinition *InputFieldsDefinition
+}
+
+type InputObjectTypeDefinition struct {
+	Description           *string
+	Name                  name
+	Directives            *Directives
+	InputFieldsDefinition *InputFieldsDefinition
+}
+
+type EnumTypeExtension struct {
+	Name                 name
+	Directives           *Directives
+	EnumValuesDefinition *EnumValuesDefinition
+}
+
+type EnumValuesDefinition []EnumValueDefinition
+
+type EnumValueDefinition struct {
+	Description *string
+	EnumValue   EnumValue
+	Directives  *Directives
+}
+
+type EnumValue struct {
+	Name name
+}
+
+type EnumTypeDefinition struct {
+	Description          *string
+	Name                 name
+	Directives           *Directives
+	EnumValuesDefinition *EnumValuesDefinition
+}
+
+type UnionTypeExtension struct {
+	Name             name
+	Directives       *Directives
+	UnionMemberTypes *UnionMemberTypes
+}
+
+type UnionMemberTypes []NamedType
+
+type UnionTypeDefinition struct {
+	Description      *string
+	Name             name
+	Directives       *Directives
+	FieldsDefinition *FieldsDefinition
+}
+
+type FieldsDefinition []FieldDefinition
+
+type FieldDefinition struct {
+	Description         *string
+	Name                name
+	ArgumentsDefinition *ArgumentsDefinition
+	Type                Type
+	Directives          *Directives
+}
+
+type InterfaceTypeExtension struct {
+	Name             name
+	Directives       *Directives
+	FieldsDefinition *FieldsDefinition
+}
+
+type InterfaceTypeDefinition struct {
+	Description      *string
+	Name             name
+	Directives       *Directives
+	FieldsDefinition *FieldsDefinition
+}
+
+type ImplementsInterfaces []NamedType
+
+type ObjectTypeExtension struct {
+	Name                 name
+	ImplementsInterfaces *ImplementsInterfaces
+	Directive            *Directives
+	FieldsDefinition     *FieldsDefinition
+}
+
+type ObjectTypeDefinition struct {
+	Description          *string
+	Name                 name
+	ImplementsInterfaces *ImplementsInterfaces
+	Directives           *Directives
+	FieldsDefinition     *FieldsDefinition
+}
+
+type ScalarTypeExtension struct {
+	Name       name
+	Directives Directives
+}
+
+type ScalarTypeDefinition struct {
+	Description *string
+	Name        name
+	Directives  *Directives
+}
+
+type TypeExtension interface {
+	// Make sure all TypeExtensions implement this.
+	typeExtension()
+}
+
+type TypeDefinition interface {
+	// Make sure all TypeDefinitions implement this.
+	typeDefinition()
+}
+
+type RootOperationTypeDefinition struct {
+	OperationType OperationType
+	NamedType     NamedType
+}
+
+type OperationType string
+
+const (
+	OPERATION_QUERY        OperationType = "query"
+	OPERATION_MUTATION     OperationType = "mutation"
+	OPERATION_SUBSCRIPTION OperationType = "subscription"
+)
+
+type SchemaExtension struct {
+	Directives                  *Directives
+	RootOperationTypeDefinition *RootOperationTypeDefinition
+}
+
+type TypeSystemExtension interface {
+}
+
+type TypeSystemDefinition interface {
+}
+
+type Variable struct {
+	Name name
+}
+
+type VariableDefinition struct {
+	Variable     Variable
+	Type         Type
+	DefaultValue *DefaultValue
+	Directives   *Directives
+}
+
+type VariableDefinitions []VariableDefinition
+
+type ObjectField struct {
+	Name  name
+	Value Value
+}
+
+type ObjectValue []ObjectField
+
+type ListValue []Value
+
+// Figure out how to implement this type
+type NullValue interface{}
+
+type TypeCondition struct {
+	NamedType NamedType
+}
+
+type FragmentName name
+
+type FragmentDefinition struct {
+	FragmentName  FragmentName
+	TypeCondition TypeCondition
+	Directives    *Directives
+	SelectionSet  SelectionSet
+}
+
+type InlineFragment struct {
+	TypeCondition *TypeCondition
+	Directives    *Directives
+	SelectionSet  SelectionSet
+}
+
+func (inf InlineFragment) GetFields() []Field {
+	return []Field{}
+}
+
+type FragmentSpread struct {
+	FragmentName FragmentName
+	Directives   *Directives
+}
+
+func (fs FragmentSpread) GetFields() []Field {
+	return []Field{}
+}
+
+type Alias name
+
+type Field struct {
+	Alias        *Alias
+	Name         name
+	Arguments    *Arguments
+	Directives   *Directives
+	SelectionSet *SelectionSet
+}
+
+func (f Field) GetFields() []Field {
+	return []Field{}
+}
+
+type Selection interface {
+	GetFields() []Field
+}
+
+type SelectionSet []Selection
+
+type OperationDefinition struct {
+	OperationType       *OperationType
+	Name                *name
+	VariableDefinitions *VariableDefinitions
+	Directives          *Directives
+	SelectionSet        SelectionSet
+}
+
+type ExecutableDefinition interface {
+	Definition
+	executableDefinition()
+}
+
+type Definition interface {
+	definition()
+}
+
+type Document struct {
+	Definitions []Definition
 }
