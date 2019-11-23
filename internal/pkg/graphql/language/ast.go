@@ -1,71 +1,83 @@
 package language
 
-// Documents is a type that holds a parsed graphql Document.
-type Document struct {
-	Operations []OperationDefinition
-	Fragments  []FragmentDefinition
+type DirectiveLocation int
+
+const (
+	// Executable Directive Locations
+	QUERY DirectiveLocation = iota + 1
+	MUTATION
+	SUBSCRIPTION
+	FIELD
+	FRAGMENT_DEFINITION
+	FRAGMENT_SPREAD
+	INLINE_FRAGMENT
+	VARIABLE_DEFINITION
+
+	// Type System Directive Locations
+	SCHEMA
+	SCALAR
+	OBJECT
+	FIELD_DEFINITION
+	ARGUMENT_DEFINITION
+	INTERFACE
+	UNION
+	ENUM
+	ENUM_VALUE
+	INPUT_OBJECT
+	INPUT_FIELD_DEFINITION
+)
+
+type TypeSystemDirectiveLocation DirectiveLocation
+
+type ExecutableDirectiveLocation DirectiveLocation
+
+type DirectiveLocations []DirectiveLocation
+
+type name string
+
+func parseName(n string) name {
+	return name("")
 }
 
-// Documents is a type that holds an OperationDefinition.
-type OperationDefinition struct {
-	SelectionSet
-	Type       string
-	Name       string
-	Variables  []Variable
-	Directives []Directive
+type DirectiveDefinition struct {
+	Description         *string
+	Name                name
+	ArgumentsDefinition ArgumentsDefinition
+	DirectiveLocations  DirectiveLocations
 }
 
-// Documents is a type that holds an FragmentDefinition.
-type FragmentDefinition struct {
-	Fragment
-	Name string
+type ArgumentsDefinition []InputValueDefinition
+
+type TypeKind int
+
+const (
+	NAMED_TYPE TypeKind = iota + 1
+	LIST_TYPE
+	NON_NULL_TYPE
+)
+
+type Type interface {
+	GetTypeKind() TypeKind
 }
 
-type Fragment struct {
-	SelectionSet
-	TypeCondition string
-	Directives    []Directive
+type NamedType name
+
+func (nt NamedType) GetTypeKind() TypeKind {
+	return NAMED_TYPE
 }
 
-// Selection is an interface that whatever type that implements it,
-// may be included in a SelectionSet (Field, FragmentSpread and
-// InlineFragment).
-type Selection interface {
-	GetFields() []*Field
+type ListType struct {
+	Type Type
 }
 
-// SelectionSet is a list of Selection instances.
-type SelectionSet []Selection
-
-type Field struct {
-	SelectionSet
-	Alias      string
-	Name       string
-	Arguments  []Argument
-	Directives []Directive
+func (lt ListType) GetTypeKind() TypeKind {
+	return LIST_TYPE
 }
 
-type FragmentSpread struct {
-	Name       string
-	Directives []Directive
+type NonNullType struct {
+	Type Type
 }
 
-type InlineFragment struct {
-	Fragment
-}
-
-type Directive struct {
-	Name      string
-	Arguments []Argument
-}
-
-type Variable struct {
-	Name         string
-	Type         string
-	DefaultValue string
-}
-
-type Argument struct {
-	Name  string
-	Value string
+func (nt NonNullType) GetTypeKind() TypeKind {
+	return NON_NULL_TYPE
 }
