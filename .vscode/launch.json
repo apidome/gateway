@@ -12,11 +12,11 @@
             ]
         },
         {
-            "name": "Launch current file",
+            "name": "Launch debug",
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${file}",
+            "program": "${workspaceFolder}/cmd/caf-debug/main.go",
             "args": [
                 "${workspaceFolder}/settings/config.dev.json"
             ]
