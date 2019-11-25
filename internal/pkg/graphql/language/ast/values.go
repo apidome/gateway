@@ -24,7 +24,14 @@ type Value interface {
 }
 
 var _ Value = (*DefaultValue)(nil)
-var _ Value = (*DefaultValue)(nil)
+var _ Value = (*ObjectField)(nil)
+var _ Value = (*ObjectValue)(nil)
+var _ Value = (*ListValue)(nil)
+var _ Value = (*IntValue)(nil)
+var _ Value = (*FloatValue)(nil)
+var _ Value = (*StringValue)(nil)
+var _ Value = (*BooleanValue)(nil)
+var _ Value = (*EnumValue)(nil)
 
 type DefaultValue struct {
 	Kind  string

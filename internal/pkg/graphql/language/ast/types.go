@@ -4,43 +4,42 @@ import "github.com/omeryahud/caf/internal/pkg/graphql/language/location"
 
 type TypeKind int
 
-const (
-	NAMED_TYPE TypeKind = iota + 1
-	LIST_TYPE
-	NON_NULL_TYPE
-)
-
 type Type interface {
-	GetTypeKind() TypeKind
+	GetKind() string
 }
 
-type NamedType Name
+type NamedType struct {
+	Kind string
+	Name Name
+}
 
-func (nt NamedType) GetTypeKind() TypeKind {
-	return NAMED_TYPE
+func (nt NamedType) GetKind() string {
+	return nt.Kind
 }
 
 type ListType struct {
+	Kind   string
 	OfType Type
-	loc    *location.Location
+	Loc    *location.Location
 }
 
-func (lt ListType) GetTypeKind() TypeKind {
-	return LIST_TYPE
+func (lt ListType) GetKind() string {
+	return lt.Kind
 }
 
 type NonNullType struct {
+	Kind   string
 	OfType Type
-	loc    *location.Location
+	Loc    *location.Location
 }
 
-func (nt NonNullType) GetTypeKind() TypeKind {
-	return NON_NULL_TYPE
+func (nt NonNullType) GetKind() string {
+	return nt.Kind
 }
 
 type TypeCondition struct {
 	NamedType NamedType
-	loc       *location.Location
+	Loc       *location.Location
 }
 
 type UnionMemberTypes []NamedType
