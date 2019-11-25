@@ -121,3 +121,8 @@ func (ev EnumValue) Kind() string {
 func (ev EnumValue) Value() interface{} {
 	return ev
 }
+
+type Variable struct {
+	Name Name
+	loc  *location.Location
+}

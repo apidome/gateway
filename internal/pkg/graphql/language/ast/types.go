@@ -42,3 +42,7 @@ type TypeCondition struct {
 	NamedType NamedType
 	loc       *location.Location
 }
+
+type UnionMemberTypes []NamedType
+
+type ImplementsInterfaces []NamedType
