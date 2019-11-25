@@ -1,5 +1,7 @@
 package ast
 
+import "github.com/omeryahud/caf/internal/pkg/graphql/language/location"
+
 type DirectiveLocation int
 
 const (
@@ -38,4 +40,5 @@ type Directives []Directive
 type Directive struct {
 	Name      Name
 	Arguments *Arguments
+	loc       *location.Location
 }

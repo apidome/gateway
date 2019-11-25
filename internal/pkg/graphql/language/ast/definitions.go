@@ -1,5 +1,7 @@
 package ast
 
+import "github.com/omeryahud/caf/internal/pkg/graphql/language/location"
+
 type Definition interface {
 	definition()
 }
@@ -20,19 +22,22 @@ type ExecutableDefinition interface {
 type SchemaDefinition struct {
 	Directives                   *Directives
 	RootOperationTypeDefinitions []RootOperationTypeDefinition
+	loc                          *location.Location
 }
 
 type SchemaExtension struct {
 	Directives                   *Directives
 	RootOperationTypeDefinitions *[]RootOperationTypeDefinition
+	loc                          *location.Location
 }
 
 type OperationDefinition struct {
 	OperationType       *OperationType
-	Name                *name
+	Name                *Name
 	VariableDefinitions *VariableDefinitions
 	Directives          *Directives
 	SelectionSet        SelectionSet
+	loc                 *location.Location
 }
 
 type FragmentDefinition struct {
@@ -40,6 +45,7 @@ type FragmentDefinition struct {
 	TypeCondition TypeCondition
 	Directives    *Directives
 	SelectionSet  SelectionSet
+	loc           *location.Location
 }
 
 type VariableDefinition struct {
@@ -47,6 +53,7 @@ type VariableDefinition struct {
 	Type         Type
 	DefaultValue *DefaultValue
 	Directives   *Directives
+	loc          *location.Location
 }
 
 type VariableDefinitions []VariableDefinition
@@ -65,96 +72,109 @@ type TypeDefinition interface {
 
 type EnumTypeDefinition struct {
 	Description          *string
-	Name                 name
+	Name                 Name
 	Directives           *Directives
 	EnumValuesDefinition *EnumValuesDefinition
+	loc                  *location.Location
 }
 
 type UnionTypeExtension struct {
-	Name             name
+	Name             Name
 	Directives       *Directives
 	UnionMemberTypes *UnionMemberTypes
+	loc              *location.Location
 }
 
 type UnionMemberTypes []NamedType
 
 type UnionTypeDefinition struct {
 	Description      *string
-	Name             name
+	Name             Name
 	Directives       *Directives
 	FieldsDefinition *FieldsDefinition
+	loc              *location.Location
 }
 
 type FieldsDefinition []FieldDefinition
 
 type FieldDefinition struct {
 	Description         *string
-	Name                name
+	Name                Name
 	ArgumentsDefinition *ArgumentsDefinition
 	Type                Type
 	Directives          *Directives
+	loc                 *location.Location
 }
 
 type InterfaceTypeExtension struct {
-	Name             name
+	Name             Name
 	Directives       *Directives
 	FieldsDefinition *FieldsDefinition
+	loc              *location.Location
 }
 
 type InterfaceTypeDefinition struct {
 	Description      *string
-	Name             name
+	Name             Name
 	Directives       *Directives
 	FieldsDefinition *FieldsDefinition
+	loc              *location.Location
 }
 
 type ImplementsInterfaces []NamedType
 
 type ObjectTypeExtension struct {
-	Name                 name
+	Name                 Name
 	ImplementsInterfaces *ImplementsInterfaces
 	Directive            *Directives
 	FieldsDefinition     *FieldsDefinition
+	loc                  *location.Location
 }
 
 type ObjectTypeDefinition struct {
 	Description          *string
-	Name                 name
+	Name                 Name
 	ImplementsInterfaces *ImplementsInterfaces
 	Directives           *Directives
 	FieldsDefinition     *FieldsDefinition
+	loc                  *location.Location
 }
 
 type ScalarTypeExtension struct {
-	Name       name
+	Name       Name
 	Directives Directives
+	loc        *location.Location
 }
 
 type ScalarTypeDefinition struct {
 	Description *string
-	Name        name
+	Name        Name
 	Directives  *Directives
+	loc         *location.Location
 }
 
 type InputFieldsDefinition []InputValueDefinition
 
 type InputObjectTypeExtension struct {
-	Name                  name
+	Name                  Name
 	Directives            *Directives
 	InputFieldsDefinition *InputFieldsDefinition
+	loc                   *location.Location
 }
 
 type InputObjectTypeDefinition struct {
 	Description           *string
-	Name                  name
+	Name                  Name
 	Directives            *Directives
 	InputFieldsDefinition *InputFieldsDefinition
+	loc                   *location.Location
 }
 
 type EnumTypeExtension struct {
-	Name                 name
+	Name                 Name
 	Directives           *Directives
 	EnumValuesDefinition *EnumValuesDefinition
+	loc                  *location.Location
 }
 
 type EnumValuesDefinition []EnumValueDefinition
@@ -163,20 +183,23 @@ type EnumValueDefinition struct {
 	Description *string
 	EnumValue   EnumValue
 	Directives  *Directives
+	loc         *location.Location
 }
 
 type InputValueDefinition struct {
 	Description  *string
-	Name         name
+	Name         Name
 	DefaultValue *DefaultValue
 	Directives   *Directives
+	loc          *location.Location
 }
 
 type DirectiveDefinition struct {
 	Description         *string
-	Name                name
+	Name                Name
 	ArgumentsDefinition ArgumentsDefinition
 	DirectiveLocations  DirectiveLocations
+	loc                 *location.Location
 }
 
 type ArgumentsDefinition []InputValueDefinition
@@ -184,6 +207,7 @@ type ArgumentsDefinition []InputValueDefinition
 type RootOperationTypeDefinition struct {
 	OperationType OperationType
 	NamedType     NamedType
+	loc           *location.Location
 }
 
 type OperationType string
@@ -195,5 +219,6 @@ const (
 )
 
 type Variable struct {
-	Name name
+	Name Name
+	loc  *location.Location
 }

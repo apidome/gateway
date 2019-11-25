@@ -28,9 +28,13 @@ type DefaultValue Value
 type ObjectField struct {
 	Name  Name
 	Value Value
+	loc   *location.Location
 }
 
-type ObjectValue []ObjectField
+type ObjectValue struct {
+	Values []ObjectField
+	loc    *location.Location
+}
 
 func (ov ObjectValue) Kind() string {
 	return kinds.ObjectValue
@@ -40,7 +44,10 @@ func (ov ObjectValue) Value() interface{} {
 	return ov
 }
 
-type ListValue []Value
+type ListValue struct {
+	Values []Value
+	loc    *location.Location
+}
 
 func (lv ListValue) Kind() string {
 	return kinds.ListValue
@@ -52,6 +59,7 @@ func (lv ListValue) Value() interface{} {
 
 type IntValue struct {
 	value int
+	loc   *location.Location
 }
 
 func (iv IntValue) Kind() string {
@@ -64,6 +72,7 @@ func (iv IntValue) Value() interface{} {
 
 type FloatValue struct {
 	value float64
+	loc   *location.Location
 }
 
 func (fv FloatValue) Kind() string {
@@ -76,6 +85,7 @@ func (fv FloatValue) Value() interface{} {
 
 type StringValue struct {
 	value string
+	loc   *location.Location
 }
 
 func (sv StringValue) Kind() string {
@@ -88,6 +98,7 @@ func (sv StringValue) Value() interface{} {
 
 type BooleanValue struct {
 	value bool
+	loc   *location.Location
 }
 
 func (bv BooleanValue) Kind() string {
@@ -100,6 +111,7 @@ func (bv BooleanValue) Value() interface{} {
 
 type EnumValue struct {
 	Name Name
+	loc  *location.Location
 }
 
 func (ev EnumValue) Kind() string {

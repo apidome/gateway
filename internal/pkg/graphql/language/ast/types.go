@@ -1,5 +1,7 @@
 package ast
 
+import "github.com/omeryahud/caf/internal/pkg/graphql/language/location"
+
 type TypeKind int
 
 const (
@@ -20,6 +22,7 @@ func (nt NamedType) GetTypeKind() TypeKind {
 
 type ListType struct {
 	OfType Type
+	loc    *location.Location
 }
 
 func (lt ListType) GetTypeKind() TypeKind {
@@ -28,6 +31,7 @@ func (lt ListType) GetTypeKind() TypeKind {
 
 type NonNullType struct {
 	OfType Type
+	loc    *location.Location
 }
 
 func (nt NonNullType) GetTypeKind() TypeKind {
@@ -36,4 +40,5 @@ func (nt NonNullType) GetTypeKind() TypeKind {
 
 type TypeCondition struct {
 	NamedType NamedType
+	loc       *location.Location
 }
