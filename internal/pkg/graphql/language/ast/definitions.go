@@ -5,9 +5,11 @@ type Definition interface {
 }
 
 type TypeSystemExtension interface {
+	Definition
 }
 
 type TypeSystemDefinition interface {
+	Definition
 }
 
 type ExecutableDefinition interface {
@@ -15,9 +17,14 @@ type ExecutableDefinition interface {
 	executableDefinition()
 }
 
+type SchemaDefinition struct {
+	Directives                   *Directives
+	RootOperationTypeDefinitions []RootOperationTypeDefinition
+}
+
 type SchemaExtension struct {
-	Directives                  *Directives
-	RootOperationTypeDefinition *RootOperationTypeDefinition
+	Directives                   *Directives
+	RootOperationTypeDefinitions *[]RootOperationTypeDefinition
 }
 
 type OperationDefinition struct {
@@ -45,11 +52,13 @@ type VariableDefinition struct {
 type VariableDefinitions []VariableDefinition
 
 type TypeExtension interface {
+	TypeSystemExtension
 	// Make sure all TypeExtensions implement this.
 	typeExtension()
 }
 
 type TypeDefinition interface {
+	TypeSystemDefinition
 	// Make sure all TypeDefinitions implement this.
 	typeDefinition()
 }

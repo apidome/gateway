@@ -3,6 +3,6 @@ package ast
 type Arguments []Argument
 
 type Argument struct {
-	Name  name
+	Name  Name
 	Value Value
 }

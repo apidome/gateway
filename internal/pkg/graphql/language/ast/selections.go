@@ -8,7 +8,7 @@ type SelectionSet []Selection
 
 type Field struct {
 	Alias        *Alias
-	Name         name
+	Name         Name
 	Arguments    *Arguments
 	Directives   *Directives
 	SelectionSet *SelectionSet

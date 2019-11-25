@@ -1,16 +1,22 @@
 package ast
 
-import "github.com/omeryahud/caf/internal/pkg/graphql/language/kinds"
+import (
+	"github.com/omeryahud/caf/internal/pkg/graphql/language/kinds"
+	"github.com/omeryahud/caf/internal/pkg/graphql/language/location"
+)
 
-type name string
-
-func parseName(n string) name {
-	return name("")
+type Name struct {
+	value string
+	loc   location.Location
 }
 
-type Alias name
+func parseName(n string) Name {
+	return Name{}
+}
 
-type FragmentName name
+type Alias Name
+
+type FragmentName Name
 
 type Value interface {
 	Kind() string
@@ -20,7 +26,7 @@ type Value interface {
 type DefaultValue Value
 
 type ObjectField struct {
-	Name  name
+	Name  Name
 	Value Value
 }
 
@@ -93,7 +99,7 @@ func (bv BooleanValue) Value() interface{} {
 }
 
 type EnumValue struct {
-	Name name
+	Name Name
 }
 
 func (ev EnumValue) Kind() string {

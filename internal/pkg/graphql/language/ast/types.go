@@ -12,7 +12,7 @@ type Type interface {
 	GetTypeKind() TypeKind
 }
 
-type NamedType name
+type NamedType Name
 
 func (nt NamedType) GetTypeKind() TypeKind {
 	return NAMED_TYPE

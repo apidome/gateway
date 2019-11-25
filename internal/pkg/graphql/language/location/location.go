@@ -1,4 +1,4 @@
-package language
+package location
 
 type Location struct {
 	Start  int

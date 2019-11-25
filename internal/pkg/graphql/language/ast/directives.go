@@ -36,6 +36,6 @@ type DirectiveLocations []DirectiveLocation
 type Directives []Directive
 
 type Directive struct {
-	Name      name
+	Name      Name
 	Arguments *Arguments
 }
