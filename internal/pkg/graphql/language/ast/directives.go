@@ -40,5 +40,5 @@ type Directives []Directive
 type Directive struct {
 	Name      Name
 	Arguments *Arguments
-	loc       *location.Location
+	Loc       *location.Location
 }

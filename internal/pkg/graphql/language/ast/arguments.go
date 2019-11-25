@@ -7,5 +7,5 @@ type Arguments []Argument
 type Argument struct {
 	Name  Name
 	Value Value
-	loc   *location.Location
+	Loc   *location.Location
 }
