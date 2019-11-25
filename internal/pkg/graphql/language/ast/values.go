@@ -1,128 +1,159 @@
 package ast
 
 import (
-	"github.com/omeryahud/caf/internal/pkg/graphql/language/kinds"
 	"github.com/omeryahud/caf/internal/pkg/graphql/language/location"
 )
 
 type Name struct {
-	value string
-	loc   location.Location
+	Value string
+	Loc   location.Location
 }
 
-func parseName(n string) Name {
+func ParseName(n string) Name {
+	// TODO: Implement Name validation according to
+	// 	https://graphql.github.io/graphql-spec/draft/#Name
 	return Name{}
 }
 
 type Alias Name
-
 type FragmentName Name
 
 type Value interface {
-	Kind() string
-	Value() interface{}
+	GetKind() string
+	GetValue() interface{}
 }
 
-type DefaultValue Value
+var _ Value = (*DefaultValue)(nil)
+var _ Value = (*DefaultValue)(nil)
+
+type DefaultValue struct {
+	Kind  string
+	Value Value
+	Loc   location.Location
+}
+
+func (dv DefaultValue) GetKind() string {
+	return dv.Kind
+}
+
+func (dv DefaultValue) GetValue() interface{} {
+	return dv.Value.GetValue()
+}
 
 type ObjectField struct {
+	Kind  string
 	Name  Name
 	Value Value
-	loc   *location.Location
+	Loc   *location.Location
+}
+
+func (of ObjectField) GetKind() string {
+	return of.Kind
+}
+
+func (of ObjectField) GetValue() interface{} {
+	return of.Value.GetValue()
 }
 
 type ObjectValue struct {
+	Kind   string
 	Values []ObjectField
-	loc    *location.Location
+	Loc    *location.Location
 }
 
-func (ov ObjectValue) Kind() string {
-	return kinds.ObjectValue
+func (ov ObjectValue) GetKind() string {
+	return ov.Kind
 }
 
-func (ov ObjectValue) Value() interface{} {
+func (ov ObjectValue) GetValue() interface{} {
 	return ov
 }
 
 type ListValue struct {
+	Kind   string
 	Values []Value
-	loc    *location.Location
+	Loc    *location.Location
 }
 
-func (lv ListValue) Kind() string {
-	return kinds.ListValue
+func (lv ListValue) GetKind() string {
+	return lv.Kind
 }
 
-func (lv ListValue) Value() interface{} {
+func (lv ListValue) GetValue() interface{} {
 	return lv
 }
 
 type IntValue struct {
-	value int
-	loc   *location.Location
+	Kind  string
+	Value int
+	Loc   *location.Location
 }
 
-func (iv IntValue) Kind() string {
-	return kinds.IntValue
+func (iv IntValue) GetKind() string {
+	return iv.Kind
 }
 
-func (iv IntValue) Value() interface{} {
+func (iv IntValue) GetValue() interface{} {
 	return iv
 }
 
 type FloatValue struct {
-	value float64
-	loc   *location.Location
+	Kind  string
+	Value float64
+	Loc   *location.Location
 }
 
-func (fv FloatValue) Kind() string {
-	return kinds.FloatValue
+func (fv FloatValue) GetKind() string {
+	return fv.Kind
 }
 
-func (fv FloatValue) Value() interface{} {
+func (fv FloatValue) GetValue() interface{} {
 	return fv
 }
 
 type StringValue struct {
-	value string
-	loc   *location.Location
+	Kind  string
+	Value string
+	Loc   *location.Location
 }
 
-func (sv StringValue) Kind() string {
-	return kinds.StringValue
+func (sv StringValue) GetKind() string {
+	return sv.Kind
 }
 
-func (sv StringValue) Value() interface{} {
+func (sv StringValue) GetValue() interface{} {
 	return sv
 }
 
 type BooleanValue struct {
-	value bool
-	loc   *location.Location
+	Kind  string
+	Value bool
+	Loc   *location.Location
 }
 
-func (bv BooleanValue) Kind() string {
-	return kinds.BooleanValue
+func (bv BooleanValue) GetKind() string {
+	return bv.Kind
 }
 
-func (bv BooleanValue) Value() interface{} {
+func (bv BooleanValue) GetValue() interface{} {
 	return bv
 }
 
 type EnumValue struct {
+	Kind string
 	Name Name
-	loc  *location.Location
+	Loc  *location.Location
 }
 
-func (ev EnumValue) Kind() string {
-	return kinds.EnumValue
+func (ev EnumValue) GetKind() string {
+	return ev.Kind
 }
 
-func (ev EnumValue) Value() interface{} {
+func (ev EnumValue) GetValue() interface{} {
 	return ev
 }
 
 type Variable struct {
 	Name Name
-	loc  *location.Location
+	Loc  *location.Location
 }
