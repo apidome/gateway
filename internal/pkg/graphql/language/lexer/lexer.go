@@ -224,7 +224,6 @@ func Lex(doc string) ([]Token, error) {
 			}
 			//tokens = append(tokens, Token{BANG, index, index, string(char)})
 		case '\n', '\r':
-			whiteSpaceOn = false
 			if tok != "" {
 				tokens = append(tokens, Token{kind, index - len(tok), index - 1, tok})
 				tok = ""
@@ -247,7 +246,7 @@ func Lex(doc string) ([]Token, error) {
 		}
 	}
 
-	tokens = append(tokens, Token{EOF, len(doc) - 1, len(doc) - 1, EOF.String()})
+	tokens = append(tokens, Token{EOF, len(doc), len(doc), EOF.String()})
 
 	return tokens, nil
 }

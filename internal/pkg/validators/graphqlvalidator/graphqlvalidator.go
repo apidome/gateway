@@ -22,27 +22,24 @@ func (gv GraphQLValidator) LoadSchema(path, method string, bytes []byte) error {
 func (gv GraphQLValidator) Validate(path, method string, bytes []byte) error {
 	// Create a struct that can contain an http body that contains a graphql document.
 	var body struct {
-		Query     json.RawMessage `json:"query"`
-		Variables json.RawMessage `json:"variables"`
+		Query     string `json:"query"`
+		Variables string `json:"variables"`
 	}
 
 	// Unmarshal the body into the struct.
 	err := json.Unmarshal(bytes, &body)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Failed to unmarshal request body: ")
 	}
-
-	// Remove the quote characters from the query string.
-	query := string(body.Query)[1 : len(string(body.Query))-1]
 
 	// Parse the query in order to get an AST object.
-	ast, err := parser.Parse(query)
+	ast, err := parser.Parse(body.Query)
 	if err != nil {
-		return errors.Wrap(err, "graphQL parser failed: ")
+		return errors.Wrap(err, "GraphQL parser failed: ")
 	}
 
-	fmt.Println(query)
-	fmt.Println(ast)
+	fmt.Println("Raw Document:\n", body.Query)
+	fmt.Println("\nParsed Document:\n", ast)
 
 	return nil
 }
