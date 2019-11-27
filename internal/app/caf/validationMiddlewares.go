@@ -1,6 +1,7 @@
 package caf
 
 import (
+	"github.com/omeryahud/caf/internal/pkg/validators/graphqlvalidator"
 	"log"
 	"net/http"
 	"strconv"
@@ -30,6 +31,11 @@ func addValidationMiddlewares(mm *middleman.Middleman, targets []configs.Target)
 				validator, err = jsonvalidator.NewJsonValidator(api.Version)
 				if err != nil {
 					return errors.Wrap(err, "failed to created validator for number - "+strconv.Itoa(index))
+				}
+			case configs.TypeGraphQL:
+				validator, err = graphqlvalidator.NewGraphQLValidator()
+				if err != nil {
+					return errors.Wrap(err, "failed to create validator for api number - "+strconv.Itoa(index))
 				}
 			default:
 				log.Print("[Proxy WARNING]: Invalid API Type - " + api.Type)

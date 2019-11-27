@@ -42,6 +42,17 @@
                         "validator": {
                             "monitor": true
                         }
+                    },
+                    {
+                        "type": "GraphQL",
+                        "version": "June2018",
+                        "endpoints": [
+                            {
+                                "path": "/v1/graphql",
+                                "method": "GET",
+                                "schema": "schemas/gql-schema-1.json"
+                            }
+                        ]
                     }
                 ]
             }

@@ -2,7 +2,8 @@ package configs
 
 const (
 	// TypeRest Indicates REST configurations
-	TypeRest = "REST"
+	TypeRest    = "REST"
+	TypeGraphQL = "GraphQL"
 )
 
 // API holds information on a specific API
