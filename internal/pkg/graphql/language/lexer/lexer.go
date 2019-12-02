@@ -81,7 +81,29 @@ func (kind TokenKind) String() string {
 	return tokenDescription[kind]
 }
 
-func Lex(doc string) ([]Token, error) {
+type Lexer struct {
+	source            string
+	Tokens            []Token
+	CurrentTokenIndex int
+}
+
+func NewLexer(src string) (*Lexer, error) {
+	lexer := &Lexer{
+		source: src,
+	}
+
+	tokenizedDocument, err := lex(src)
+	if err != nil {
+		return nil, err
+	}
+
+	lexer.Tokens = tokenizedDocument
+	lexer.CurrentTokenIndex = 0
+
+	return lexer, nil
+}
+
+func lex(doc string) ([]Token, error) {
 	var (
 		whiteSpaceOn  bool
 		doubleQuoteOn bool
