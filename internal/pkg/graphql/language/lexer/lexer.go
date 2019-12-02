@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"github.com/omeryahud/caf/internal/pkg/graphql/language/location"
 	"github.com/pkg/errors"
 	"strconv"
 )
@@ -83,8 +84,8 @@ func (kind TokenKind) String() string {
 
 type Lexer struct {
 	source            string
-	Tokens            []Token
-	CurrentTokenIndex int
+	tokens            []Token
+	currentTokenIndex int
 }
 
 func NewLexer(src string) (*Lexer, error) {
@@ -97,10 +98,32 @@ func NewLexer(src string) (*Lexer, error) {
 		return nil, err
 	}
 
-	lexer.Tokens = tokenizedDocument
-	lexer.CurrentTokenIndex = 0
+	lexer.tokens = tokenizedDocument
+	lexer.currentTokenIndex = 0
 
 	return lexer, nil
+}
+
+func (l Lexer) Get() *Token {
+	token := &l.tokens[l.currentTokenIndex]
+
+	if l.currentTokenIndex < len(l.tokens) {
+		l.currentTokenIndex++
+	}
+
+	return token
+}
+
+func (l Lexer) Current() *Token {
+	return &l.tokens[l.currentTokenIndex]
+}
+
+func (l Lexer) Location() location.Location {
+	return location.Location{
+		Start:  l.tokens[l.currentTokenIndex].Start,
+		End:    0,
+		Source: nil,
+	}
 }
 
 func lex(doc string) ([]Token, error) {
