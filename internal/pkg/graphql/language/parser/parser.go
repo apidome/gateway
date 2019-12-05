@@ -86,7 +86,7 @@ func parseName(n string) (string, error) {
 	return "", nil
 }
 
-func parseVariableDefinition(l *lexer.Lexer) (*ast.VariableDefinitions, error) {
+func parseVariableDefinitions(l *lexer.Lexer) (*ast.VariableDefinitions, error) {
 	return nil, nil
 }
 
@@ -95,5 +95,49 @@ func parseDirectives(l *lexer.Lexer) (*ast.Directives, error) {
 }
 
 func parseSelectionSet(l *lexer.Lexer) (*ast.SelectionSet, error) {
+	return nil, nil
+}
+
+func parseVariable(l *lexer.Lexer) (*ast.Variable, error) {
+	return nil, nil
+}
+
+func parseDefaultValue(l *lexer.Lexer) (*ast.DefaultValue, error) {
+	return nil, nil
+}
+
+func parseValue(lexer2 *lexer.Lexer) (*ast.Value, error) {
+	return nil, nil
+}
+
+func parseArguments(l *lexer.Lexer) (*ast.Arguments, error) {
+	return nil, nil
+}
+
+func parseField(l *lexer.Lexer) (*ast.Field, error) {
+	return nil, nil
+}
+
+func parseFragmentSpread(l *lexer.Lexer) (*ast.FragmentSpread, error) {
+	return nil, nil
+}
+
+func parseInlineFragment(l *lexer.Lexer) (*ast.InlineFragment, error) {
+	return nil, nil
+}
+
+func parseAlias(l *lexer.Lexer) (*ast.Alias, error) {
+	return nil, nil
+}
+
+func parseFragmentName(l *lexer.Lexer) (*ast.FragmentName, error) {
+	return nil, nil
+}
+
+func parseTypeCondition(l *lexer.Lexer) (*ast.TypeCondition, error) {
+	return nil, nil
+}
+
+func parseNamedType(l *lexer.Lexer) (*ast.NamedType, error) {
 	return nil, nil
 }
