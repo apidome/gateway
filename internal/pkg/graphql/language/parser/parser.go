@@ -4,6 +4,7 @@ import (
 	"github.com/omeryahud/caf/internal/pkg/graphql/language/ast"
 	"github.com/omeryahud/caf/internal/pkg/graphql/language/lexer"
 	"github.com/pkg/errors"
+	"regexp"
 )
 
 func Parse(doc string) (*ast.Document, error) {
@@ -20,7 +21,7 @@ func parseDocument(l *lexer.Lexer) (*ast.Document, error) {
 	var err error
 	document := &ast.Document{}
 
-	for token := l.Current(); token.Kind != lexer.EOF; {
+	for token := l.Current(); token.Kind != lexer.EOF; token = l.Get() {
 		if token.Kind == lexer.BRACE_L {
 			op, err = parseOperationDefinition(l, ast.OPERATION_QUERY)
 			if err != nil {
@@ -82,8 +83,36 @@ func parseFragmentDefinition(l *lexer.Lexer) (*ast.FragmentDefinition, error) {
 	return nil, nil
 }
 
-func parseName(n string) (string, error) {
-	return "", nil
+func parseName(l *lexer.Lexer) (*ast.Name, error) {
+	name := new(ast.Name)
+	token := l.Current()
+	pattern := "^[_A-Za-z][_0-9A-Za-z]*$"
+
+	// If the current token is not a Name, return nil
+	if token.Kind != lexer.NAME {
+		return nil, nil
+	}
+
+	// Check if the given name matches the regex provided by graphql spec at
+	// https://graphql.github.io/graphql-spec/draft/#Name
+	match, err := regexp.MatchString(pattern, token.Value)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse name: ")
+	}
+
+	// If the name does not match the requirements, return an error.
+	if !match {
+		return nil, errors.New("invalid name - " + token.Value)
+	}
+
+	// Populate the Name struct.
+	name.Value = token.Value
+	name.Loc.Start = token.Start
+	name.Loc.End = token.End
+	name.Loc.Source = l.Source()
+
+	// Return the AST Name object.
+	return name, nil
 }
 
 func parseVariableDefinitions(l *lexer.Lexer) (*ast.VariableDefinitions, error) {

@@ -103,7 +103,7 @@ func NewLexer(src string) (*Lexer, error) {
 	return lexer, nil
 }
 
-func (l Lexer) Get() *Token {
+func (l *Lexer) Get() *Token {
 	token := &l.tokens[l.currentTokenIndex]
 
 	if l.currentTokenIndex < len(l.tokens) {
@@ -113,8 +113,12 @@ func (l Lexer) Get() *Token {
 	return token
 }
 
-func (l Lexer) Current() *Token {
+func (l *Lexer) Current() *Token {
 	return &l.tokens[l.currentTokenIndex]
+}
+
+func (l *Lexer) Source() *string {
+	return &l.source
 }
 
 func lex(doc string) ([]Token, error) {
