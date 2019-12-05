@@ -1,7 +1,6 @@
 package lexer
 
 import (
-	"github.com/omeryahud/caf/internal/pkg/graphql/language/location"
 	"github.com/pkg/errors"
 	"strconv"
 )
@@ -116,14 +115,6 @@ func (l Lexer) Get() *Token {
 
 func (l Lexer) Current() *Token {
 	return &l.tokens[l.currentTokenIndex]
-}
-
-func (l Lexer) Location() location.Location {
-	return location.Location{
-		Start:  l.tokens[l.currentTokenIndex].Start,
-		End:    0,
-		Source: nil,
-	}
 }
 
 func lex(doc string) ([]Token, error) {

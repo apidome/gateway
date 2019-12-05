@@ -22,7 +22,7 @@ func parseDocument(l *lexer.Lexer) (*ast.Document, error) {
 
 	for token := l.Current(); token.Kind != lexer.EOF; {
 		if token.Kind == lexer.BRACE_L {
-			op, err = parseQuery(l)
+			op, err = parseOperationDefinition(l, ast.OPERATION_QUERY)
 			if err != nil {
 				return nil, err
 			}
@@ -30,21 +30,21 @@ func parseDocument(l *lexer.Lexer) (*ast.Document, error) {
 			switch token.Value {
 			case lexer.QUERY:
 				{
-					op, err = parseQuery(l)
+					op, err = parseOperationDefinition(l, ast.OPERATION_QUERY)
 					if err != nil {
 						return nil, err
 					}
 				}
 			case lexer.MUTATION:
 				{
-					op, err = parseMutation(l)
+					op, err = parseOperationDefinition(l, ast.OPERATION_MUTATION)
 					if err != nil {
 						return nil, err
 					}
 				}
 			case lexer.SUBSCRIPTION:
 				{
-					op, err = parseSubscription(l)
+					op, err = parseOperationDefinition(l, ast.OPERATION_SUBSCRIPTION)
 					if err != nil {
 						return nil, err
 					}
@@ -70,23 +70,11 @@ func parseDocument(l *lexer.Lexer) (*ast.Document, error) {
 	return document, nil
 }
 
-func parseQuery(l *lexer.Lexer) (*ast.OperationDefinition, error) {
-	return &ast.OperationDefinition{}, nil
-}
-
-func parseMutation(l *lexer.Lexer) (*ast.OperationDefinition, error) {
-	return &ast.OperationDefinition{}, nil
-}
-
-func parseSubscription(l *lexer.Lexer) (*ast.OperationDefinition, error) {
-	return &ast.OperationDefinition{}, nil
-}
-
 func parseFragment(l *lexer.Lexer) (*ast.FragmentDefinition, error) {
 	return nil, nil
 }
 
-func parseOperationDefinition(l *lexer.Lexer) (*ast.OperationDefinition, error) {
+func parseOperationDefinition(l *lexer.Lexer, operationType ast.OperationType) (*ast.OperationDefinition, error) {
 	return nil, nil
 }
 

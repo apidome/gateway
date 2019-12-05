@@ -33,7 +33,7 @@ var _ ExecutableDefinition = (*FragmentDefinition)(nil)
 
 type OperationDefinition struct {
 	Kind                string
-	OperationType       *OperationType
+	OperationType       OperationType
 	Name                *Name
 	VariableDefinitions *VariableDefinitions
 	Directives          *Directives
