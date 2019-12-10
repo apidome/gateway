@@ -1,10 +1,11 @@
 package caf
 
 import (
-	"github.com/omeryahud/caf/internal/pkg/validators/graphqlvalidator"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/omeryahud/caf/internal/pkg/validators/graphqlvalidator"
 
 	"github.com/omeryahud/caf/internal/pkg/configs"
 	"github.com/omeryahud/caf/internal/pkg/middleman"
