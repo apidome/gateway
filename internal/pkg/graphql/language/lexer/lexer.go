@@ -144,15 +144,18 @@ func (l *Lexer) Source() *string {
 func lex(doc string) ([]Token, error) {
 	var (
 		whiteSpaceOn  bool
-		doubleQuoteOn bool
+		stringOn      bool
 		blockStringOn bool
 		tok           string
 		kind          TokenKind
 		tokens        []Token
 	)
 
-	for index, char := range doc {
-		switch char {
+	runes := []rune(doc)
+
+	//for index, char := range doc {
+	for i := 0; i < len(runes); i++ {
+		switch runes[i] {
 		// This case handles all the punctuator characters that stand as an independent token.
 		case '!', '$', '(', ')', ':', '=', '@', '[', ']', '{', '}', '|', '&':
 			{
@@ -163,14 +166,14 @@ func lex(doc string) ([]Token, error) {
 				// is a punctuator that ended a token.
 				if tok != "" {
 					// Append the token token to the tokens slice.
-					tokens = append(tokens, Token{kind, index - len(tok), index - 1, tok})
+					tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
 
 					// Empty the token.
 					tok = ""
 				}
 
 				// Append a punctuator token to the tokens slice.
-				tokens = append(tokens, Token{getPunctuatorKind(char), index, index, string(char)})
+				tokens = append(tokens, Token{getPunctuatorKind(runes[i]), i, i, string(runes[i])})
 			}
 		// This case handles the "spread" operator and float's decimal point.
 		case '.':
@@ -180,43 +183,81 @@ func lex(doc string) ([]Token, error) {
 					kind = FLOAT
 				} else if kind == FLOAT {
 					// If we met '.' when the token kind is FLOAT, return an error.
-					return nil, errors.New("unexpected character '.' at position " + strconv.Itoa(index))
+					return nil, errors.New("unexpected character '.' at position " + strconv.Itoa(i))
 				}
 
 				// Append the character to the token.
-				tok = tok + string(char)
+				tok = tok + string(runes[i])
 
 				// Check if the token is a spread operator.
 				if tok == "..." {
 					// Append the token to the tokens slice.
-					tokens = append(tokens, Token{SPREAD, index, index, "..."})
+					tokens = append(tokens, Token{SPREAD, i, i, "..."})
 
 					// Empty the token.
 					tok = ""
 				}
 			}
+		// This case is responsible for detection of STRING and BLOCK_STRING values.
 		case '"':
 			{
 				// Turn off the white space flag.
 				whiteSpaceOn = false
 
-				// Append the character to the token variable
-				tok = tok + string(char)
+				// If the token is empty, this is a start of a STRING or a BLOCK_STRING
+				// Else, this is the end of a value.
+				if tok == "" {
+					// If the next two characters are also double quotes, this is a BLOCK_STRING.
+					// Else, this is a STRING.
+					if runes[i+1] == '"' && runes[i+2] == '"' {
+						// Turn the block string flag on.
+						blockStringOn = true
 
-				// If double quote flag is off, it means that it is the start of a new STRING.
-				// Else, it is the end of a STRING.
-				if !doubleQuoteOn {
-					// Turn on the double quote flag.
-					doubleQuoteOn = true
+						// Set the token kind to block string.
+						kind = BLOCK_STRING
 
-					// Set the token kind to string.
-					kind = STRING
+						// Append the '"' runes to the token.
+						tok = tok + string(runes[i:i+3])
+
+						// Increment the loop index twice.
+						i += 2
+					} else {
+						// Turn the string flag on
+						stringOn = true
+
+						// Set the token king to string
+						kind = STRING
+
+						// Append the '"' rune to the token.
+						tok = tok + string(runes[i])
+					}
 				} else {
-					// Turn off the double quote flag.
-					doubleQuoteOn = false
+					if blockStringOn {
+						if runes[i+1] == '"' && runes[i+2] == '"' {
+							// Turn the block string flag off.
+							blockStringOn = false
+
+							// Append the '"' runes to the token.
+							tok = tok + string(runes[i:i+3])
+
+							// Increment the loop index twice.
+							i += 2
+						} else {
+							// Append the '"' as part of the value.
+							tok = tok + string(runes[i])
+						}
+					} else if stringOn {
+						// Turn the string flag off
+						stringOn = false
+
+						// Append the '"' as the end of the string value.
+						tok = tok + string(runes[i])
+					} else {
+						return nil, errors.New("unexpected character '\"' at position " + strconv.Itoa(i))
+					}
 
 					// Append the token to the tokens slice.
-					tokens = append(tokens, Token{STRING, index - len(tok), index - 1, tok})
+					tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
 
 					// Empty the token.
 					tok = ""
@@ -228,8 +269,8 @@ func lex(doc string) ([]Token, error) {
 				// If the double quote flag is on, we append any white space
 				// we meet to the token variable.
 				// Else, we will treat the white space as a delimiter between tokens
-				if doubleQuoteOn {
-					tok = tok + string(char)
+				if stringOn {
+					tok = tok + string(runes[i])
 				} else {
 					// If the white space flag is off, turn it on.
 					if !whiteSpaceOn {
@@ -238,7 +279,7 @@ func lex(doc string) ([]Token, error) {
 						// If the token is not empty
 						if tok != "" {
 							// Append the token to tokens slice.
-							tokens = append(tokens, Token{kind, index - len(tok), index - 1, tok})
+							tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
 
 							// Empty the token
 							tok = ""
@@ -255,7 +296,7 @@ func lex(doc string) ([]Token, error) {
 				// If the token is not empty
 				if tok != "" {
 					// Append the token to the tokens slice.
-					tokens = append(tokens, Token{kind, index - len(tok), index - 1, tok})
+					tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
 
 					// Empty the token
 					tok = ""
@@ -267,7 +308,7 @@ func lex(doc string) ([]Token, error) {
 				// If the token is not empty, it means that the current character ends a token.
 				if tok != "" {
 					// Append the token to the tokens slice.
-					tokens = append(tokens, Token{kind, index - len(tok), index - 1, tok})
+					tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
 
 					// Empty the token.
 					tok = ""
@@ -285,7 +326,7 @@ func lex(doc string) ([]Token, error) {
 				}
 
 				// Append the character to the token variable.
-				tok = tok + string(char)
+				tok = tok + string(runes[i])
 			}
 		case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 			{
@@ -296,12 +337,12 @@ func lex(doc string) ([]Token, error) {
 				}
 
 				// Append the character to the token variable.
-				tok = tok + string(char)
+				tok = tok + string(runes[i])
 			}
 		// This case handles the rest of the unicode characters (hebrew, chinese, etc)
 		default:
 			{
-				tok = tok + string(char)
+				tok = tok + string(runes[i])
 			}
 		}
 	}
