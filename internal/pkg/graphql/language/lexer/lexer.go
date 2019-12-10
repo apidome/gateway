@@ -1,7 +1,6 @@
 package lexer
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
 	"strconv"
 )
@@ -366,10 +365,6 @@ func lex(doc string) ([]Token, error) {
 
 	// Append an EOF token to mark the end of the document.
 	tokens = append(tokens, Token{EOF, len(doc), len(doc), EOF.String()})
-
-	for i, token := range tokens {
-		fmt.Printf("token #%d - %v\n", i, token)
-	}
 
 	// Return the tokens slice.
 	return tokens, nil
