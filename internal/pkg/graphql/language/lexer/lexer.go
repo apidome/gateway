@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"strconv"
 )
@@ -256,20 +257,24 @@ func lex(doc string) ([]Token, error) {
 						return nil, errors.New("unexpected character '\"' at position " + strconv.Itoa(i))
 					}
 
-					// Append the token to the tokens slice.
-					tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
+					// If both of the flags are off (which means that we are inside any string value
+					// anymore), append the token to the tokens slice.
+					if !stringOn && !blockStringOn {
+						// Append the token to the tokens slice.
+						tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
 
-					// Empty the token.
-					tok = ""
+						// Empty the token.
+						tok = ""
+					}
 				}
 			}
 		// This case handles white spaces (single white space character only)
-		case ' ':
+		case ' ', '\t':
 			{
 				// If the double quote flag is on, we append any white space
 				// we meet to the token variable.
 				// Else, we will treat the white space as a delimiter between tokens
-				if stringOn {
+				if stringOn || blockStringOn {
 					tok = tok + string(runes[i])
 				} else {
 					// If the white space flag is off, turn it on.
@@ -302,16 +307,28 @@ func lex(doc string) ([]Token, error) {
 					tok = ""
 				}
 			}
-		// This case handles line feed, carriage return and tab.
-		case '\n', '\r', '\t':
+		// This case handles line feed and carriage return.
+		case '\n', '\r':
 			{
-				// If the token is not empty, it means that the current character ends a token.
-				if tok != "" {
-					// Append the token to the tokens slice.
-					tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
+				// If we are inside a string value, line feed and carriage return are disallowed.
+				if stringOn {
+					return nil, errors.New("line feed and carriage return characters are " +
+						"disallowed in a string value.")
+				}
 
-					// Empty the token.
-					tok = ""
+				// If one if the string flags are on, append the character to the token.
+				// Else, treat is as the end of the previous token.
+				if blockStringOn {
+					tok = tok + string(runes[i])
+				} else {
+					// If the token is not empty, it means that the current character ends a token.
+					if tok != "" {
+						// Append the token to the tokens slice.
+						tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
+
+						// Empty the token.
+						tok = ""
+					}
 				}
 			}
 		case '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
@@ -349,6 +366,10 @@ func lex(doc string) ([]Token, error) {
 
 	// Append an EOF token to mark the end of the document.
 	tokens = append(tokens, Token{EOF, len(doc), len(doc), EOF.String()})
+
+	for i, token := range tokens {
+		fmt.Printf("token #%d - %v\n", i, token)
+	}
 
 	// Return the tokens slice.
 	return tokens, nil
