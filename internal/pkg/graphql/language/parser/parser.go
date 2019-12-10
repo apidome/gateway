@@ -81,8 +81,8 @@ func parseFragment(l *lexer.Lexer) (*ast.FragmentDefinition, error) {
 func parseOperationDefinition(l *lexer.Lexer, operationType ast.OperationType) (*ast.OperationDefinition, error) {
 	opType := l.Current().Value
 
-	if opType != lexer.QUERY ||
-		opType != lexer.MUTATION ||
+	if opType != lexer.QUERY &&
+		opType != lexer.MUTATION &&
 		opType != lexer.SUBSCRIPTION {
 		return nil, errors.New("No operation type found")
 	} else {
@@ -212,17 +212,41 @@ func parseName(l *lexer.Lexer) (*ast.Name, error) {
 	return name, nil
 }
 
+//
 func parseVariableDefinitions(l *lexer.Lexer) (*ast.VariableDefinitions, error) {
 	if l.Current().Value != lexer.PAREN_L.String() {
 		return nil, errors.New("Expecting '(' to parse variable definitions")
 	} else {
 		l.Get()
-	}
 
-	return nil, nil
+		varDefs := &ast.VariableDefinitions{}
+
+		for l.Current().Value != lexer.PAREN_R.String() {
+			varDef, err := parseVariableDefinition(l)
+
+			if err != nil {
+				return nil, err
+			}
+
+			*varDefs = append(*varDefs, *varDef)
+		}
+
+		// Get closing parentheses
+		l.Get()
+
+		return varDefs, nil
+	}
 }
 
 func parseVariableDefinition(l *lexer.Lexer) (*ast.VariableDefinition, error) {
+	varDef := &ast.VariableDefinition{}
+
+	_var, err := parseVariable(l)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return nil, nil
 }
 
