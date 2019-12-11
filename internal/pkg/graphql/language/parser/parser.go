@@ -8,6 +8,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	errDoesntExist error = errors.New("Element does not exist")
+)
+
 func Parse(doc string) (*ast.Document, error) {
 	l, err := lexer.NewLexer(doc)
 	if err != nil {
@@ -84,15 +88,19 @@ func parseOperationDefinition(l *lexer.Lexer, operationType ast.OperationType) (
 	if opType != lexer.QUERY &&
 		opType != lexer.MUTATION &&
 		opType != lexer.SUBSCRIPTION {
-		return nil, errors.New("No operation type found")
+		return nil, errDoesntExist
 	} else {
+		l.Get()
+
 		opDefinition := &ast.OperationDefinition{}
 
 		// optional
 		name, err := parseName(l)
 
 		if err != nil {
-			return nil, err
+			if err != errDoesntExist {
+				return nil, err
+			}
 		}
 
 		opDefinition.Name = name
@@ -101,7 +109,9 @@ func parseOperationDefinition(l *lexer.Lexer, operationType ast.OperationType) (
 		varDef, err := parseVariableDefinitions(l)
 
 		if err != nil {
-			return nil, err
+			if err != errDoesntExist {
+				return nil, err
+			}
 		}
 
 		opDefinition.VariableDefinitions = varDef
@@ -110,7 +120,9 @@ func parseOperationDefinition(l *lexer.Lexer, operationType ast.OperationType) (
 		directives, err := parseDirectives(l)
 
 		if err != nil {
-			return nil, err
+			if err != errDoesntExist {
+				return nil, err
+			}
 		}
 
 		opDefinition.Directives = directives
@@ -130,7 +142,7 @@ func parseOperationDefinition(l *lexer.Lexer, operationType ast.OperationType) (
 //
 func parseFragmentDefinition(l *lexer.Lexer) (*ast.FragmentDefinition, error) {
 	if l.Current().Value != lexer.FRAGMENT {
-		return nil, errors.New("Token is not a fragment definition")
+		return nil, errDoesntExist
 	} else {
 		l.Get()
 
@@ -160,7 +172,9 @@ func parseFragmentDefinition(l *lexer.Lexer) (*ast.FragmentDefinition, error) {
 		directives, err := parseDirectives(l)
 
 		if err != nil {
-			return nil, err
+			if err != errDoesntExist {
+				return nil, err
+			}
 		}
 
 		fragDef.Directives = directives
@@ -215,7 +229,7 @@ func parseName(l *lexer.Lexer) (*ast.Name, error) {
 //
 func parseVariableDefinitions(l *lexer.Lexer) (*ast.VariableDefinitions, error) {
 	if l.Current().Value != lexer.PAREN_L.String() {
-		return nil, errors.New("Expecting '(' to parse variable definitions")
+		return nil, errDoesntExist
 	} else {
 		l.Get()
 
@@ -225,6 +239,10 @@ func parseVariableDefinitions(l *lexer.Lexer) (*ast.VariableDefinitions, error) 
 			varDef, err := parseVariableDefinition(l)
 
 			if err != nil {
+				if err == errDoesntExist {
+					break
+				}
+
 				return nil, err
 			}
 
@@ -238,6 +256,7 @@ func parseVariableDefinitions(l *lexer.Lexer) (*ast.VariableDefinitions, error) 
 	}
 }
 
+//
 func parseVariableDefinition(l *lexer.Lexer) (*ast.VariableDefinition, error) {
 	varDef := &ast.VariableDefinition{}
 
@@ -247,35 +266,323 @@ func parseVariableDefinition(l *lexer.Lexer) (*ast.VariableDefinition, error) {
 		return nil, err
 	}
 
-	return nil, nil
+	varDef.Variable = *_var
+
+	defVal, err := parseDefaultValue(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	varDef.DefaultValue = defVal
+
+	directives, err := parseDirectives(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	varDef.Directives = directives
+
+	return varDef, nil
 }
 
+//
 func parseDirectives(l *lexer.Lexer) (*ast.Directives, error) {
+	dirs := &ast.Directives{}
+
+	for {
+		dir, err := parseDirective(l)
+
+		if err != nil {
+			if err == errDoesntExist {
+				break
+			}
+
+			return nil, err
+		}
+
+		*dirs = append(*dirs, *dir)
+	}
 	return nil, nil
 }
 
+//
+func parseDirective(l *lexer.Lexer) (*ast.Directive, error) {
+	if l.Current().Value != lexer.AT.String() {
+		return nil, errDoesntExist
+	} else {
+		l.Get()
+
+		dir := &ast.Directive{}
+
+		name, err := parseName(l)
+
+		if err != nil {
+			return nil, err
+		}
+
+		dir.Name = *name
+
+		args, err := parseArguments(l)
+
+		if err != nil {
+			if err != errDoesntExist {
+				return nil, err
+			}
+		}
+
+		dir.Arguments = args
+
+		return dir, nil
+	}
+}
+
+//
 func parseSelectionSet(l *lexer.Lexer) (*ast.SelectionSet, error) {
-	return nil, nil
+	if l.Current().Value != lexer.BRACE_L.String() {
+		return nil, errDoesntExist
+	} else {
+		selSet := &ast.SelectionSet{}
+
+		for l.Current().Value != lexer.BRACE_R.String() {
+			sel, err := parseSelection(l)
+
+			if err != nil {
+				if err == errDoesntExist {
+					break
+				}
+
+				return nil, err
+			}
+
+			*selSet = append(*selSet, *sel)
+		}
+
+		if l.Current().Value != lexer.BRACE_R.String() {
+			return nil, errors.New("Expecting closing bracket for selection set")
+		}
+
+		return selSet, nil
+	}
 }
 
+//
+func parseSelection(l *lexer.Lexer) (*ast.Selection, error) {
+	var sel ast.Selection
+
+	sel, err := parseField(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	sel, err = parseFragmentSpread(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	sel, err = parseInlineFragment(l)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &sel, nil
+}
+
+//
 func parseVariable(l *lexer.Lexer) (*ast.Variable, error) {
-	return nil, nil
+	if l.Current().Value != lexer.DOLLAR.String() {
+		return nil, errDoesntExist
+	} else {
+		_var := &ast.Variable{}
+
+		name, err := parseName(l)
+
+		if err != nil {
+			return nil, err
+		}
+
+		_var.Name = *name
+
+		return _var, nil
+	}
 }
 
+//
 func parseDefaultValue(l *lexer.Lexer) (*ast.DefaultValue, error) {
-	return nil, nil
+	if l.Current().Value != lexer.EQUALS.String() {
+		return nil, errDoesntExist
+	} else {
+		dVal := &ast.DefaultValue{}
+
+		val, err := parseValue(l)
+
+		if err != nil {
+			return nil, err
+		}
+
+		dVal.Value = *val
+
+		return dVal, nil
+	}
 }
 
-func parseValue(lexer2 *lexer.Lexer) (*ast.Value, error) {
-	return nil, nil
+//
+func parseValue(l *lexer.Lexer) (*ast.Value, error) {
+	_var, err := parseVariable(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	} else {
+		// ! need to read variable value if it exists
+		_var = _var
+	}
+
+	var val ast.Value
+
+	val, err = parseIntValue(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	val, err = parseFloatValue(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	val, err = parseStringValue(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	val, err = parseBooleanValue(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	val, err = parseNullValue(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	val, err = parseEnumValue(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	val, err = parseListValue(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	val, err = parseObjectValue(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	if val == nil {
+		return nil, errDoesntExist
+	} else {
+		return &val, nil
+	}
 }
 
 func parseArguments(l *lexer.Lexer) (*ast.Arguments, error) {
-	return nil, nil
+	if l.Current().Value != lexer.PAREN_L.String() {
+
+	}
 }
 
+//
 func parseField(l *lexer.Lexer) (*ast.Field, error) {
-	return nil, nil
+	field := &ast.Field{}
+
+	alias, err := parseAlias(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	field.Alias = alias
+
+	name, err := parseName(l)
+
+	if err != nil {
+		return nil, err
+	}
+
+	field.Name = *name
+
+	args, err := parseArguments(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	field.Arguments = args
+
+	dirs, err := parseDirectives(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	field.Directives = dirs
+
+	selSet, err := parseSelectionSet(l)
+
+	if err != nil {
+		if err != errDoesntExist {
+			return nil, err
+		}
+	}
+
+	field.SelectionSet = selSet
+
+	return field, nil
 }
 
 func parseFragmentSpread(l *lexer.Lexer) (*ast.FragmentSpread, error) {
@@ -299,5 +606,37 @@ func parseTypeCondition(l *lexer.Lexer) (*ast.TypeCondition, error) {
 }
 
 func parseNamedType(l *lexer.Lexer) (*ast.NamedType, error) {
+	return nil, nil
+}
+
+func parseIntValue(l *lexer.Lexer) (*ast.IntValue, error) {
+	return nil, nil
+}
+
+func parseFloatValue(l *lexer.Lexer) (*ast.FloatValue, error) {
+	return nil, nil
+}
+
+func parseStringValue(l *lexer.Lexer) (*ast.StringValue, error) {
+	return nil, nil
+}
+
+func parseBooleanValue(l *lexer.Lexer) (*ast.BooleanValue, error) {
+	return nil, nil
+}
+
+func parseNullValue(l *lexer.Lexer) (*ast.NullValue, error) {
+	return nil, nil
+}
+
+func parseEnumValue(l *lexer.Lexer) (*ast.EnumValue, error) {
+	return nil, nil
+}
+
+func parseListValue(l *lexer.Lexer) (*ast.ListValue, error) {
+	return nil, nil
+}
+
+func parseObjectValue(l *lexer.Lexer) (*ast.ObjectValue, error) {
 	return nil, nil
 }

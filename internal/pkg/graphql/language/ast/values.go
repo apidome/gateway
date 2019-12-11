@@ -160,6 +160,19 @@ func (ev EnumValue) GetValue() interface{} {
 	return ev
 }
 
+type NullValue struct {
+	Kind string
+	Loc  *location.Location
+}
+
+func (nv NullValue) GetKind() string {
+	return nv.Kind
+}
+
+func (nv NullValue) GetValue() interface{} {
+	return nv
+}
+
 type Variable struct {
 	Name Name
 	Loc  *location.Location
