@@ -92,7 +92,7 @@ func (lv ListValue) GetValue() interface{} {
 
 type IntValue struct {
 	Kind  string
-	Value int
+	Value int64
 	Loc   *location.Location
 }
 

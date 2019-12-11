@@ -8,14 +8,7 @@ type Type interface {
 	GetKind() string
 }
 
-type NamedType struct {
-	Kind string
-	Name Name
-}
-
-func (nt NamedType) GetKind() string {
-	return nt.Kind
-}
+type NamedType Name
 
 type ListType struct {
 	Kind   string
