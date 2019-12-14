@@ -58,6 +58,8 @@ func parseDefinitions(l *lexer.Lexer) (*ast.Definitions, error) {
 			if err == errDoesntExist {
 				break
 			}
+
+			return nil, err
 		}
 
 		if def != nil {
@@ -71,6 +73,16 @@ func parseDefinitions(l *lexer.Lexer) (*ast.Definitions, error) {
 		}
 	}
 
+	tok, err = l.Current()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if tok.Value == lexer.EOF.String() {
+		l.Get()
+	}
+
 	if len(*defs) == 0 {
 		return nil, errors.New("No definitions found in document")
 	}
@@ -82,25 +94,13 @@ func parseDefinitions(l *lexer.Lexer) (*ast.Definitions, error) {
 func parseDefinition(l *lexer.Lexer) (ast.Definition, error) {
 	def, err := parseExecutableDefinition(l)
 
-	if err != nil {
-		if err != errDoesntExist {
-			return nil, err
-		}
-	}
-
-	if def != nil {
+	if err == nil {
 		return def, nil
 	}
 
 	def, err = parseTypeSystemDefinition(l)
 
-	if err != nil {
-		if err != errDoesntExist {
-			return nil, err
-		}
-	}
-
-	if def != nil {
+	if err == nil {
 		return def, nil
 	}
 
@@ -119,13 +119,7 @@ func parseExecutableDefinition(l *lexer.Lexer) (ast.ExecutableDefinition, error)
 
 	execDef, err := parseOperationDefinition(l)
 
-	if err != nil {
-		if err != errDoesntExist {
-			return nil, err
-		}
-	}
-
-	if execDef != nil {
+	if err == nil {
 		return execDef, nil
 	}
 
@@ -144,25 +138,13 @@ func parseTypeSystemDefinition(l *lexer.Lexer) (ast.TypeSystemDefinition, error)
 
 	def, err := parseSchemaDefinition(l)
 
-	if err != nil {
-		if err != errDoesntExist {
-			return nil, err
-		}
-	}
-
-	if def != nil {
+	if err == nil {
 		return def, nil
 	}
 
 	def, err = parseTypeDefinition(l)
 
-	if err != nil {
-		if err != errDoesntExist {
-			return nil, err
-		}
-	}
-
-	if def != nil {
+	if err == nil {
 		return def, nil
 	}
 
@@ -218,6 +200,7 @@ func parseOperationDefinition(l *lexer.Lexer) (*ast.OperationDefinition, error) 
 
 		opDef := &ast.OperationDefinition{}
 
+		opDef.OperationType = "query"
 		opDef.SelectionSet = *shorthandQuery
 
 		return opDef, nil
@@ -226,34 +209,22 @@ func parseOperationDefinition(l *lexer.Lexer) (*ast.OperationDefinition, error) 
 		tok.Value != lexer.SUBSCRIPTION {
 		return nil, errDoesntExist
 	} else {
-		l.Get()
-
-		// optional
-		name, err := parseName(l)
+		tok, err := l.Get()
 
 		if err != nil {
-			if err != errDoesntExist {
-				return nil, err
-			}
+			return nil, err
 		}
 
-		// optional
-		varDef, err := parseVariableDefinitions(l)
+		opType := tok.Value
 
-		if err != nil {
-			if err != errDoesntExist {
-				return nil, err
-			}
-		}
+		// optional name
+		name, _ := parseName(l)
 
-		// optional
-		directives, err := parseDirectives(l)
+		// optional variable definitions
+		varDef, _ := parseVariableDefinitions(l)
 
-		if err != nil {
-			if err != errDoesntExist {
-				return nil, err
-			}
-		}
+		// optional directives
+		directives, _ := parseDirectives(l)
 
 		selSet, err := parseSelectionSet(l)
 
@@ -263,6 +234,7 @@ func parseOperationDefinition(l *lexer.Lexer) (*ast.OperationDefinition, error) 
 
 		opDefinition := &ast.OperationDefinition{}
 
+		opDefinition.OperationType = ast.OperationType(opType)
 		opDefinition.Name = name
 		opDefinition.VariableDefinitions = varDef
 		opDefinition.Directives = directives
@@ -281,7 +253,7 @@ func parseFragmentDefinition(l *lexer.Lexer) (*ast.FragmentDefinition, error) {
 	}
 
 	if tok.Value != lexer.FRAGMENT {
-		return nil, errDoesntExist
+		return nil, errors.New("Expecting fragment keyword")
 	} else {
 		l.Get()
 
@@ -301,14 +273,7 @@ func parseFragmentDefinition(l *lexer.Lexer) (*ast.FragmentDefinition, error) {
 			return nil, err
 		}
 
-		// optional
-		directives, err := parseDirectives(l)
-
-		if err != nil {
-			if err != errDoesntExist {
-				return nil, err
-			}
-		}
+		directives, _ := parseDirectives(l)
 
 		selectionSet, err := parseSelectionSet(l)
 
@@ -377,7 +342,7 @@ func parseVariableDefinitions(l *lexer.Lexer) (*ast.VariableDefinitions, error) 
 	}
 
 	if tok.Value != lexer.PAREN_L.String() {
-		return nil, errDoesntExist
+		return nil, errors.New("Expecting '(' opener for variable definitions")
 	} else {
 		l.Get()
 
@@ -393,11 +358,7 @@ func parseVariableDefinitions(l *lexer.Lexer) (*ast.VariableDefinitions, error) 
 			varDef, err := parseVariableDefinition(l)
 
 			if err != nil {
-				if err == errDoesntExist {
-					break
-				}
-
-				return nil, err
+				break
 			}
 
 			*varDefs = append(*varDefs, *varDef)
@@ -417,7 +378,7 @@ func parseVariableDefinitions(l *lexer.Lexer) (*ast.VariableDefinitions, error) 
 		}
 
 		if tok.Value != lexer.PAREN_R.String() {
-			return nil, errors.New("Expecting closing parentheses for variabel definitions")
+			return nil, errors.New("Expecting closing parentheses for variable definitions")
 		}
 
 		l.Get()
@@ -434,29 +395,126 @@ func parseVariableDefinition(l *lexer.Lexer) (*ast.VariableDefinition, error) {
 		return nil, err
 	}
 
-	defVal, err := parseDefaultValue(l)
+	tok, err := l.Current()
 
 	if err != nil {
-		if err != errDoesntExist {
-			return nil, err
-		}
+		return nil, err
 	}
 
-	directives, err := parseDirectives(l)
+	if tok.Value != lexer.COLON.String() {
+		return nil, errors.New("Expecting a colon after variable name")
+	}
+
+	_type, err := parseType(l)
 
 	if err != nil {
-		if err != errDoesntExist {
-			return nil, err
-		}
+		return nil, err
 	}
+
+	defVal, _ := parseDefaultValue(l)
+
+	directives, _ := parseDirectives(l)
 
 	varDef := &ast.VariableDefinition{}
 
 	varDef.Variable = *_var
+	varDef.Type = _type
 	varDef.DefaultValue = defVal
 	varDef.Directives = directives
 
 	return varDef, nil
+}
+
+func parseType(l *lexer.Lexer) (ast.Type, error) {
+	var _type ast.Type
+
+	_type, err := parseNamedType(l)
+
+	if err == nil {
+		return _type, nil
+	}
+
+	_type, err = parseListType(l)
+
+	if err == nil {
+		return _type, nil
+	}
+
+	_type, err = parseNonNullType(l)
+
+	if err == nil {
+		return _type, nil
+	} else {
+		return nil, err
+	}
+}
+
+func parseListType(l *lexer.Lexer) (*ast.ListType, error) {
+	tok, err := l.Current()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if tok.Value != lexer.BRACKET_L.String() {
+		return nil, errors.New("Expecting '[' for list type")
+	}
+
+	l.Get()
+
+	_type, err := parseType(l)
+
+	if err != nil {
+		return nil, err
+	}
+
+	tok, err = l.Current()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if tok.Value != lexer.BRACKET_R.String() {
+		return nil, errors.New("Expecting ']' for list type")
+	}
+
+	l.Get()
+
+	listType := &ast.ListType{}
+
+	listType.OfType = _type
+
+	return listType, nil
+}
+
+func parseNonNullType(l *lexer.Lexer) (*ast.NonNullType, error) {
+	var _type ast.Type
+
+	_type, err := parseNamedType(l)
+
+	if err != nil {
+		_type, err = parseListType(l)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	tok, err := l.Current()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if tok.Value != lexer.BANG.String() {
+		return nil, errors.New("Expecting '!' at the end of a non null type")
+	}
+
+	nonNull := &ast.NonNullType{}
+
+	nonNull.OfType = _type
+
+	return nonNull, nil
 }
 
 //

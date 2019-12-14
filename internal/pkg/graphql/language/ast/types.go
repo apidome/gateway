@@ -10,6 +10,10 @@ type Type interface {
 
 type NamedType Name
 
+func (nt NamedType) GetKind() string {
+	return "NamedType"
+}
+
 type ListType struct {
 	Kind   string
 	OfType Type

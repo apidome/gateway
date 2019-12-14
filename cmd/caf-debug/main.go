@@ -6,15 +6,13 @@ import (
 
 func main() {
 	query := `
-	{
-		#commet
-		empireHero: hero(episode: EMPIRE) {
-		  name
+	mutation {
+		likeStory(storyID: 12345) {
+		  story {
+			likeCount
+		  }
 		}
-		jediHero: hero(episode: JEDI) {
-		  name
-		}
-	}
+	  }	   
 	`
 
 	parser.Parse(query)
