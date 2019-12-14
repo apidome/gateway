@@ -19,7 +19,9 @@ func Parse(doc string) (*ast.Document, error) {
 		return nil, err
 	}
 
-	return parseDocument(l)
+	astDoc, _ := parseDocument(l)
+
+	return astDoc, nil
 }
 
 //
@@ -41,7 +43,13 @@ func parseDocument(l *lexer.Lexer) (*ast.Document, error) {
 func parseDefinitions(l *lexer.Lexer) (*ast.Definitions, error) {
 	defs := &ast.Definitions{}
 
-	for {
+	tok, err := l.Current()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for tok.Value != lexer.EOF.String() {
 		var def ast.Definition
 
 		def, err := parseDefinition(l)
@@ -54,6 +62,12 @@ func parseDefinitions(l *lexer.Lexer) (*ast.Definitions, error) {
 
 		if def != nil {
 			*defs = append(*defs, def)
+		}
+
+		tok, err = l.Current()
+
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -814,18 +828,32 @@ func parseArgument(l *lexer.Lexer) (*ast.Argument, error) {
 
 //
 func parseField(l *lexer.Lexer) (*ast.Field, error) {
-	alias, err := parseAlias(l)
-
-	if err != nil {
-		if err != errDoesntExist {
-			return nil, err
-		}
-	}
-
-	name, err := parseName(l)
+	alias, err := parseName(l)
 
 	if err != nil {
 		return nil, err
+	}
+
+	tok, err := l.Current()
+
+	if err != nil {
+		return nil, err
+	}
+
+	name := &ast.Name{}
+
+	if tok.Value == lexer.COLON.String() {
+		l.Get()
+
+		name, err = parseName(l)
+
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		*name = *alias
+
+		alias = nil
 	}
 
 	args, err := parseArguments(l)
@@ -854,7 +882,7 @@ func parseField(l *lexer.Lexer) (*ast.Field, error) {
 
 	field := &ast.Field{}
 
-	field.Alias = alias
+	field.Alias = (*ast.Alias)(alias)
 	field.Name = *name
 	field.Arguments = args
 	field.Directives = dirs
@@ -940,33 +968,6 @@ func parseInlineFragment(l *lexer.Lexer) (*ast.InlineFragment, error) {
 		inlineFrag.SelectionSet = *selSet
 
 		return inlineFrag, nil
-	}
-}
-
-// ! im wondering what to do if the name dosent end with a colon
-func parseAlias(l *lexer.Lexer) (*ast.Alias, error) {
-	name, err := parseName(l)
-
-	if err != nil {
-		return nil, err
-	}
-
-	tok, err := l.Current()
-
-	if err != nil {
-		return nil, err
-	}
-
-	if tok.Value != lexer.COLON.String() {
-		return nil, errDoesntExist
-	} else {
-		l.Get()
-
-		alias := &ast.Alias{}
-
-		*alias = ast.Alias(*name)
-
-		return alias, nil
 	}
 }
 
