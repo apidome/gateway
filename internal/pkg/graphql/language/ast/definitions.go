@@ -16,6 +16,8 @@ type Definition interface {
 	GetKind() string
 }
 
+type Definitions []Definition
+
 var _ Definition = (*RootOperationTypeDefinition)(nil)
 var _ Definition = (*EnumValueDefinition)(nil)
 var _ Definition = (*InputValueDefinition)(nil)

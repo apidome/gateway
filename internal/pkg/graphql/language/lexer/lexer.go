@@ -124,18 +124,22 @@ func NewLexer(src string) (*Lexer, error) {
 	return lexer, nil
 }
 
-func (l *Lexer) Get() *Token {
-	token := &l.tokens[l.currentTokenIndex]
+func (l *Lexer) Get() (*Token, error) {
+	tok, err := l.Current()
 
-	if l.currentTokenIndex < len(l.tokens) {
+	if tok != nil {
 		l.currentTokenIndex++
 	}
 
-	return token
+	return tok, err
 }
 
-func (l *Lexer) Current() *Token {
-	return &l.tokens[l.currentTokenIndex]
+func (l *Lexer) Current() (*Token, error) {
+	if l.currentTokenIndex >= len(l.tokens) {
+		return nil, errors.New("Reached end of document")
+	}
+
+	return &l.tokens[l.currentTokenIndex], nil
 }
 
 func (l *Lexer) Source() *string {
