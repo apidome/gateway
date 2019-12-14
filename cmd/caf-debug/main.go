@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"strings"
-	"text/scanner"
+	"github.com/omeryahud/caf/internal/pkg/graphql/language/parser"
 )
 
 func main() {
@@ -19,16 +17,5 @@ func main() {
 	}
 	`
 
-	var sc scanner.Scanner
-
-	sc.Mode = scanner.ScanIdents | scanner.ScanInts |
-		scanner.ScanFloats | scanner.ScanChars |
-		scanner.ScanStrings | scanner.ScanRawStrings |
-		scanner.ScanComments
-
-	sc.Init(strings.NewReader(query))
-
-	for sc.Scan() != scanner.EOF {
-		fmt.Println(sc.TokenText())
-	}
+	parser.Parse(query)
 }

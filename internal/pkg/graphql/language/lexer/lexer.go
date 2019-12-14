@@ -1,8 +1,9 @@
 package lexer
 
 import (
-	"github.com/pkg/errors"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 type Token struct {
@@ -146,6 +147,7 @@ func lex(doc string) ([]Token, error) {
 		whiteSpaceOn  bool
 		stringOn      bool
 		blockStringOn bool
+		commentOn     bool
 		tok           string
 		kind          TokenKind
 		tokens        []Token
@@ -159,6 +161,10 @@ func lex(doc string) ([]Token, error) {
 		// This case handles all the punctuator characters that stand as an independent token.
 		case '!', '$', '(', ')', ':', '=', '@', '[', ']', '{', '}', '|', '&':
 			{
+				if commentOn {
+					continue
+				}
+
 				// Turn off the white space flag.
 				whiteSpaceOn = false
 
@@ -178,6 +184,10 @@ func lex(doc string) ([]Token, error) {
 		// This case handles the "spread" operator and float's decimal point.
 		case '.':
 			{
+				if commentOn {
+					continue
+				}
+
 				// If the kind of the token is INT, set it to FLOAT.
 				if kind == INT {
 					kind = FLOAT
@@ -201,6 +211,10 @@ func lex(doc string) ([]Token, error) {
 		// This case is responsible for detection of STRING and BLOCK_STRING values.
 		case '"':
 			{
+				if commentOn {
+					continue
+				}
+
 				// Turn off the white space flag.
 				whiteSpaceOn = false
 
@@ -270,6 +284,10 @@ func lex(doc string) ([]Token, error) {
 		// This case handles white spaces (single white space character only)
 		case ' ', '\t':
 			{
+				if commentOn {
+					continue
+				}
+
 				// If the double quote flag is on, we append any white space
 				// we meet to the token variable.
 				// Else, we will treat the white space as a delimiter between tokens
@@ -294,6 +312,10 @@ func lex(doc string) ([]Token, error) {
 		// This case handles commas.
 		case ',':
 			{
+				if commentOn {
+					continue
+				}
+
 				// Turn off the white space flag.
 				whiteSpaceOn = false
 
@@ -309,6 +331,11 @@ func lex(doc string) ([]Token, error) {
 		// This case handles line feed and carriage return.
 		case '\n', '\r':
 			{
+				if commentOn {
+					commentOn = false
+					continue
+				}
+
 				// If we are inside a string value, line feed and carriage return are disallowed.
 				if stringOn {
 					return nil, errors.New("line feed and carriage return characters are " +
@@ -335,6 +362,10 @@ func lex(doc string) ([]Token, error) {
 			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
 			'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z':
 			{
+				if commentOn {
+					continue
+				}
+
 				// If the current character is the first character of the token,
 				// set the token kind to NAME.
 				if tok == "" {
@@ -346,6 +377,10 @@ func lex(doc string) ([]Token, error) {
 			}
 		case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 			{
+				if commentOn {
+					continue
+				}
+
 				// If the current character (which is a digit) is the first character
 				// of the token, set the kind as an INT.
 				if tok == "" {
@@ -354,6 +389,10 @@ func lex(doc string) ([]Token, error) {
 
 				// Append the character to the token variable.
 				tok = tok + string(runes[i])
+			}
+		case '#':
+			{
+				commentOn = true
 			}
 		// This case handles the rest of the unicode characters (hebrew, chinese, etc)
 		default:
