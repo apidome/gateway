@@ -6,13 +6,14 @@ import (
 
 func main() {
 	query := `
-	mutation {
-		likeStory(storyID: 12345) {
-		  story {
-			likeCount
-		  }
+	{
+		user(id: 4) {
+		  id
+		  name
+		  profilePic(width: 100, height: 50)
 		}
-	  }	   
+	  }
+	  
 	`
 
 	parser.Parse(query)

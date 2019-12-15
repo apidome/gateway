@@ -6,6 +6,7 @@ import (
 
 	"github.com/omeryahud/caf/internal/pkg/graphql/language/ast"
 	"github.com/omeryahud/caf/internal/pkg/graphql/language/lexer"
+	"github.com/omeryahud/caf/internal/pkg/graphql/language/location"
 	"github.com/pkg/errors"
 )
 
@@ -186,6 +187,8 @@ func parseFragment(l *lexer.Lexer) (*ast.FragmentDefinition, error) {
 func parseOperationDefinition(l *lexer.Lexer) (*ast.OperationDefinition, error) {
 	tok, err := l.Current()
 
+	locStart := tok.Start
+
 	if err != nil {
 		return nil, err
 	}
@@ -202,6 +205,7 @@ func parseOperationDefinition(l *lexer.Lexer) (*ast.OperationDefinition, error) 
 
 		opDef.OperationType = "query"
 		opDef.SelectionSet = *shorthandQuery
+		opDef.Loc = &location.Location{locStart, tok.End, l.Source()}
 
 		return opDef, nil
 	} else if tok.Value != lexer.QUERY &&
@@ -239,6 +243,7 @@ func parseOperationDefinition(l *lexer.Lexer) (*ast.OperationDefinition, error) 
 		opDefinition.VariableDefinitions = varDef
 		opDefinition.Directives = directives
 		opDefinition.SelectionSet = *selSet
+		opDefinition.Loc = &location.Location{locStart, tok.End, l.Source()}
 
 		return opDefinition, nil
 	}
@@ -247,6 +252,8 @@ func parseOperationDefinition(l *lexer.Lexer) (*ast.OperationDefinition, error) 
 //
 func parseFragmentDefinition(l *lexer.Lexer) (*ast.FragmentDefinition, error) {
 	tok, err := l.Current()
+
+	locStart := tok.Start
 
 	if err != nil {
 		return nil, err
@@ -287,6 +294,7 @@ func parseFragmentDefinition(l *lexer.Lexer) (*ast.FragmentDefinition, error) {
 		fragDef.TypeCondition = *typeCond
 		fragDef.Directives = directives
 		fragDef.SelectionSet = *selectionSet
+		fragDef.Loc = &location.Location{locStart, tok.End, l.Source()}
 
 		return fragDef, nil
 	}
@@ -387,19 +395,21 @@ func parseVariableDefinitions(l *lexer.Lexer) (*ast.VariableDefinitions, error) 
 	}
 }
 
-//
+// ! Keep working on locations from here
 func parseVariableDefinition(l *lexer.Lexer) (*ast.VariableDefinition, error) {
+	tok, err := l.Current()
+
+	if err != nil {
+		return nil, err
+	}
+
 	_var, err := parseVariable(l)
 
 	if err != nil {
 		return nil, err
 	}
 
-	tok, err := l.Current()
-
-	if err != nil {
-		return nil, err
-	}
+	//locStart := _var.Loc.Start
 
 	if tok.Value != lexer.COLON.String() {
 		return nil, errors.New("Expecting a colon after variable name")
@@ -410,6 +420,8 @@ func parseVariableDefinition(l *lexer.Lexer) (*ast.VariableDefinition, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// locEnd := _type.
 
 	defVal, _ := parseDefaultValue(l)
 

@@ -142,8 +142,8 @@ func (l *Lexer) Current() (*Token, error) {
 	return &l.tokens[l.currentTokenIndex], nil
 }
 
-func (l *Lexer) Source() *string {
-	return &l.source
+func (l *Lexer) Source() string {
+	return l.source
 }
 
 func lex(doc string) ([]Token, error) {
