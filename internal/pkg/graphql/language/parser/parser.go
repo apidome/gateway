@@ -409,7 +409,7 @@ func parseVariableDefinition(l *lexer.Lexer) (*ast.VariableDefinition, error) {
 		return nil, err
 	}
 
-	//locStart := _var.Loc.Start
+	locStart := _var.Loc.Start
 
 	if tok.Value != lexer.COLON.String() {
 		return nil, errors.New("Expecting a colon after variable name")
