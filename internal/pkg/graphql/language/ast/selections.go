@@ -3,8 +3,13 @@ package ast
 import "github.com/omeryahud/caf/internal/pkg/graphql/language/location"
 
 type Selection interface {
-	GetFields() []Field
+	Selections() *SelectionSet
+	Location() *location.Location
 }
+
+var _ Selection = (*Field)(nil)
+var _ Selection = (*FragmentSpread)(nil)
+var _ Selection = (*InlineFragment)(nil)
 
 type SelectionSet []Selection
 
@@ -14,30 +19,31 @@ type Field struct {
 	Arguments    *Arguments
 	Directives   *Directives
 	SelectionSet *SelectionSet
-	loc          *location.Location
+	Locator
 }
 
-func (f Field) GetFields() []Field {
-	return []Field{}
+func (f *Field) Selections() *SelectionSet {
+	return f.SelectionSet
 }
 
 type FragmentSpread struct {
 	FragmentName FragmentName
 	Directives   *Directives
-	loc          *location.Location
+	Locator
 }
 
-func (fs FragmentSpread) GetFields() []Field {
-	return []Field{}
+// ! Find the fragment definition by its name and return its selection set
+func (f *FragmentSpread) Selections() *SelectionSet {
+	return &SelectionSet{}
 }
 
 type InlineFragment struct {
 	TypeCondition *TypeCondition
 	Directives    *Directives
 	SelectionSet  SelectionSet
-	loc           *location.Location
+	Locator
 }
 
-func (inf InlineFragment) GetFields() []Field {
-	return []Field{}
+func (i *InlineFragment) Selections() *SelectionSet {
+	return &i.SelectionSet
 }

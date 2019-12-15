@@ -1,42 +1,30 @@
 package ast
 
-import "github.com/omeryahud/caf/internal/pkg/graphql/language/location"
-
-type TypeKind int
-
 type Type interface {
-	GetKind() string
+	LocatorInterface
 }
+
+var _ Type = (*NamedType)(nil)
+var _ Type = (*ListType)(nil)
+var _ Type = (*NonNullType)(nil)
 
 type NamedType Name
-
-func (nt NamedType) GetKind() string {
-	return "NamedType"
-}
 
 type ListType struct {
 	Kind   string
 	OfType Type
-	Loc    *location.Location
-}
-
-func (lt ListType) GetKind() string {
-	return lt.Kind
+	Locator
 }
 
 type NonNullType struct {
 	Kind   string
 	OfType Type
-	Loc    *location.Location
-}
-
-func (nt NonNullType) GetKind() string {
-	return nt.Kind
+	Locator
 }
 
 type TypeCondition struct {
 	NamedType NamedType
-	Loc       *location.Location
+	Locator
 }
 
 type UnionMemberTypes []NamedType

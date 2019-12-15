@@ -205,7 +205,7 @@ func parseOperationDefinition(l *lexer.Lexer) (*ast.OperationDefinition, error) 
 
 		opDef.OperationType = "query"
 		opDef.SelectionSet = *shorthandQuery
-		opDef.Loc = &location.Location{locStart, tok.End, l.Source()}
+		opDef.Loc = location.Location{locStart, tok.End, l.Source()}
 
 		return opDef, nil
 	} else if tok.Value != lexer.QUERY &&
@@ -243,7 +243,7 @@ func parseOperationDefinition(l *lexer.Lexer) (*ast.OperationDefinition, error) 
 		opDefinition.VariableDefinitions = varDef
 		opDefinition.Directives = directives
 		opDefinition.SelectionSet = *selSet
-		opDefinition.Loc = &location.Location{locStart, tok.End, l.Source()}
+		opDefinition.Loc = location.Location{locStart, tok.End, l.Source()}
 
 		return opDefinition, nil
 	}
@@ -294,7 +294,7 @@ func parseFragmentDefinition(l *lexer.Lexer) (*ast.FragmentDefinition, error) {
 		fragDef.TypeCondition = *typeCond
 		fragDef.Directives = directives
 		fragDef.SelectionSet = *selectionSet
-		fragDef.Loc = &location.Location{locStart, tok.End, l.Source()}
+		fragDef.Loc = location.Location{locStart, tok.End, l.Source()}
 
 		return fragDef, nil
 	}
@@ -409,7 +409,7 @@ func parseVariableDefinition(l *lexer.Lexer) (*ast.VariableDefinition, error) {
 		return nil, err
 	}
 
-	//locStart := _var.Loc.Start
+	locStart := _var.Location().Start
 
 	if tok.Value != lexer.COLON.String() {
 		return nil, errors.New("Expecting a colon after variable name")
@@ -421,7 +421,7 @@ func parseVariableDefinition(l *lexer.Lexer) (*ast.VariableDefinition, error) {
 		return nil, err
 	}
 
-	// locEnd := _type.
+	locEnd := _type.Location().End
 
 	defVal, _ := parseDefaultValue(l)
 
@@ -433,6 +433,7 @@ func parseVariableDefinition(l *lexer.Lexer) (*ast.VariableDefinition, error) {
 	varDef.Type = _type
 	varDef.DefaultValue = defVal
 	varDef.Directives = directives
+	varDef.Loc = location.Location{locStart, locEnd, l.Source()}
 
 	return varDef, nil
 }
@@ -468,6 +469,8 @@ func parseListType(l *lexer.Lexer) (*ast.ListType, error) {
 		return nil, err
 	}
 
+	locStart := tok.Start
+
 	if tok.Value != lexer.BRACKET_L.String() {
 		return nil, errors.New("Expecting '[' for list type")
 	}
@@ -490,11 +493,14 @@ func parseListType(l *lexer.Lexer) (*ast.ListType, error) {
 		return nil, errors.New("Expecting ']' for list type")
 	}
 
+	locEnd := tok.End
+
 	l.Get()
 
 	listType := &ast.ListType{}
 
 	listType.OfType = _type
+	listType.Loc = location.Location{locStart, locEnd, l.Source()}
 
 	return listType, nil
 }
@@ -512,6 +518,8 @@ func parseNonNullType(l *lexer.Lexer) (*ast.NonNullType, error) {
 		}
 	}
 
+	locStart := _type.Location().Start
+
 	tok, err := l.Current()
 
 	if err != nil {
@@ -522,9 +530,14 @@ func parseNonNullType(l *lexer.Lexer) (*ast.NonNullType, error) {
 		return nil, errors.New("Expecting '!' at the end of a non null type")
 	}
 
+	locEnd := tok.End
+
+	l.Get()
+
 	nonNull := &ast.NonNullType{}
 
 	nonNull.OfType = _type
+	nonNull.Loc = location.Location{locStart, locEnd, l.Source()}
 
 	return nonNull, nil
 }
@@ -562,6 +575,8 @@ func parseDirective(l *lexer.Lexer) (*ast.Directive, error) {
 		return nil, err
 	}
 
+	locStart := tok.Start
+
 	if tok.Value != lexer.AT.String() {
 		return nil, errDoesntExist
 	} else {
@@ -581,10 +596,19 @@ func parseDirective(l *lexer.Lexer) (*ast.Directive, error) {
 			}
 		}
 
+		locEnd := 0
+
+		if err == nil {
+			locEnd = (*args)[len(*args)-1].Location().End
+		} else {
+			locEnd = tok.End
+		}
+
 		dir := &ast.Directive{}
 
 		dir.Name = *name
 		dir.Arguments = args
+		dir.Loc = location.Location{locStart, locEnd, l.Source()}
 
 		return dir, nil
 	}
@@ -692,6 +716,8 @@ func parseVariable(l *lexer.Lexer) (*ast.Variable, error) {
 		return nil, err
 	}
 
+	locStart := tok.Start
+
 	if tok.Value != lexer.DOLLAR.String() {
 		return nil, errDoesntExist
 	} else {
@@ -704,6 +730,7 @@ func parseVariable(l *lexer.Lexer) (*ast.Variable, error) {
 		_var := &ast.Variable{}
 
 		_var.Name = *name
+		_var.Loc = location.Location{locStart, name.Location().End, l.Source()}
 
 		return _var, nil
 	}
@@ -717,6 +744,8 @@ func parseDefaultValue(l *lexer.Lexer) (*ast.DefaultValue, error) {
 		return nil, err
 	}
 
+	locStart := tok.Start
+
 	if tok.Value != lexer.EQUALS.String() {
 		return nil, errDoesntExist
 	} else {
@@ -729,12 +758,13 @@ func parseDefaultValue(l *lexer.Lexer) (*ast.DefaultValue, error) {
 		dVal := &ast.DefaultValue{}
 
 		dVal.Value = val
+		dVal.Loc = location.Location{locStart, val.Location().End, l.Source()}
 
 		return dVal, nil
 	}
 }
 
-//
+// ! need to check variable type in order to parse its value
 func parseValue(l *lexer.Lexer) (ast.Value, error) {
 	_var, err := parseVariable(l)
 
@@ -870,6 +900,8 @@ func parseArgument(l *lexer.Lexer) (*ast.Argument, error) {
 		return nil, err
 	}
 
+	locStart := name.Location().Start
+
 	tok, err := l.Current()
 
 	if err != nil {
@@ -892,6 +924,7 @@ func parseArgument(l *lexer.Lexer) (*ast.Argument, error) {
 
 	arg.Name = *name
 	arg.Value = val
+	arg.Loc = location.Location{locStart, val.Location().End, l.Source()}
 
 	return arg, nil
 }
@@ -903,6 +936,8 @@ func parseField(l *lexer.Lexer) (*ast.Field, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	locStart := alias.Location().Start
 
 	tok, err := l.Current()
 
@@ -926,12 +961,16 @@ func parseField(l *lexer.Lexer) (*ast.Field, error) {
 		alias = nil
 	}
 
+	locEnd := name.Location().End
+
 	args, err := parseArguments(l)
 
 	if err != nil {
 		if err != errDoesntExist {
 			return nil, err
 		}
+	} else {
+		locEnd = (*args)[len(*args)-1].Location().End
 	}
 
 	dirs, err := parseDirectives(l)
@@ -940,6 +979,8 @@ func parseField(l *lexer.Lexer) (*ast.Field, error) {
 		if err != errDoesntExist {
 			return nil, err
 		}
+	} else {
+		locEnd = (*dirs)[len(*dirs)-1].Location().End
 	}
 
 	selSet, err := parseSelectionSet(l)
@@ -948,6 +989,8 @@ func parseField(l *lexer.Lexer) (*ast.Field, error) {
 		if err != errDoesntExist {
 			return nil, err
 		}
+	} else {
+		locEnd = (*selSet)[len(*selSet)-1].Location().End
 	}
 
 	field := &ast.Field{}
@@ -957,6 +1000,7 @@ func parseField(l *lexer.Lexer) (*ast.Field, error) {
 	field.Arguments = args
 	field.Directives = dirs
 	field.SelectionSet = selSet
+	field.Loc = location.Location{locStart, locEnd, l.Source()}
 
 	return field, nil
 }
@@ -969,6 +1013,8 @@ func parseFragmentSpread(l *lexer.Lexer) (*ast.FragmentSpread, error) {
 		return nil, err
 	}
 
+	locStart := tok.Start
+
 	if tok.Value != lexer.SPREAD.String() {
 		return nil, errDoesntExist
 	} else {
@@ -980,18 +1026,23 @@ func parseFragmentSpread(l *lexer.Lexer) (*ast.FragmentSpread, error) {
 			return nil, err
 		}
 
+		locEnd := fname.Location().End
+
 		directives, err := parseDirectives(l)
 
 		if err != nil {
 			if err != errDoesntExist {
 				return nil, err
 			}
+		} else {
+			locEnd = (*directives)[len(*directives)-1].Location().End
 		}
 
 		spread := &ast.FragmentSpread{}
 
 		spread.FragmentName = *fname
 		spread.Directives = directives
+		spread.Loc = location.Location{locStart, locEnd, l.Source()}
 
 		return spread, nil
 	}
@@ -1003,6 +1054,8 @@ func parseInlineFragment(l *lexer.Lexer) (*ast.InlineFragment, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	locStart := tok.Start
 
 	if tok.Value != lexer.SPREAD.String() {
 		return nil, errDoesntExist
@@ -1031,11 +1084,14 @@ func parseInlineFragment(l *lexer.Lexer) (*ast.InlineFragment, error) {
 			return nil, err
 		}
 
+		locEnd := (*selSet)[len(*selSet)-1].Location().End
+
 		inlineFrag := &ast.InlineFragment{}
 
 		inlineFrag.TypeCondition = typeCon
 		inlineFrag.Directives = directives
 		inlineFrag.SelectionSet = *selSet
+		inlineFrag.Loc = location.Location{locStart, locEnd, l.Source()}
 
 		return inlineFrag, nil
 	}
@@ -1056,6 +1112,7 @@ func parseFragmentName(l *lexer.Lexer) (*ast.FragmentName, error) {
 	var fragName *ast.FragmentName
 
 	*fragName = ast.FragmentName(*name)
+	fragName.Loc = *name.Location()
 
 	return fragName, nil
 }
@@ -1067,6 +1124,8 @@ func parseTypeCondition(l *lexer.Lexer) (*ast.TypeCondition, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	locStart := tok.Start
 
 	if tok.Value != "on" {
 		return nil, errDoesntExist
@@ -1080,6 +1139,7 @@ func parseTypeCondition(l *lexer.Lexer) (*ast.TypeCondition, error) {
 		typeCond := &ast.TypeCondition{}
 
 		typeCond.NamedType = *namedType
+		typeCond.Loc = location.Location{locStart, namedType.Location().End, l.Source()}
 
 		return typeCond, nil
 	}
@@ -1119,6 +1179,7 @@ func parseIntValue(l *lexer.Lexer) (*ast.IntValue, error) {
 	intValP := &ast.IntValue{}
 
 	intValP.Value = intVal
+	intValP.Loc = location.Location{tok.Start, tok.End, l.Source()}
 
 	return intValP, nil
 }
@@ -1142,6 +1203,7 @@ func parseFloatValue(l *lexer.Lexer) (*ast.FloatValue, error) {
 	floatValP := &ast.FloatValue{}
 
 	floatValP.Value = floatVal
+	floatValP.Loc = location.Location{tok.Start, tok.End, l.Source()}
 
 	return floatValP, nil
 }
@@ -1153,6 +1215,7 @@ func parseStringValue(l *lexer.Lexer) (*ast.StringValue, error) {
 	sv := &ast.StringValue{}
 
 	sv.Value = tok.Value
+	sv.Loc = location.Location{tok.Start, tok.End, l.Source()}
 
 	return sv, nil
 }
@@ -1176,6 +1239,7 @@ func parseBooleanValue(l *lexer.Lexer) (*ast.BooleanValue, error) {
 	boolValP := &ast.BooleanValue{}
 
 	boolValP.Value = boolVal
+	boolValP.Loc = location.Location{tok.Start, tok.End, l.Source()}
 
 	return boolValP, nil
 }
@@ -1194,6 +1258,7 @@ func parseNullValue(l *lexer.Lexer) (*ast.NullValue, error) {
 		l.Get()
 
 		null := &ast.NullValue{}
+		null.Loc = location.Location{tok.Start, tok.End, l.Source()}
 
 		return null, nil
 	}
@@ -1214,6 +1279,7 @@ func parseEnumValue(l *lexer.Lexer) (*ast.EnumValue, error) {
 		enumVal := &ast.EnumValue{}
 
 		enumVal.Name = *name
+		enumVal.Loc = location.Location{name.Location().Start, name.Location().End, l.Source()}
 
 		return enumVal, nil
 	}
@@ -1226,6 +1292,8 @@ func parseListValue(l *lexer.Lexer) (*ast.ListValue, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	locStart := tok.Start
 
 	if tok.Value != "[" {
 		return nil, errDoesntExist
@@ -1266,9 +1334,13 @@ func parseListValue(l *lexer.Lexer) (*ast.ListValue, error) {
 			return nil, err
 		}
 
+		locEnd := tok.End
+
 		if tok.Value != "]" {
 			return nil, errors.New("Missing closing bracket for list value")
 		}
+
+		lstVal.Loc = location.Location{locStart, locEnd, l.Source()}
 
 		return lstVal, nil
 	}
@@ -1281,6 +1353,8 @@ func parseObjectValue(l *lexer.Lexer) (*ast.ObjectValue, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	locStart := tok.Start
 
 	if tok.Value != "{" {
 		return nil, errDoesntExist
@@ -1325,6 +1399,8 @@ func parseObjectValue(l *lexer.Lexer) (*ast.ObjectValue, error) {
 			return nil, errors.New("Expecting a closing curly brace for an object value")
 		}
 
+		objVal.Loc = location.Location{locStart, tok.End, l.Source()}
+
 		return objVal, nil
 	}
 }
@@ -1359,6 +1435,7 @@ func parseObjectField(l *lexer.Lexer) (*ast.ObjectField, error) {
 
 	objField.Name = *name
 	objField.Value = val
+	objField.Loc = location.Location{name.Location().Start, val.Location().End, l.Source()}
 
 	return objField, nil
 }

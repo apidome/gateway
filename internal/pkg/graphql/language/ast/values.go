@@ -1,12 +1,8 @@
 package ast
 
-import (
-	"github.com/omeryahud/caf/internal/pkg/graphql/language/location"
-)
-
 type Name struct {
 	Value string
-	Loc   location.Location
+	Locator
 }
 
 func ParseName(n string) Name {
@@ -19,8 +15,8 @@ type Alias Name
 type FragmentName Name
 
 type Value interface {
-	GetKind() string
 	GetValue() interface{}
+	LocatorInterface
 }
 
 var _ Value = (*DefaultValue)(nil)
@@ -34,13 +30,8 @@ var _ Value = (*BooleanValue)(nil)
 var _ Value = (*EnumValue)(nil)
 
 type DefaultValue struct {
-	Kind  string
 	Value Value
-	Loc   location.Location
-}
-
-func (dv DefaultValue) GetKind() string {
-	return dv.Kind
+	Locator
 }
 
 func (dv DefaultValue) GetValue() interface{} {
@@ -48,14 +39,9 @@ func (dv DefaultValue) GetValue() interface{} {
 }
 
 type ObjectField struct {
-	Kind  string
 	Name  Name
 	Value Value
-	Loc   *location.Location
-}
-
-func (of ObjectField) GetKind() string {
-	return of.Kind
+	Locator
 }
 
 func (of ObjectField) GetValue() interface{} {
@@ -63,13 +49,8 @@ func (of ObjectField) GetValue() interface{} {
 }
 
 type ObjectValue struct {
-	Kind   string
 	Values []ObjectField
-	Loc    *location.Location
-}
-
-func (ov ObjectValue) GetKind() string {
-	return ov.Kind
+	Locator
 }
 
 func (ov ObjectValue) GetValue() interface{} {
@@ -77,13 +58,8 @@ func (ov ObjectValue) GetValue() interface{} {
 }
 
 type ListValue struct {
-	Kind   string
 	Values []Value
-	Loc    *location.Location
-}
-
-func (lv ListValue) GetKind() string {
-	return lv.Kind
+	Locator
 }
 
 func (lv ListValue) GetValue() interface{} {
@@ -91,13 +67,8 @@ func (lv ListValue) GetValue() interface{} {
 }
 
 type IntValue struct {
-	Kind  string
 	Value int64
-	Loc   *location.Location
-}
-
-func (iv IntValue) GetKind() string {
-	return iv.Kind
+	Locator
 }
 
 func (iv IntValue) GetValue() interface{} {
@@ -105,13 +76,8 @@ func (iv IntValue) GetValue() interface{} {
 }
 
 type FloatValue struct {
-	Kind  string
 	Value float64
-	Loc   *location.Location
-}
-
-func (fv FloatValue) GetKind() string {
-	return fv.Kind
+	Locator
 }
 
 func (fv FloatValue) GetValue() interface{} {
@@ -119,13 +85,8 @@ func (fv FloatValue) GetValue() interface{} {
 }
 
 type StringValue struct {
-	Kind  string
 	Value string
-	Loc   *location.Location
-}
-
-func (sv StringValue) GetKind() string {
-	return sv.Kind
+	Locator
 }
 
 func (sv StringValue) GetValue() interface{} {
@@ -133,13 +94,8 @@ func (sv StringValue) GetValue() interface{} {
 }
 
 type BooleanValue struct {
-	Kind  string
 	Value bool
-	Loc   *location.Location
-}
-
-func (bv BooleanValue) GetKind() string {
-	return bv.Kind
+	Locator
 }
 
 func (bv BooleanValue) GetValue() interface{} {
@@ -147,13 +103,8 @@ func (bv BooleanValue) GetValue() interface{} {
 }
 
 type EnumValue struct {
-	Kind string
 	Name Name
-	Loc  *location.Location
-}
-
-func (ev EnumValue) GetKind() string {
-	return ev.Kind
+	Locator
 }
 
 func (ev EnumValue) GetValue() interface{} {
@@ -161,12 +112,7 @@ func (ev EnumValue) GetValue() interface{} {
 }
 
 type NullValue struct {
-	Kind string
-	Loc  *location.Location
-}
-
-func (nv NullValue) GetKind() string {
-	return nv.Kind
+	Locator
 }
 
 func (nv NullValue) GetValue() interface{} {
@@ -175,5 +121,5 @@ func (nv NullValue) GetValue() interface{} {
 
 type Variable struct {
 	Name Name
-	Loc  *location.Location
+	Locator
 }
