@@ -1,4 +1,4 @@
-package lexer
+package language
 
 import (
 	"strconv"
@@ -17,19 +17,20 @@ type TokenKind int
 
 // NAME -> keyword relationship
 const (
-	FRAGMENT     = "fragment"
-	QUERY        = "query"
-	MUTATION     = "mutation"
-	SUBSCRIPTION = "subscription"
-	SCHEMA       = "schema"
-	SCALAR       = "scalar"
-	TYPE         = "type"
-	INTERFACE    = "interface"
-	UNION        = "union"
-	ENUM         = "enum"
-	INPUT        = "input"
-	EXTEND       = "extend"
-	DIRECTIVE    = "directive"
+	KW_FRAGMENT     = "fragment"
+	KW_QUERY        = "query"
+	KW_MUTATION     = "mutation"
+	KW_SUBSCRIPTION = "subscription"
+	KW_SCHEMA       = "schema"
+	KW_SCALAR       = "scalar"
+	KW_TYPE         = "type"
+	KW_INTERFACE    = "interface"
+	KW_UNION        = "union"
+	KW_ENUM         = "enum"
+	KW_INPUT        = "input"
+	KW_EXTEND       = "extend"
+	KW_DIRECTIVE    = "directive"
+	KW_IMPLEMENTS   = "implements"
 )
 
 const (
@@ -132,6 +133,18 @@ func (l *Lexer) Get() (*Token, error) {
 	}
 
 	return tok, err
+}
+
+func (l *Lexer) PrevLocation() *Location {
+	if l.currentTokenIndex == 0 {
+		loc := &Location{0, 0, l.Source()}
+
+		return loc
+	} else {
+		return &Location{l.tokens[l.currentTokenIndex-1].Start,
+			l.tokens[l.currentTokenIndex-1].End,
+			l.Source()}
+	}
 }
 
 func (l *Lexer) Current() (*Token, error) {

@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/omeryahud/caf/internal/pkg/graphql/language/parser"
-)
+import "github.com/omeryahud/caf/internal/pkg/graphql/language"
 
 func main() {
 	query := `
@@ -16,5 +14,5 @@ func main() {
 	  
 	`
 
-	parser.Parse(query)
+	language.Parse(query)
 }
