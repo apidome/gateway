@@ -313,7 +313,7 @@ type ScalarTypeExtension struct {
 type ObjectTypeExtension struct {
 	Name                 Name
 	ImplementsInterfaces *ImplementsInterfaces
-	Directive            *Directives
+	Directives           *Directives
 	FieldsDefinition     *FieldsDefinition
 	Locator
 }

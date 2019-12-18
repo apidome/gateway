@@ -6,14 +6,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Token struct {
-	Kind  TokenKind
+type token struct {
+	Kind  tokenKind
 	Start int
 	End   int
 	Value string
 }
 
-type TokenKind int
+type tokenKind int
 
 // NAME -> keyword relationship
 const (
@@ -34,7 +34,7 @@ const (
 )
 
 const (
-	EOF TokenKind = iota + 1
+	EOF tokenKind = iota + 1
 	BANG
 	DOLLAR
 	PAREN_L
@@ -56,7 +56,7 @@ const (
 	AMP
 )
 
-var punctuatorKindsMap = map[rune]TokenKind{
+var punctuatorKindsMap = map[rune]tokenKind{
 	'!': BANG,
 	'$': DOLLAR,
 	'(': PAREN_L,
@@ -72,11 +72,11 @@ var punctuatorKindsMap = map[rune]TokenKind{
 	'&': AMP,
 }
 
-func getPunctuatorKind(c rune) TokenKind {
+func getPunctuatorKind(c rune) tokenKind {
 	return punctuatorKindsMap[c]
 }
 
-var tokenDescription = map[TokenKind]string{
+var tokenDescription = map[tokenKind]string{
 	EOF:          "EOF",
 	BANG:         "!",
 	DOLLAR:       "$",
@@ -99,22 +99,23 @@ var tokenDescription = map[TokenKind]string{
 	AMP:          "&",
 }
 
-func (kind TokenKind) String() string {
+func (kind tokenKind) String() string {
 	return tokenDescription[kind]
 }
 
-type Lexer struct {
+type lexer struct {
 	source            string
-	tokens            []Token
+	tokens            []token
 	currentTokenIndex int
 }
 
-func NewLexer(src string) (*Lexer, error) {
-	lexer := &Lexer{
+func Newlexer(src string) (*lexer, error) {
+	lexer := &lexer{
 		source: src,
 	}
 
 	tokenizedDocument, err := lex(src)
+
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +126,7 @@ func NewLexer(src string) (*Lexer, error) {
 	return lexer, nil
 }
 
-func (l *Lexer) Get() (*Token, error) {
+func (l *lexer) Get() (*token, error) {
 	tok, err := l.Current()
 
 	if tok != nil {
@@ -135,7 +136,7 @@ func (l *Lexer) Get() (*Token, error) {
 	return tok, err
 }
 
-func (l *Lexer) PrevLocation() *Location {
+func (l *lexer) PrevLocation() *Location {
 	if l.currentTokenIndex == 0 {
 		loc := &Location{0, 0, l.Source()}
 
@@ -147,7 +148,7 @@ func (l *Lexer) PrevLocation() *Location {
 	}
 }
 
-func (l *Lexer) Current() (*Token, error) {
+func (l *lexer) Current() (*token, error) {
 	if l.currentTokenIndex >= len(l.tokens) {
 		return nil, errors.New("Reached end of document")
 	}
@@ -155,19 +156,43 @@ func (l *Lexer) Current() (*Token, error) {
 	return &l.tokens[l.currentTokenIndex], nil
 }
 
-func (l *Lexer) Source() string {
+func (l *lexer) Location() (*Location, error) {
+	tok, err := l.Current()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &Location{tok.Start, tok.End, l.Source()}, nil
+}
+
+func (l *lexer) tokenEquals(tokVals ...string) bool {
+	if l.currentTokenIndex+len(tokVals)-1 >= len(l.tokens) {
+		return false
+	}
+
+	for i, val := range tokVals {
+		if l.tokens[l.currentTokenIndex+i].Value != val {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (l *lexer) Source() string {
 	return l.source
 }
 
-func lex(doc string) ([]Token, error) {
+func lex(doc string) ([]token, error) {
 	var (
 		whiteSpaceOn  bool
 		stringOn      bool
 		blockStringOn bool
 		commentOn     bool
 		tok           string
-		kind          TokenKind
-		tokens        []Token
+		kind          tokenKind
+		tokens        []token
 	)
 
 	runes := []rune(doc)
@@ -189,14 +214,14 @@ func lex(doc string) ([]Token, error) {
 				// is a punctuator that ended a token.
 				if tok != "" {
 					// Append the token token to the tokens slice.
-					tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
+					tokens = append(tokens, token{kind, i - len(tok), i - 1, tok})
 
 					// Empty the token.
 					tok = ""
 				}
 
 				// Append a punctuator token to the tokens slice.
-				tokens = append(tokens, Token{getPunctuatorKind(runes[i]), i, i, string(runes[i])})
+				tokens = append(tokens, token{getPunctuatorKind(runes[i]), i, i, string(runes[i])})
 			}
 		// This case handles the "spread" operator and float's decimal point.
 		case '.':
@@ -219,7 +244,7 @@ func lex(doc string) ([]Token, error) {
 				// Check if the token is a spread operator.
 				if tok == "..." {
 					// Append the token to the tokens slice.
-					tokens = append(tokens, Token{SPREAD, i, i, "..."})
+					tokens = append(tokens, token{SPREAD, i, i, "..."})
 
 					// Empty the token.
 					tok = ""
@@ -291,7 +316,7 @@ func lex(doc string) ([]Token, error) {
 					// anymore), append the token to the tokens slice.
 					if !stringOn && !blockStringOn {
 						// Append the token to the tokens slice.
-						tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
+						tokens = append(tokens, token{kind, i - len(tok), i - 1, tok})
 
 						// Empty the token.
 						tok = ""
@@ -318,7 +343,7 @@ func lex(doc string) ([]Token, error) {
 						// If the token is not empty
 						if tok != "" {
 							// Append the token to tokens slice.
-							tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
+							tokens = append(tokens, token{kind, i - len(tok), i - 1, tok})
 
 							// Empty the token
 							tok = ""
@@ -339,7 +364,7 @@ func lex(doc string) ([]Token, error) {
 				// If the token is not empty
 				if tok != "" {
 					// Append the token to the tokens slice.
-					tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
+					tokens = append(tokens, token{kind, i - len(tok), i - 1, tok})
 
 					// Empty the token
 					tok = ""
@@ -367,7 +392,7 @@ func lex(doc string) ([]Token, error) {
 					// If the token is not empty, it means that the current character ends a token.
 					if tok != "" {
 						// Append the token to the tokens slice.
-						tokens = append(tokens, Token{kind, i - len(tok), i - 1, tok})
+						tokens = append(tokens, token{kind, i - len(tok), i - 1, tok})
 
 						// Empty the token.
 						tok = ""
@@ -420,7 +445,7 @@ func lex(doc string) ([]Token, error) {
 	}
 
 	// Append an EOF token to mark the end of the document.
-	tokens = append(tokens, Token{EOF, len(doc), len(doc), EOF.String()})
+	tokens = append(tokens, token{EOF, len(doc), len(doc), EOF.String()})
 
 	// Return the tokens slice.
 	return tokens, nil
