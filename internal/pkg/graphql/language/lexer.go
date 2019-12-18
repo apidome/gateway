@@ -31,6 +31,10 @@ const (
 	KW_EXTEND       = "extend"
 	KW_DIRECTIVE    = "directive"
 	KW_IMPLEMENTS   = "implements"
+	KW_ON           = "on"
+	KW_TRUE         = "true"
+	KW_FALSE        = "false"
+	KW_NULL         = "null"
 )
 
 const (
@@ -99,7 +103,7 @@ var tokenDescription = map[tokenKind]string{
 	AMP:          "&",
 }
 
-func (kind tokenKind) String() string {
+func (kind tokenKind) string() string {
 	return tokenDescription[kind]
 }
 
@@ -109,7 +113,7 @@ type lexer struct {
 	currentTokenIndex int
 }
 
-func Newlexer(src string) (*lexer, error) {
+func newlexer(src string) (*lexer, error) {
 	lexer := &lexer{
 		source: src,
 	}
@@ -126,44 +130,40 @@ func Newlexer(src string) (*lexer, error) {
 	return lexer, nil
 }
 
-func (l *lexer) Get() (*token, error) {
-	tok, err := l.Current()
+func (l *lexer) get() *token {
+	tok := l.current()
 
-	if tok != nil {
+	if tok.Value != "EOF" {
 		l.currentTokenIndex++
 	}
 
-	return tok, err
+	return tok
 }
 
-func (l *lexer) PrevLocation() *Location {
+func (l *lexer) prevLocation() *Location {
 	if l.currentTokenIndex == 0 {
-		loc := &Location{0, 0, l.Source()}
+		loc := &Location{0, 0, l.source}
 
 		return loc
 	} else {
 		return &Location{l.tokens[l.currentTokenIndex-1].Start,
 			l.tokens[l.currentTokenIndex-1].End,
-			l.Source()}
+			l.source}
 	}
 }
 
-func (l *lexer) Current() (*token, error) {
+func (l *lexer) current() *token {
 	if l.currentTokenIndex >= len(l.tokens) {
-		return nil, errors.New("Reached end of document")
+		return &token{EOF, len(l.source), len(l.source), "EOF"}
 	}
 
-	return &l.tokens[l.currentTokenIndex], nil
+	return &l.tokens[l.currentTokenIndex]
 }
 
-func (l *lexer) Location() (*Location, error) {
-	tok, err := l.Current()
+func (l *lexer) location() *Location {
+	tok := l.current()
 
-	if err != nil {
-		return nil, err
-	}
-
-	return &Location{tok.Start, tok.End, l.Source()}, nil
+	return &Location{tok.Start, tok.End, l.source}
 }
 
 func (l *lexer) tokenEquals(tokVals ...string) bool {
@@ -178,10 +178,6 @@ func (l *lexer) tokenEquals(tokVals ...string) bool {
 	}
 
 	return true
-}
-
-func (l *lexer) Source() string {
-	return l.source
 }
 
 func lex(doc string) ([]token, error) {
@@ -445,7 +441,7 @@ func lex(doc string) ([]token, error) {
 	}
 
 	// Append an EOF token to mark the end of the document.
-	tokens = append(tokens, token{EOF, len(doc), len(doc), EOF.String()})
+	tokens = append(tokens, token{EOF, len(doc), len(doc), EOF.string()})
 
 	// Return the tokens slice.
 	return tokens, nil
