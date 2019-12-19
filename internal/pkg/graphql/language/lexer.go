@@ -7,10 +7,10 @@ import (
 )
 
 type token struct {
-	Kind  tokenKind
-	Start int
-	End   int
-	Value string
+	kind  tokenKind
+	start int
+	end   int
+	value string
 }
 
 type tokenKind int
@@ -111,6 +111,7 @@ type lexer struct {
 	source            string
 	tokens            []token
 	currentTokenIndex int
+	revertStack       []int
 }
 
 func newlexer(src string) (*lexer, error) {
@@ -133,22 +134,30 @@ func newlexer(src string) (*lexer, error) {
 func (l *lexer) get() *token {
 	tok := l.current()
 
-	if tok.Value != "EOF" {
+	if tok.value != "EOF" {
 		l.currentTokenIndex++
 	}
 
 	return tok
 }
 
-func (l *lexer) put() {
-	if l.currentTokenIndex > 0 {
-		l.currentTokenIndex--
-	}
+func (l *lexer) pushIndex() {
+	var newStack []int
+
+	newStack = append(newStack, l.currentTokenIndex)
+
+	newStack = append(newStack, l.revertStack...)
+
+	l.revertStack = newStack
 }
 
-func (l *lexer) putMany(c int) {
-	if l.currentTokenIndex-c >= 0 {
-		l.currentTokenIndex -= c
+func (l *lexer) popIndex() {
+	if len(l.revertStack) >= 1 {
+		popped := l.revertStack[0]
+
+		l.revertStack = l.revertStack[1:len(l.revertStack)]
+
+		l.currentTokenIndex = popped
 	}
 }
 
@@ -158,8 +167,8 @@ func (l *lexer) prevLocation() *location {
 
 		return loc
 	} else {
-		return &location{l.tokens[l.currentTokenIndex-1].Start,
-			l.tokens[l.currentTokenIndex-1].End,
+		return &location{l.tokens[l.currentTokenIndex-1].start,
+			l.tokens[l.currentTokenIndex-1].end,
 			l.source}
 	}
 }
@@ -175,7 +184,7 @@ func (l *lexer) current() *token {
 func (l *lexer) location() *location {
 	tok := l.current()
 
-	return &location{tok.Start, tok.End, l.source}
+	return &location{tok.start, tok.end, l.source}
 }
 
 func (l *lexer) tokenEquals(tokVals ...string) bool {
@@ -184,7 +193,7 @@ func (l *lexer) tokenEquals(tokVals ...string) bool {
 	}
 
 	for i, val := range tokVals {
-		if l.tokens[l.currentTokenIndex+i].Value != val {
+		if l.tokens[l.currentTokenIndex+i].value != val {
 			return false
 		}
 	}

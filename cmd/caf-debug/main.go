@@ -15,7 +15,6 @@ func main() {
 		  profilePic(width: 100, height: 50)
 		}
 	  }
-	  
 	`
 
 	_, err := language.Parse(query)

@@ -55,9 +55,7 @@ func parseDefinitions(l *lexer) (*definitions, error) {
 			return nil, err
 		}
 
-		if def != nil {
-			*defs = append(*defs, def)
-		}
+		*defs = append(*defs, def)
 	}
 
 	if len(*defs) == 0 {
@@ -138,7 +136,7 @@ func parseTypeSystemDefinition(l *lexer) (typeSystemDefinition, error) {
 
 // https://graphql.github.io/graphql-spec/draft/#SchemaDefinition
 func parseSchemaDefinition(l *lexer) (*schemaDefinition, error) {
-	locStart := l.current().Start
+	locStart := l.current().start
 
 	if !l.tokenEquals(kwSchema) {
 		return nil, errors.New("Missing 'schema' keyword for a schema definition")
@@ -164,7 +162,7 @@ func parseSchemaDefinition(l *lexer) (*schemaDefinition, error) {
 		return nil, errors.New("Missing '}' for schema definition")
 	}
 
-	locEnd := l.current().End
+	locEnd := l.current().end
 
 	l.get()
 
@@ -200,7 +198,7 @@ func parseRootOperationTypeDefinitions(l *lexer) (*rootOperationTypeDefinitions,
 
 // https://graphql.github.io/graphql-spec/draft/#RootOperationTypeDefinition
 func parseRootOperationTypeDefinition(l *lexer) (*rootOperationTypeDefinition, error) {
-	locStart := l.current().Start
+	locStart := l.current().start
 
 	opType, err := parseOperationType(l)
 
@@ -233,16 +231,16 @@ func parseRootOperationTypeDefinition(l *lexer) (*rootOperationTypeDefinition, e
 func parseOperationType(l *lexer) (*operationType, error) {
 	tok := l.current()
 
-	if tok.Value != string(operationMutation) &&
-		tok.Value != string(operationQuery) &&
-		tok.Value != string(operationSubscription) {
+	if tok.value != string(operationMutation) &&
+		tok.value != string(operationQuery) &&
+		tok.value != string(operationSubscription) {
 		return nil,
 			errors.New("Expecting 'query', 'mutation' or 'subscription' as operation type")
 	}
 
 	opType := new(operationType)
 
-	*opType = (operationType)(tok.Value)
+	*opType = (operationType)(tok.value)
 
 	return opType, nil
 }
@@ -313,7 +311,7 @@ func parseScalarTypeDefinition(l *lexer) (*scalarTypeDefinition, error) {
 	scalarTd.Description = desc
 	scalarTd.Name = *nam
 	scalarTd.Directives = dirs
-	scalarTd.Loc = location{tok.Start, l.prevLocation().End, l.source}
+	scalarTd.Loc = location{tok.start, l.prevLocation().End, l.source}
 
 	return scalarTd, nil
 }
@@ -1109,7 +1107,7 @@ func parseExecutableDirectiveLocation(l *lexer) (*executableDirectiveLocation, e
 	tok := l.current()
 
 	for i := range executableDirectiveLocations {
-		if string(executableDirectiveLocations[i]) == tok.Value {
+		if string(executableDirectiveLocations[i]) == tok.value {
 			l.get()
 
 			edl := executableDirectiveLocations[i]
@@ -1126,7 +1124,7 @@ func parseTypeSystemDirectiveLocation(l *lexer) (*typeSystemDirectiveLocation, e
 	tok := l.current()
 
 	for i := range typeSystemDirectiveLocations {
-		if string(typeSystemDirectiveLocations[i]) == tok.Value {
+		if string(typeSystemDirectiveLocations[i]) == tok.value {
 			l.get()
 
 			tsdl := typeSystemDirectiveLocations[i]
@@ -1258,7 +1256,7 @@ func parseOperationDefinition(l *lexer) (*operationDefinition, error) {
 	} else {
 		tok := l.get()
 
-		opType := tok.Value
+		opType := tok.value
 
 		nam, _ := parseName(l)
 
@@ -1279,7 +1277,7 @@ func parseOperationDefinition(l *lexer) (*operationDefinition, error) {
 		opDefinition.VariableDefinitions = varDef
 		opDefinition.Directives = directives
 		opDefinition.SelectionSet = *selSet
-		opDefinition.Loc = location{locStart, tok.End, l.source}
+		opDefinition.Loc = location{locStart, tok.end, l.source}
 
 		return opDefinition, nil
 	}
@@ -1337,20 +1335,20 @@ func parseName(l *lexer) (*name, error) {
 	pattern := "^[_A-Za-z][_0-9A-Za-z]*$"
 
 	// If the current token is not a Name, return nil
-	if tok.Kind != tokName {
+	if tok.kind != tokName {
 		return nil, errors.New("Not a name")
 	}
 
 	// Check if the given name matches the regex provided by graphql spec at
 	// https://graphql.github.io/graphql-spec/draft/#Name
-	match, err := regexp.MatchString(pattern, tok.Value)
+	match, err := regexp.MatchString(pattern, tok.value)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse name: ")
 	}
 
 	// If the name does not match the requirements, return an error.
 	if !match {
-		return nil, errors.New("invalid name - " + tok.Value)
+		return nil, errors.New("invalid name - " + tok.value)
 	}
 
 	l.get()
@@ -1358,9 +1356,9 @@ func parseName(l *lexer) (*name, error) {
 	nam := &name{}
 
 	// Populate the Name struct.
-	nam.Value = tok.Value
-	nam.Loc.Start = tok.Start
-	nam.Loc.End = tok.End
+	nam.Value = tok.value
+	nam.Loc.Start = tok.start
+	nam.Loc.End = tok.end
 	nam.Loc.Source = l.source
 
 	// Return the AST Name object.
@@ -1937,7 +1935,7 @@ func parseNamedType(l *lexer) (*namedType, error) {
 func parseIntValue(l *lexer) (*intValue, error) {
 	tok := l.current()
 
-	intVal, err := strconv.ParseInt(tok.Value, 10, 64)
+	intVal, err := strconv.ParseInt(tok.value, 10, 64)
 
 	if err != nil {
 		return nil, err
@@ -1948,7 +1946,7 @@ func parseIntValue(l *lexer) (*intValue, error) {
 	intValP := &intValue{}
 
 	intValP.Value = intVal
-	intValP.Loc = location{tok.Start, tok.End, l.source}
+	intValP.Loc = location{tok.start, tok.end, l.source}
 
 	return intValP, nil
 }
@@ -1957,7 +1955,7 @@ func parseIntValue(l *lexer) (*intValue, error) {
 func parseFloatValue(l *lexer) (*floatValue, error) {
 	tok := l.current()
 
-	floatVal, err := strconv.ParseFloat(tok.Value, 64)
+	floatVal, err := strconv.ParseFloat(tok.value, 64)
 
 	if err != nil {
 		return nil, err
@@ -1968,7 +1966,7 @@ func parseFloatValue(l *lexer) (*floatValue, error) {
 	floatValP := &floatValue{}
 
 	floatValP.Value = floatVal
-	floatValP.Loc = location{tok.Start, tok.End, l.source}
+	floatValP.Loc = location{tok.start, tok.end, l.source}
 
 	return floatValP, nil
 }
@@ -1980,8 +1978,8 @@ func parseStringValue(l *lexer) (*stringValue, error) {
 
 	sv := &stringValue{}
 
-	sv.Value = tok.Value
-	sv.Loc = location{tok.Start, tok.End, l.source}
+	sv.Value = tok.value
+	sv.Loc = location{tok.start, tok.end, l.source}
 
 	return sv, nil
 }
@@ -1990,7 +1988,7 @@ func parseStringValue(l *lexer) (*stringValue, error) {
 func parseBooleanValue(l *lexer) (*booleanValue, error) {
 	tok := l.current()
 
-	boolVal, err := strconv.ParseBool(tok.Value)
+	boolVal, err := strconv.ParseBool(tok.value)
 
 	if err != nil {
 		return nil, err
@@ -2001,7 +1999,7 @@ func parseBooleanValue(l *lexer) (*booleanValue, error) {
 	boolValP := &booleanValue{}
 
 	boolValP.Value = boolVal
-	boolValP.Loc = location{tok.Start, tok.End, l.source}
+	boolValP.Loc = location{tok.start, tok.end, l.source}
 
 	return boolValP, nil
 }
@@ -2010,13 +2008,13 @@ func parseBooleanValue(l *lexer) (*booleanValue, error) {
 func parseNullValue(l *lexer) (*nullValue, error) {
 	tok := l.current()
 
-	if tok.Value != kwNull {
+	if tok.value != kwNull {
 		return nil, errors.New("Expecting 'null' keyword")
 	} else {
 		l.get()
 
 		null := &nullValue{}
-		null.Loc = location{tok.Start, tok.End, l.source}
+		null.Loc = location{tok.start, tok.end, l.source}
 
 		return null, nil
 	}
