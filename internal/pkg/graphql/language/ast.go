@@ -2,543 +2,543 @@ package language
 
 const (
 	// Executable Directive Locations
-	QUERY               ExecutableDirectiveLocation = "QUERY"
-	MUTATION                                        = "MUTATION"
-	SUBSCRIPTION                                    = "SUBSCRIPTION"
-	FIELD                                           = "FIELD"
-	FRAGMENT_DEFINITION                             = "FRAGMENT_DEFINITION"
-	FRAGMENT_SPREAD                                 = "FRAGMENT_SPREAD"
-	INLINE_FRAGMENT                                 = "INLINE_FRAGMENT"
-	VARIABLE_DEFINITION                             = "VARIABLE_DEFINITION"
+	edlQuery              executableDirectiveLocation = "QUERY"
+	edlMutation                                       = "MUTATION"
+	edlSubscription                                   = "SUBSCRIPTION"
+	edlField                                          = "FIELD"
+	edlFragmentDefinition                             = "FRAGMENT_DEFINITION"
+	edlFragmentSpread                                 = "FRAGMENT_SPREAD"
+	edlInlineFragment                                 = "INLINE_FRAGMENT"
+	edlVariableDefinition                             = "VARIABLE_DEFINITION"
 
 	// Type System Directive Locations
-	SCHEMA                 TypeSystemDirectiveLocation = "SCHEMA"
-	SCALAR                                             = "SCALAR"
-	OBJECT                                             = "OBJECT"
-	FIELD_DEFINITION                                   = "FIELD_DEFINITION"
-	ARGUMENT_DEFINITION                                = "ARGUMENT_DEFINITION"
-	INTERFACE                                          = "INTERFACE"
-	UNION                                              = "UNION"
-	ENUM                                               = "ENUM"
-	ENUM_VALUE                                         = "ENUM_VALUE"
-	INPUT_OBJECT                                       = "INPUT_OBJECT"
-	INPUT_FIELD_DEFINITION                             = "INPUT_FIELD_DEFINITION"
+	tsdlSchema               typeSystemDirectiveLocation = "SCHEMA"
+	tsdlScalar                                           = "SCALAR"
+	tsdlObject                                           = "OBJECT"
+	tsdlFieldDefinition                                  = "FIELD_DEFINITION"
+	tsdlArgumentDefinition                               = "ARGUMENT_DEFINITION"
+	tsdlInterface                                        = "INTERFACE"
+	tsdlUnion                                            = "UNION"
+	tsdlEnum                                             = "ENUM"
+	tsdlEnumValue                                        = "ENUM_VALUE"
+	tsdlInputObject                                      = "INPUT_OBJECT"
+	tsdlInputFieldDefinition                             = "INPUT_FIELD_DEFINITION"
 )
 
 const (
-	OPERATION_QUERY        OperationType = "query"
-	OPERATION_MUTATION     OperationType = "mutation"
-	OPERATION_SUBSCRIPTION OperationType = "subscription"
+	operationQuery        operationType = "query"
+	operationMutation     operationType = "mutation"
+	operationSubscription operationType = "subscription"
 )
 
-var executableDirectiveLocations []ExecutableDirectiveLocation = []ExecutableDirectiveLocation{
-	QUERY,
-	MUTATION,
-	SUBSCRIPTION,
-	FIELD,
-	FRAGMENT_DEFINITION,
-	FRAGMENT_SPREAD,
-	INLINE_FRAGMENT,
-	VARIABLE_DEFINITION,
+var executableDirectiveLocations []executableDirectiveLocation = []executableDirectiveLocation{
+	edlQuery,
+	edlMutation,
+	edlSubscription,
+	edlField,
+	edlFragmentDefinition,
+	edlFragmentSpread,
+	edlInlineFragment,
+	edlVariableDefinition,
 }
 
-var typeSystemDirectiveLocations []TypeSystemDirectiveLocation = []TypeSystemDirectiveLocation{
-	SCHEMA,
-	SCALAR,
-	OBJECT,
-	FIELD_DEFINITION,
-	ARGUMENT_DEFINITION,
-	INTERFACE,
-	UNION,
-	ENUM,
-	ENUM_VALUE,
-	INPUT_OBJECT,
-	INPUT_FIELD_DEFINITION,
+var typeSystemDirectiveLocations []typeSystemDirectiveLocation = []typeSystemDirectiveLocation{
+	tsdlSchema,
+	tsdlScalar,
+	tsdlObject,
+	tsdlFieldDefinition,
+	tsdlArgumentDefinition,
+	tsdlInterface,
+	tsdlUnion,
+	tsdlEnum,
+	tsdlEnumValue,
+	tsdlInputObject,
+	tsdlInputFieldDefinition,
 }
 
-type DirectiveLocation string
+type directiveLocation string
 
-type ExecutableDirectiveLocation DirectiveLocation
+type executableDirectiveLocation directiveLocation
 
-type TypeSystemDirectiveLocation DirectiveLocation
+type typeSystemDirectiveLocation directiveLocation
 
-type Location struct {
+type location struct {
 	Start  int
 	End    int
 	Source string
 }
 
-type Document struct {
-	Definitions []Definition
+type document struct {
+	Definitions []definition
 }
 
-type Arguments []Argument
+type arguments []argument
 
-type Argument struct {
-	Name  Name
-	Value Value
-	Locator
+type argument struct {
+	Name  name
+	Value value
+	locator
 }
 
-type DirectiveLocations []DirectiveLocation
+type directiveLocations []directiveLocation
 
-type Directives []Directive
+type directives []directive
 
-type Directive struct {
-	Name      Name
-	Arguments *Arguments
-	Locator
+type directive struct {
+	Name      name
+	Arguments *arguments
+	locator
 }
 
-type OperationType string
+type operationType string
 
-type LocatorInterface interface {
-	Location() *Location
+type locatorInterface interface {
+	Location() *location
 }
 
-type Locator struct {
-	Loc Location
+type locator struct {
+	Loc location
 }
 
-func (l *Locator) Location() *Location {
+func (l *locator) Location() *location {
 	return &l.Loc
 }
 
-type Definition interface {
-	LocatorInterface
+type definition interface {
+	locatorInterface
 }
 
-type Definitions []Definition
+type definitions []definition
 
-var _ Definition = (*RootOperationTypeDefinition)(nil)
-var _ Definition = (*EnumValueDefinition)(nil)
-var _ Definition = (*InputValueDefinition)(nil)
+var _ definition = (*rootOperationTypeDefinition)(nil)
+var _ definition = (*enumValueDefinition)(nil)
+var _ definition = (*inputValueDefinition)(nil)
 
 /*
 	Executable Definitions
 */
-type ExecutableDefinition interface {
-	Definition
+type executableDefinition interface {
+	definition
 }
 
-var _ ExecutableDefinition = (*OperationDefinition)(nil)
-var _ ExecutableDefinition = (*FragmentDefinition)(nil)
+var _ executableDefinition = (*operationDefinition)(nil)
+var _ executableDefinition = (*fragmentDefinition)(nil)
 
-type OperationDefinition struct {
-	OperationType       OperationType
-	Name                *Name
-	VariableDefinitions *VariableDefinitions
-	SelectionSet        SelectionSet
-	Directives          *Directives
-	Locator
+type operationDefinition struct {
+	OperationType       operationType
+	Name                *name
+	VariableDefinitions *variableDefinitions
+	SelectionSet        selectionSet
+	Directives          *directives
+	locator
 }
 
-type FragmentDefinition struct {
-	FragmentName  FragmentName
-	TypeCondition TypeCondition
-	SelectionSet  SelectionSet
-	Directives    *Directives
-	Locator
+type fragmentDefinition struct {
+	FragmentName  fragmentName
+	TypeCondition typeCondition
+	SelectionSet  selectionSet
+	Directives    *directives
+	locator
 }
 
 /*
 	Type System Definitions
 */
 
-type TypeSystemDefinition interface {
-	Definition
+type typeSystemDefinition interface {
+	definition
 }
 
-var _ TypeSystemDefinition = (TypeDefinition)(nil)
-var _ TypeSystemDefinition = (*SchemaDefinition)(nil)
-var _ TypeSystemDefinition = (*DirectiveDefinition)(nil)
+var _ typeSystemDefinition = (typeDefinition)(nil)
+var _ typeSystemDefinition = (*schemaDefinition)(nil)
+var _ typeSystemDefinition = (*directiveDefinition)(nil)
 
-type SchemaDefinition struct {
-	Directives                   *Directives
-	RootOperationTypeDefinitions []RootOperationTypeDefinition
-	Locator
+type schemaDefinition struct {
+	Directives                   *directives
+	RootOperationTypeDefinitions []rootOperationTypeDefinition
+	locator
 }
 
-type RootOperationTypeDefinition struct {
-	OperationType OperationType
-	NamedType     NamedType
-	Locator
+type rootOperationTypeDefinition struct {
+	OperationType operationType
+	NamedType     namedType
+	locator
 }
 
-type RootOperationTypeDefinitions []RootOperationTypeDefinition
+type rootOperationTypeDefinitions []rootOperationTypeDefinition
 
-type DirectiveDefinition struct {
-	Description         *Description
-	Name                Name
-	ArgumentsDefinition *ArgumentsDefinition
-	DirectiveLocations  DirectiveLocations
-	Locator
+type directiveDefinition struct {
+	Description         *description
+	Name                name
+	ArgumentsDefinition *argumentsDefinition
+	DirectiveLocations  directiveLocations
+	locator
 }
 
-type InputValueDefinition struct {
-	Description  *Description
-	Name         Name
-	Type         Type
-	DefaultValue *DefaultValue
-	Directives   *Directives
-	Locator
+type inputValueDefinition struct {
+	Description  *description
+	Name         name
+	Type         _type
+	DefaultValue *defaultValue
+	Directives   *directives
+	locator
 }
 
-type ArgumentsDefinition []InputValueDefinition
+type argumentsDefinition []inputValueDefinition
 
-type TypeDefinition interface {
-	TypeSystemDefinition
+type typeDefinition interface {
+	typeSystemDefinition
 }
 
-var _ TypeDefinition = (*ScalarTypeDefinition)(nil)
-var _ TypeDefinition = (*ObjectTypeDefinition)(nil)
-var _ TypeDefinition = (*InterfaceTypeDefinition)(nil)
-var _ TypeDefinition = (*UnionTypeDefinition)(nil)
-var _ TypeDefinition = (*EnumTypeDefinition)(nil)
-var _ TypeDefinition = (*InputObjectTypeDefinition)(nil)
+var _ typeDefinition = (*scalarTypeDefinition)(nil)
+var _ typeDefinition = (*objectTypeDefinition)(nil)
+var _ typeDefinition = (*interfaceTypeDefinition)(nil)
+var _ typeDefinition = (*unionTypeDefinition)(nil)
+var _ typeDefinition = (*enumTypeDefinition)(nil)
+var _ typeDefinition = (*inputObjectTypeDefinition)(nil)
 
-type ScalarTypeDefinition struct {
-	Description *Description
-	Name        Name
-	Directives  *Directives
-	Locator
+type scalarTypeDefinition struct {
+	Description *description
+	Name        name
+	Directives  *directives
+	locator
 }
 
-type ObjectTypeDefinition struct {
-	Description          *Description
-	Name                 Name
-	ImplementsInterfaces *ImplementsInterfaces
-	Directives           *Directives
-	FieldsDefinition     *FieldsDefinition
-	Locator
+type objectTypeDefinition struct {
+	Description          *description
+	Name                 name
+	ImplementsInterfaces *implementsInterfaces
+	Directives           *directives
+	FieldsDefinition     *fieldsDefinition
+	locator
 }
 
-type InterfaceTypeDefinition struct {
-	Description      *Description
-	Name             Name
-	Directives       *Directives
-	FieldsDefinition *FieldsDefinition
-	Locator
+type interfaceTypeDefinition struct {
+	Description      *description
+	Name             name
+	Directives       *directives
+	FieldsDefinition *fieldsDefinition
+	locator
 }
 
-type UnionTypeDefinition struct {
-	Description      *Description
-	Name             Name
-	Directives       *Directives
-	UnionMemberTypes *UnionMemberTypes
-	Locator
+type unionTypeDefinition struct {
+	Description      *description
+	Name             name
+	Directives       *directives
+	UnionMemberTypes *unionMemberTypes
+	locator
 }
 
-type EnumTypeDefinition struct {
-	Description          *Description
-	Name                 Name
-	Directives           *Directives
-	EnumValuesDefinition *EnumValuesDefinition
-	Locator
+type enumTypeDefinition struct {
+	Description          *description
+	Name                 name
+	Directives           *directives
+	EnumValuesDefinition *enumValuesDefinition
+	locator
 }
 
-type EnumValueDefinition struct {
-	Description *Description
-	EnumValue   EnumValue
-	Directives  *Directives
-	Locator
+type enumValueDefinition struct {
+	Description *description
+	EnumValue   enumValue
+	Directives  *directives
+	locator
 }
 
-type EnumValuesDefinition []EnumValueDefinition
+type enumValuesDefinition []enumValueDefinition
 
-type InputObjectTypeDefinition struct {
-	Description           *Description
-	Name                  Name
-	Directives            *Directives
-	InputFieldsDefinition *InputFieldsDefinition
-	Locator
+type inputObjectTypeDefinition struct {
+	Description           *description
+	Name                  name
+	Directives            *directives
+	InputFieldsDefinition *inputFieldsDefinition
+	locator
 }
 
-type InputFieldsDefinition []InputValueDefinition
+type inputFieldsDefinition []inputValueDefinition
 
-type VariableDefinition struct {
-	Variable     Variable
-	Type         Type
-	DefaultValue *DefaultValue
-	Directives   *Directives
-	Locator
+type variableDefinition struct {
+	Variable     variable
+	Type         _type
+	DefaultValue *defaultValue
+	Directives   *directives
+	locator
 }
 
-type VariableDefinitions []VariableDefinition
+type variableDefinitions []variableDefinition
 
-type FieldDefinition struct {
-	Description         *Description
-	Name                Name
-	ArgumentsDefinition *ArgumentsDefinition
-	Type                Type
-	Directives          *Directives
-	Locator
+type fieldDefinition struct {
+	Description         *description
+	Name                name
+	ArgumentsDefinition *argumentsDefinition
+	Type                _type
+	Directives          *directives
+	locator
 }
 
-type FieldsDefinition []FieldDefinition
+type fieldsDefinition []fieldDefinition
 
 /*
 	Type System Extensions
 */
 
-type TypeSystemExtension interface {
-	Definition
+type typeSystemExtension interface {
+	definition
 }
 
-var _ TypeSystemExtension = (*SchemaExtension)(nil)
+var _ typeSystemExtension = (*schemaExtension)(nil)
 
-type SchemaExtension struct {
-	Directives                   *Directives
-	RootOperationTypeDefinitions *RootOperationTypeDefinitions
-	Locator
+type schemaExtension struct {
+	Directives                   *directives
+	RootOperationTypeDefinitions *rootOperationTypeDefinitions
+	locator
 }
 
-type TypeExtension interface {
-	TypeSystemExtension
+type typeExtension interface {
+	typeSystemExtension
 }
 
-var _ TypeExtension = (*ScalarTypeExtension)(nil)
-var _ TypeExtension = (*ObjectTypeExtension)(nil)
-var _ TypeExtension = (*InterfaceTypeExtension)(nil)
-var _ TypeExtension = (*UnionTypeExtension)(nil)
-var _ TypeExtension = (*EnumTypeExtension)(nil)
-var _ TypeExtension = (*InputObjectTypeExtension)(nil)
+var _ typeExtension = (*scalarTypeExtension)(nil)
+var _ typeExtension = (*objectTypeExtension)(nil)
+var _ typeExtension = (*interfaceTypeExtension)(nil)
+var _ typeExtension = (*unionTypeExtension)(nil)
+var _ typeExtension = (*enumTypeExtension)(nil)
+var _ typeExtension = (*inputObjectTypeExtension)(nil)
 
-type ScalarTypeExtension struct {
-	Name       Name
-	Directives Directives
-	Locator
+type scalarTypeExtension struct {
+	Name       name
+	Directives directives
+	locator
 }
 
-type ObjectTypeExtension struct {
-	Name                 Name
-	ImplementsInterfaces *ImplementsInterfaces
-	Directives           *Directives
-	FieldsDefinition     *FieldsDefinition
-	Locator
+type objectTypeExtension struct {
+	Name                 name
+	ImplementsInterfaces *implementsInterfaces
+	Directives           *directives
+	FieldsDefinition     *fieldsDefinition
+	locator
 }
 
-type InterfaceTypeExtension struct {
-	Name             Name
-	Directives       *Directives
-	FieldsDefinition *FieldsDefinition
-	Locator
+type interfaceTypeExtension struct {
+	Name             name
+	Directives       *directives
+	FieldsDefinition *fieldsDefinition
+	locator
 }
 
-type UnionTypeExtension struct {
-	Name             Name
-	Directives       *Directives
-	UnionMemberTypes *UnionMemberTypes
-	Locator
+type unionTypeExtension struct {
+	Name             name
+	Directives       *directives
+	UnionMemberTypes *unionMemberTypes
+	locator
 }
 
-type EnumTypeExtension struct {
-	Name                 Name
-	Directives           *Directives
-	EnumValuesDefinition *EnumValuesDefinition
-	Locator
+type enumTypeExtension struct {
+	Name                 name
+	Directives           *directives
+	EnumValuesDefinition *enumValuesDefinition
+	locator
 }
 
-type InputObjectTypeExtension struct {
-	Name                  Name
-	Directives            *Directives
-	InputFieldsDefinition *InputFieldsDefinition
-	Locator
+type inputObjectTypeExtension struct {
+	Name                  name
+	Directives            *directives
+	InputFieldsDefinition *inputFieldsDefinition
+	locator
 }
 
-type Selection interface {
-	LocatorInterface
-	Selections() *SelectionSet
+type selection interface {
+	locatorInterface
+	Selections() *selectionSet
 }
 
-var _ Selection = (*Field)(nil)
-var _ Selection = (*FragmentSpread)(nil)
-var _ Selection = (*InlineFragment)(nil)
+var _ selection = (*field)(nil)
+var _ selection = (*fragmentSpread)(nil)
+var _ selection = (*inlineFragment)(nil)
 
-type SelectionSet []Selection
+type selectionSet []selection
 
-type Field struct {
-	Alias        *Alias
-	Name         Name
-	Arguments    *Arguments
-	Directives   *Directives
-	SelectionSet *SelectionSet
-	Locator
+type field struct {
+	Alias        *alias
+	Name         name
+	Arguments    *arguments
+	Directives   *directives
+	SelectionSet *selectionSet
+	locator
 }
 
-func (f *Field) Selections() *SelectionSet {
+func (f *field) Selections() *selectionSet {
 	return f.SelectionSet
 }
 
-type FragmentSpread struct {
-	FragmentName FragmentName
-	Directives   *Directives
-	Locator
+type fragmentSpread struct {
+	FragmentName fragmentName
+	Directives   *directives
+	locator
 }
 
 // ! Find the fragment definition by its name and return its selection set
-func (f *FragmentSpread) Selections() *SelectionSet {
-	return &SelectionSet{}
+func (f *fragmentSpread) Selections() *selectionSet {
+	return &selectionSet{}
 }
 
-type InlineFragment struct {
-	TypeCondition *TypeCondition
-	Directives    *Directives
-	SelectionSet  SelectionSet
-	Locator
+type inlineFragment struct {
+	TypeCondition *typeCondition
+	Directives    *directives
+	SelectionSet  selectionSet
+	locator
 }
 
-func (i *InlineFragment) Selections() *SelectionSet {
+func (i *inlineFragment) Selections() *selectionSet {
 	return &i.SelectionSet
 }
 
-type Type interface {
-	LocatorInterface
+type _type interface {
+	locatorInterface
 }
 
-var _ Type = (*NamedType)(nil)
-var _ Type = (*ListType)(nil)
-var _ Type = (*NonNullType)(nil)
+var _ _type = (*namedType)(nil)
+var _ _type = (*listType)(nil)
+var _ _type = (*nonNullType)(nil)
 
-type NamedType Name
+type namedType name
 
-type ListType struct {
+type listType struct {
 	Kind   string
-	OfType Type
-	Locator
+	OfType _type
+	locator
 }
 
-type NonNullType struct {
+type nonNullType struct {
 	Kind   string
-	OfType Type
-	Locator
+	OfType _type
+	locator
 }
 
-type TypeCondition struct {
-	NamedType NamedType
-	Locator
+type typeCondition struct {
+	NamedType namedType
+	locator
 }
 
-type UnionMemberTypes []NamedType
+type unionMemberTypes []namedType
 
-type ImplementsInterfaces []NamedType
+type implementsInterfaces []namedType
 
-type Name struct {
+type name struct {
 	Value string
-	Locator
+	locator
 }
 
-type Alias Name
-type FragmentName Name
+type alias name
+type fragmentName name
 
-type Value interface {
+type value interface {
 	GetValue() interface{}
-	LocatorInterface
+	locatorInterface
 }
 
-var _ Value = (*DefaultValue)(nil)
-var _ Value = (*ObjectField)(nil)
-var _ Value = (*ObjectValue)(nil)
-var _ Value = (*ListValue)(nil)
-var _ Value = (*IntValue)(nil)
-var _ Value = (*FloatValue)(nil)
-var _ Value = (*StringValue)(nil)
-var _ Value = (*BooleanValue)(nil)
-var _ Value = (*EnumValue)(nil)
+var _ value = (*defaultValue)(nil)
+var _ value = (*objectField)(nil)
+var _ value = (*objectValue)(nil)
+var _ value = (*listValue)(nil)
+var _ value = (*intValue)(nil)
+var _ value = (*floatValue)(nil)
+var _ value = (*stringValue)(nil)
+var _ value = (*booleanValue)(nil)
+var _ value = (*enumValue)(nil)
 
-type DefaultValue struct {
-	Value Value
-	Locator
+type defaultValue struct {
+	Value value
+	locator
 }
 
-func (dv DefaultValue) GetValue() interface{} {
+func (dv defaultValue) GetValue() interface{} {
 	return dv.Value.GetValue()
 }
 
-type ObjectField struct {
-	Name  Name
-	Value Value
-	Locator
+type objectField struct {
+	Name  name
+	Value value
+	locator
 }
 
-func (of ObjectField) GetValue() interface{} {
+func (of objectField) GetValue() interface{} {
 	return of.Value.GetValue()
 }
 
-type ObjectValue struct {
-	Values []ObjectField
-	Locator
+type objectValue struct {
+	Values []objectField
+	locator
 }
 
-func (ov ObjectValue) GetValue() interface{} {
+func (ov objectValue) GetValue() interface{} {
 	return ov
 }
 
-type ListValue struct {
-	Values []Value
-	Locator
+type listValue struct {
+	Values []value
+	locator
 }
 
-func (lv ListValue) GetValue() interface{} {
+func (lv listValue) GetValue() interface{} {
 	return lv
 }
 
-type IntValue struct {
+type intValue struct {
 	Value int64
-	Locator
+	locator
 }
 
-func (iv IntValue) GetValue() interface{} {
+func (iv intValue) GetValue() interface{} {
 	return iv
 }
 
-type FloatValue struct {
+type floatValue struct {
 	Value float64
-	Locator
+	locator
 }
 
-func (fv FloatValue) GetValue() interface{} {
+func (fv floatValue) GetValue() interface{} {
 	return fv
 }
 
-type StringValue struct {
+type stringValue struct {
 	Value string
-	Locator
+	locator
 }
 
-func (sv StringValue) GetValue() interface{} {
+func (sv stringValue) GetValue() interface{} {
 	return sv
 }
 
-type BooleanValue struct {
+type booleanValue struct {
 	Value bool
-	Locator
+	locator
 }
 
-func (bv BooleanValue) GetValue() interface{} {
+func (bv booleanValue) GetValue() interface{} {
 	return bv
 }
 
-type EnumValue struct {
-	Name Name
-	Locator
+type enumValue struct {
+	Name name
+	locator
 }
 
-func (ev EnumValue) GetValue() interface{} {
+func (ev enumValue) GetValue() interface{} {
 	return ev
 }
 
-type NullValue struct {
-	Locator
+type nullValue struct {
+	locator
 }
 
-func (nv NullValue) GetValue() interface{} {
+func (nv nullValue) GetValue() interface{} {
 	return nv
 }
 
-type Variable struct {
-	Name Name
-	Locator
+type variable struct {
+	Name name
+	locator
 }
 
-type Description StringValue
+type description stringValue

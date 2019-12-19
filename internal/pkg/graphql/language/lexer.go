@@ -17,63 +17,63 @@ type tokenKind int
 
 // NAME -> keyword relationship
 const (
-	KW_FRAGMENT     = "fragment"
-	KW_QUERY        = "query"
-	KW_MUTATION     = "mutation"
-	KW_SUBSCRIPTION = "subscription"
-	KW_SCHEMA       = "schema"
-	KW_SCALAR       = "scalar"
-	KW_TYPE         = "type"
-	KW_INTERFACE    = "interface"
-	KW_UNION        = "union"
-	KW_ENUM         = "enum"
-	KW_INPUT        = "input"
-	KW_EXTEND       = "extend"
-	KW_DIRECTIVE    = "directive"
-	KW_IMPLEMENTS   = "implements"
-	KW_ON           = "on"
-	KW_TRUE         = "true"
-	KW_FALSE        = "false"
-	KW_NULL         = "null"
+	kwFragment     = "fragment"
+	kwQuery        = "query"
+	kwMutation     = "mutation"
+	kwSubscription = "subscription"
+	kwSchema       = "schema"
+	kwScalar       = "scalar"
+	kwType         = "type"
+	kwInterface    = "interface"
+	kwUnion        = "union"
+	kwEnum         = "enum"
+	kwInput        = "input"
+	kwExtend       = "extend"
+	kwDirective    = "directive"
+	kwImplements   = "implements"
+	kwOn           = "on"
+	kwTrue         = "true"
+	kwFalse        = "false"
+	kwNull         = "null"
 )
 
 const (
-	EOF tokenKind = iota + 1
-	BANG
-	DOLLAR
-	PAREN_L
-	PAREN_R
-	SPREAD
-	COLON
-	EQUALS
-	AT
-	BRACKET_L
-	BRACKET_R
-	BRACE_L
-	PIPE
-	BRACE_R
-	NAME
-	INT
-	FLOAT
-	STRING
-	BLOCK_STRING
-	AMP
+	tokEOF tokenKind = iota + 1
+	tokBang
+	tokDollar
+	tokParenL
+	tokParenR
+	tokSpread
+	tokColon
+	tokEquals
+	tokAt
+	tokBracketL
+	tokBracketR
+	tokBraceL
+	tokPipe
+	tokBraceR
+	tokName
+	tokInt
+	tokFloat
+	tokString
+	tokBlockString
+	tokAmp
 )
 
 var punctuatorKindsMap = map[rune]tokenKind{
-	'!': BANG,
-	'$': DOLLAR,
-	'(': PAREN_L,
-	')': PAREN_R,
-	':': COLON,
-	'=': EQUALS,
-	'@': AT,
-	'[': BRACKET_L,
-	']': BRACKET_R,
-	'{': BRACE_L,
-	'}': BRACE_R,
-	'|': PIPE,
-	'&': AMP,
+	'!': tokBang,
+	'$': tokDollar,
+	'(': tokParenL,
+	')': tokParenR,
+	':': tokColon,
+	'=': tokEquals,
+	'@': tokAt,
+	'[': tokBracketL,
+	']': tokBracketR,
+	'{': tokBraceL,
+	'}': tokBraceR,
+	'|': tokPipe,
+	'&': tokAmp,
 }
 
 func getPunctuatorKind(c rune) tokenKind {
@@ -81,26 +81,26 @@ func getPunctuatorKind(c rune) tokenKind {
 }
 
 var tokenDescription = map[tokenKind]string{
-	EOF:          "EOF",
-	BANG:         "!",
-	DOLLAR:       "$",
-	PAREN_L:      "(",
-	PAREN_R:      ")",
-	SPREAD:       "...",
-	COLON:        ":",
-	EQUALS:       "=",
-	AT:           "@",
-	BRACKET_L:    "[",
-	BRACKET_R:    "]",
-	BRACE_L:      "{",
-	PIPE:         "|",
-	BRACE_R:      "}",
-	NAME:         "Name",
-	INT:          "Int",
-	FLOAT:        "Float",
-	STRING:       "String",
-	BLOCK_STRING: "BlockString",
-	AMP:          "&",
+	tokEOF:         "EOF",
+	tokBang:        "!",
+	tokDollar:      "$",
+	tokParenL:      "(",
+	tokParenR:      ")",
+	tokSpread:      "...",
+	tokColon:       ":",
+	tokEquals:      "=",
+	tokAt:          "@",
+	tokBracketL:    "[",
+	tokBracketR:    "]",
+	tokBraceL:      "{",
+	tokPipe:        "|",
+	tokBraceR:      "}",
+	tokName:        "Name",
+	tokInt:         "Int",
+	tokFloat:       "Float",
+	tokString:      "String",
+	tokBlockString: "BlockString",
+	tokAmp:         "&",
 }
 
 func (kind tokenKind) string() string {
@@ -140,13 +140,25 @@ func (l *lexer) get() *token {
 	return tok
 }
 
-func (l *lexer) prevLocation() *Location {
+func (l *lexer) put() {
+	if l.currentTokenIndex > 0 {
+		l.currentTokenIndex--
+	}
+}
+
+func (l *lexer) putMany(c int) {
+	if l.currentTokenIndex-c >= 0 {
+		l.currentTokenIndex -= c
+	}
+}
+
+func (l *lexer) prevLocation() *location {
 	if l.currentTokenIndex == 0 {
-		loc := &Location{0, 0, l.source}
+		loc := &location{0, 0, l.source}
 
 		return loc
 	} else {
-		return &Location{l.tokens[l.currentTokenIndex-1].Start,
+		return &location{l.tokens[l.currentTokenIndex-1].Start,
 			l.tokens[l.currentTokenIndex-1].End,
 			l.source}
 	}
@@ -154,16 +166,16 @@ func (l *lexer) prevLocation() *Location {
 
 func (l *lexer) current() *token {
 	if l.currentTokenIndex >= len(l.tokens) {
-		return &token{EOF, len(l.source), len(l.source), "EOF"}
+		return &token{tokEOF, len(l.source), len(l.source), "EOF"}
 	}
 
 	return &l.tokens[l.currentTokenIndex]
 }
 
-func (l *lexer) location() *Location {
+func (l *lexer) location() *location {
 	tok := l.current()
 
-	return &Location{tok.Start, tok.End, l.source}
+	return &location{tok.Start, tok.End, l.source}
 }
 
 func (l *lexer) tokenEquals(tokVals ...string) bool {
@@ -227,9 +239,9 @@ func lex(doc string) ([]token, error) {
 				}
 
 				// If the kind of the token is INT, set it to FLOAT.
-				if kind == INT {
-					kind = FLOAT
-				} else if kind == FLOAT {
+				if kind == tokInt {
+					kind = tokFloat
+				} else if kind == tokFloat {
 					// If we met '.' when the token kind is FLOAT, return an error.
 					return nil, errors.New("unexpected character '.' at position " + strconv.Itoa(i))
 				}
@@ -240,7 +252,7 @@ func lex(doc string) ([]token, error) {
 				// Check if the token is a spread operator.
 				if tok == "..." {
 					// Append the token to the tokens slice.
-					tokens = append(tokens, token{SPREAD, i, i, "..."})
+					tokens = append(tokens, token{tokSpread, i, i, "..."})
 
 					// Empty the token.
 					tok = ""
@@ -266,7 +278,7 @@ func lex(doc string) ([]token, error) {
 						blockStringOn = true
 
 						// Set the token kind to block string.
-						kind = BLOCK_STRING
+						kind = tokBlockString
 
 						// Append the '"' runes to the token.
 						tok = tok + string(runes[i:i+3])
@@ -278,7 +290,7 @@ func lex(doc string) ([]token, error) {
 						stringOn = true
 
 						// Set the token king to string
-						kind = STRING
+						kind = tokString
 
 						// Append the '"' rune to the token.
 						tok = tok + string(runes[i])
@@ -407,7 +419,7 @@ func lex(doc string) ([]token, error) {
 				// If the current character is the first character of the token,
 				// set the token kind to NAME.
 				if tok == "" {
-					kind = NAME
+					kind = tokName
 				}
 
 				// Append the character to the token variable.
@@ -422,7 +434,7 @@ func lex(doc string) ([]token, error) {
 				// If the current character (which is a digit) is the first character
 				// of the token, set the kind as an INT.
 				if tok == "" {
-					kind = INT
+					kind = tokInt
 				}
 
 				// Append the character to the token variable.
@@ -441,7 +453,7 @@ func lex(doc string) ([]token, error) {
 	}
 
 	// Append an EOF token to mark the end of the document.
-	tokens = append(tokens, token{EOF, len(doc), len(doc), EOF.string()})
+	tokens = append(tokens, token{tokEOF, len(doc), len(doc), tokEOF.string()})
 
 	// Return the tokens slice.
 	return tokens, nil
