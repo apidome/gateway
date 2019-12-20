@@ -134,30 +134,20 @@ func newlexer(src string) (*lexer, error) {
 func (l *lexer) get() *token {
 	tok := l.current()
 
-	if tok.value != "EOF" {
+	if tok.kind != tokEOF {
 		l.currentTokenIndex++
 	}
 
 	return tok
 }
 
-func (l *lexer) pushIndex() {
-	var newStack []int
-
-	newStack = append(newStack, l.currentTokenIndex)
-
-	newStack = append(newStack, l.revertStack...)
-
-	l.revertStack = newStack
+func (l *lexer) getIndex() int {
+	return l.currentTokenIndex
 }
 
-func (l *lexer) popIndex() {
-	if len(l.revertStack) >= 1 {
-		popped := l.revertStack[0]
-
-		l.revertStack = l.revertStack[1:len(l.revertStack)]
-
-		l.currentTokenIndex = popped
+func (l *lexer) setIndex(i int) {
+	if i >= 0 && i < len(l.tokens) {
+		l.currentTokenIndex = i
 	}
 }
 
