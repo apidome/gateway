@@ -58,6 +58,7 @@ const (
 	tokString
 	tokBlockString
 	tokAmp
+	tokQuote
 )
 
 var punctuatorKindsMap = map[rune]tokenKind{
@@ -74,6 +75,7 @@ var punctuatorKindsMap = map[rune]tokenKind{
 	'}': tokBraceR,
 	'|': tokPipe,
 	'&': tokAmp,
+	'"': tokQuote,
 }
 
 func getPunctuatorKind(c rune) tokenKind {
@@ -101,6 +103,7 @@ var tokenDescription = map[tokenKind]string{
 	tokString:      "String",
 	tokBlockString: "BlockString",
 	tokAmp:         "&",
+	tokQuote:       "\"",
 }
 
 func (kind tokenKind) string() string {
