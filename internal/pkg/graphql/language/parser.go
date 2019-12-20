@@ -21,6 +21,13 @@ func Parse(doc string) (ret *document, err error) {
 
 	ret, err = parseDocument(l)
 
+	// recover syntax errors
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(syntaxError)
+		}
+	}()
+
 	return
 }
 
