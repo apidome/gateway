@@ -24,6 +24,7 @@ func Parse(doc string) (ret *document, err error) {
 	return
 }
 
+// ! Redo error management
 // https://graphql.github.io/graphql-spec/draft/#Document
 func parseDocument(l *lexer) (ret *document, err error) {
 	def, err := parseDefinitions(l)
