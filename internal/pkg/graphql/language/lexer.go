@@ -144,16 +144,6 @@ func (l *lexer) get() *token {
 	return tok
 }
 
-func (l *lexer) getIndex() int {
-	return l.currentTokenIndex
-}
-
-func (l *lexer) setIndex(i int) {
-	if i >= 0 && i < len(l.tokens) {
-		l.currentTokenIndex = i
-	}
-}
-
 func (l *lexer) prevLocation() *location {
 	if l.currentTokenIndex == 0 {
 		loc := &location{0, 0, l.source}
