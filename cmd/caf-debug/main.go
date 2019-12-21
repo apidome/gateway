@@ -9,6 +9,7 @@ import (
 func main() {
 	query := `
 	{
+		"""Hello"""
 		user(id: 4) {
 		  id
 		  name

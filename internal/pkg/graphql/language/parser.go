@@ -77,18 +77,6 @@ func parseDefinition(l *lexer) definition {
 	panic(errors.New("Expecting one of 'executable definition', 'type system definition', 'type system extension'"))
 }
 
-func executableDefinitionExists(l *lexer) bool {
-	return false
-}
-
-func typeSystemDefinitionExists(l *lexer) bool {
-	return false
-}
-
-func typeSystemExtensionExists(l *lexer) bool {
-	return false
-}
-
 // https://graphql.github.io/graphql-spec/draft/#ExecutableDefinition
 func parseExecutableDefinition(l *lexer) executableDefinition {
 	if operationDefinitionExists(l) {
@@ -100,14 +88,6 @@ func parseExecutableDefinition(l *lexer) executableDefinition {
 	}
 
 	panic(errors.New("Expecting one of 'operation definition', 'fragment definition'"))
-}
-
-func operationDefinitionExists(l *lexer) bool {
-	return false
-}
-
-func fragmentDefinitionExists(l *lexer) bool {
-	return false
 }
 
 // https://graphql.github.io/graphql-spec/draft/#TypeSystemDefinition
@@ -125,18 +105,6 @@ func parseTypeSystemDefinition(l *lexer) typeSystemDefinition {
 	}
 
 	panic(errors.New("Expecting one of 'schema definition', 'type definition', 'directive definition'"))
-}
-
-func schemaDefinitionExists(l *lexer) bool {
-	return false
-}
-
-func typeDefinitionExists(l *lexer) bool {
-	return false
-}
-
-func directiveDefinitionExists(l *lexer) bool {
-	return false
 }
 
 // https://graphql.github.io/graphql-spec/draft/#SchemaDefinition
@@ -174,10 +142,6 @@ func parseSchemaDefinition(l *lexer) *schemaDefinition {
 	schDef.Loc = location{locStart, locEnd, l.source}
 
 	return schDef
-}
-
-func directivesExist(l *lexer) bool {
-	return false
 }
 
 // https://graphql.github.io/graphql-spec/draft/#RootOperationTypeDefinition
@@ -266,30 +230,6 @@ func parseTypeDefinition(l *lexer) typeDefinition {
 	panic(errors.New("Expecting a type definition"))
 }
 
-func scalarTypeDefinitionExists(l *lexer) bool {
-	return false
-}
-
-func objectTypeDefinitionExists(l *lexer) bool {
-	return false
-}
-
-func interfaceTypeDefinitionExists(l *lexer) bool {
-	return false
-}
-
-func unionTypeDefinitionExists(l *lexer) bool {
-	return false
-}
-
-func enumTypeDefinitionExists(l *lexer) bool {
-	return false
-}
-
-func inputObjectTypeDefinitionExists(l *lexer) bool {
-	return false
-}
-
 // https://graphql.github.io/graphql-spec/draft/#ScalarTypeDefinition
 func parseScalarTypeDefinition(l *lexer) *scalarTypeDefinition {
 	stp := &scalarTypeDefinition{}
@@ -313,10 +253,6 @@ func parseScalarTypeDefinition(l *lexer) *scalarTypeDefinition {
 	stp.Loc = location{tok.start, l.prevLocation().End, l.source}
 
 	return stp
-}
-
-func descriptionExists(l *lexer) bool {
-	return false
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Description
@@ -359,14 +295,6 @@ func parseObjectTypeDefinition(l *lexer) *objectTypeDefinition {
 	return otd
 }
 
-func implementsInterfacesExists(l *lexer) bool {
-	return false
-}
-
-func fieldsDefinitionExists(l *lexer) bool {
-	return false
-}
-
 // https://graphql.github.io/graphql-spec/draft/#ImplementsInterfaces
 func parseImplementsInterfaces(l *lexer) *implementsInterfaces {
 	ii := &implementsInterfaces{}
@@ -399,229 +327,177 @@ func parseFieldsDefinition(l *lexer) *fieldsDefinition {
 	}
 
 	l.get()
-	/// !here
-	ret = &fieldsDefinition{}
 
 	for !l.tokenEquals(tokBraceR.string()) {
-		var fd *fieldDefinition
-
-		fd, err = parseFieldDefinition(l)
-
-		if err != nil {
-			ret = nil
-			return
-		}
-
-		(*ret) = append(*ret, *fd)
+		(*fd) = append(*fd, *parseFieldDefinition(l))
 	}
 
 	l.get()
 
-	if len(*ret) == 0 {
-		err = errors.New("Expecting at lease one field definition")
-		ret = nil
-		return
+	if len(*fd) == 0 {
+		panic(errors.New("Expecting at lease one field definition"))
 	}
 
-	return
+	return fd
 }
 
 // https://graphql.github.io/graphql-spec/draft/#FieldsDefinition
 func parseFieldDefinition(l *lexer) *fieldDefinition {
+	fd := &fieldDefinition{}
 
 	locStart := l.location().Start
 
-	desc, _ := parseDescription(l)
-
-	nam, err := parseName(l)
-
-	if err != nil {
-		return
+	if descriptionExists(l) {
+		fd.Description = parseDescription(l)
 	}
 
-	argsDef, _ := parseArgumentsDefinition(l)
+	fd.Name = *parseName(l)
+
+	if argumentsDefinitionExist(l) {
+		fd.ArgumentsDefinition = parseArgumentsDefinition(l)
+	}
 
 	if !l.tokenEquals(tokColon.string()) {
-		err = errors.New("Expecting ':' for field definition")
-		return
+		panic(errors.New("Expecting ':' for field definition"))
 	}
 
 	l.get()
 
-	_typ, err := parseType(l)
+	fd.Type = parseType(l)
 
-	if err != nil {
-		return
+	if directivesExist(l) {
+		fd.Directives = parseDirectives(l)
 	}
 
-	dirs, _ := parseDirectives(l)
+	fd.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	ret = &fieldDefinition{}
-
-	ret.Description = desc
-	ret.Name = *nam
-	ret.ArgumentsDefinition = argsDef
-	ret.Type = _typ
-	ret.Directives = dirs
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-	return
+	return fd
 }
 
 // https://graphql.github.io/graphql-spec/draft/#ArgumentsDefinition
 func parseArgumentsDefinition(l *lexer) *argumentsDefinition {
+	ad := &argumentsDefinition{}
 
 	if !l.tokenEquals(tokParenL.string()) {
-		err = errors.New("Expecting '(' for arguments definition")
-		return
+		panic(errors.New("Expecting '(' for arguments definition"))
 	}
 
 	l.get()
-
-	ret = &argumentsDefinition{}
 
 	for !l.tokenEquals(tokParenR.string()) {
-		var ivDef *inputValueDefinition
-
-		ivDef, err = parseInputValueDefinition(l)
-
-		if err != nil {
-			ret = nil
-			return
-		}
-
-		*ret = append(*ret, *ivDef)
+		*ad = append(*ad, *parseInputValueDefinition(l))
 	}
 
 	l.get()
 
-	if len(*ret) == 0 {
-		ret = nil
-		err = errors.New("Expecting at least one input value definitions")
-		return
+	if len(*ad) == 0 {
+		panic(errors.New("Expecting at least one input value definitions"))
 	}
 
-	return
+	return ad
 }
 
 // https://graphql.github.io/graphql-spec/draft/#InputValueDefinition
 func parseInputValueDefinition(l *lexer) *inputValueDefinition {
+	ivd := &inputValueDefinition{}
 
 	locStart := l.location().Start
 
-	desc, _ := parseDescription(l)
-
-	nam, err := parseName(l)
-
-	if err != nil {
-		return
+	if descriptionExists(l) {
+		ivd.Description = parseDescription(l)
 	}
 
+	ivd.Name = *parseName(l)
+
 	if !l.tokenEquals(tokColon.string()) {
-		err = errors.New("Expecting ':' for input value definition")
-		return
+		panic(errors.New("Expecting ':' for input value definition"))
 	}
 
 	l.get()
 
-	_typ, err := parseType(l)
+	ivd.Type = parseType(l)
 
-	if err != nil {
-		return
+	if defaultValueExists(l) {
+		ivd.DefaultValue = parseDefaultValue(l)
 	}
 
-	defVal, _ := parseDefaultValue(l)
+	if directivesExist(l) {
+		ivd.Directives = parseDirectives(l)
+	}
 
-	dirs, _ := parseDirectives(l)
+	ivd.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	ret = &inputValueDefinition{}
-
-	ret.Description = desc
-	ret.Name = *nam
-	ret.Type = _typ
-	ret.DefaultValue = defVal
-	ret.Directives = dirs
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-	return
+	return ivd
 }
 
 // https://graphql.github.io/graphql-spec/draft/#InterfaceTypeDefinition
 func parseInterfaceTypeDefinition(l *lexer) *interfaceTypeDefinition {
+	itd := &interfaceTypeDefinition{}
 
 	locStart := l.location().Start
 
-	desc, _ := parseDescription(l)
+	if descriptionExists(l) {
+		itd.Description = parseDescription(l)
+	}
 
 	if !l.tokenEquals(tsdlInterface) {
-		err = errors.New("Expecting 'interface' keyword for interface type definition")
-		return
+		panic(errors.New("Expecting 'interface' keyword for interface type definition"))
 	}
 
 	l.get()
 
-	nam, err := parseName(l)
+	itd.Name = *parseName(l)
 
-	if err != nil {
-		return
+	if directivesExist(l) {
+		itd.Directives = parseDirectives(l)
 	}
 
-	dirs, _ := parseDirectives(l)
+	if fieldsDefinitionExists(l) {
+		itd.FieldsDefinition = parseFieldsDefinition(l)
+	}
 
-	fds, _ := parseFieldsDefinition(l)
+	itd.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	ret = &interfaceTypeDefinition{}
-
-	ret.Description = desc
-	ret.Directives = dirs
-	ret.FieldsDefinition = fds
-	ret.Name = *nam
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-	return
+	return itd
 }
 
 // https://graphql.github.io/graphql-spec/draft/#UnionTypeDefinition
 func parseUnionTypeDefinition(l *lexer) *unionTypeDefinition {
+	utd := &unionTypeDefinition{}
 
 	locStart := l.location().Start
 
-	desc, _ := parseDescription(l)
+	if descriptionExists(l) {
+		utd.Description = parseDescription(l)
+	}
 
 	if !l.tokenEquals(tsdlUnion) {
-		err = errors.New("Expecting 'union' keyowrd for union type definition")
-		return
+		panic(errors.New("Expecting 'union' keyowrd for union type definition"))
 	}
 
 	l.get()
 
-	nam, err := parseName(l)
+	utd.Name = *parseName(l)
 
-	if err != nil {
-		return
+	if directivesExist(l) {
+		utd.Directives = parseDirectives(l)
 	}
 
-	dirs, _ := parseDirectives(l)
+	if unionMemberTypesExist(l) {
+		utd.UnionMemberTypes = parseUnionMemberTypes(l)
+	}
 
-	umt, _ := parseUnionMemberTypes(l)
+	utd.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	ret = &unionTypeDefinition{}
-
-	ret.Description = desc
-	ret.Name = *nam
-	ret.Directives = dirs
-	ret.UnionMemberTypes = umt
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-	return
+	return utd
 }
 
 // https://graphql.github.io/graphql-spec/draft/#UnionMemberTypes
 func parseUnionMemberTypes(l *lexer) *unionMemberTypes {
+	umt := &unionMemberTypes{}
 
 	if !l.tokenEquals(tokEquals.string()) {
-		err = errors.New("Expecting '=' for union member types")
-		return
+		panic(errors.New("Expecting '=' for union member types"))
 	}
 
 	l.get()
@@ -630,685 +506,518 @@ func parseUnionMemberTypes(l *lexer) *unionMemberTypes {
 		l.get()
 	}
 
-	nt, err := parseNamedType(l)
-
-	if err != nil {
-		return
-	}
-
-	ret = &unionMemberTypes{}
-
-	*ret = append(*ret, *nt)
+	*umt = append(*umt, *parseNamedType(l))
 
 	for l.tokenEquals(tokPipe.string()) {
 		l.get()
 
-		nt, err = parseNamedType(l)
-
-		if err != nil {
-			return nil, err
-		}
-
-		*ret = append(*ret, *nt)
+		*umt = append(*umt, *parseNamedType(l))
 	}
 
-	if len(*ret) == 0 {
-		ret = nil
-		err = errors.New("Expecting at least one union member type")
-		return
+	if len(*umt) == 0 {
+		panic(errors.New("Expecting at least one union member type"))
 	}
 
-	return
+	return umt
 }
 
 // https://graphql.github.io/graphql-spec/draft/#EnumTypeDefinition
 func parseEnumTypeDefinition(l *lexer) *enumTypeDefinition {
+	etd := &enumTypeDefinition{}
 
 	locStart := l.location().Start
 
-	desc, _ := parseDescription(l)
+	if descriptionExists(l) {
+		etd.Description = parseDescription(l)
+	}
 
 	if !l.tokenEquals(tsdlEnum) {
-		err = errors.New("Expecting 'enum' keyword for enum type definition")
-		return
+		panic(errors.New("Expecting 'enum' keyword for enum type definition"))
 	}
 
 	l.get()
 
-	nam, err := parseName(l)
+	etd.Name = *parseName(l)
 
-	if err != nil {
-		return
+	if directivesExist(l) {
+		etd.Directives = parseDirectives(l)
 	}
 
-	dirs, _ := parseDirectives(l)
+	if enumValuesDefinitionExist(l) {
+		etd.EnumValuesDefinition = parseEnumValuesDefinition(l)
+	}
 
-	evd, _ := parseEnumValuesDefinition(l)
+	etd.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	ret = &enumTypeDefinition{}
-
-	ret.Description = desc
-	ret.Name = *nam
-	ret.Directives = dirs
-	ret.EnumValuesDefinition = evd
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-	return
+	return etd
 }
 
 // https://graphql.github.io/graphql-spec/draft/#EnumValuesDefinition
 func parseEnumValuesDefinition(l *lexer) *enumValuesDefinition {
+	evd := &enumValuesDefinition{}
 
 	if !l.tokenEquals(tokBraceL.string()) {
-		err = errors.New("Expecting '{' for enum values definition")
-		return
+		panic(errors.New("Expecting '{' for enum values definition"))
 	}
 
 	l.get()
-
-	ret = &enumValuesDefinition{}
 
 	for !l.tokenEquals(tokBraceR.string()) {
-		var evd *enumValueDefinition
-
-		evd, err = parseEnumValueDefinition(l)
-
-		if err != nil {
-			ret = nil
-			return
-		}
-
-		*ret = append(*ret, *evd)
+		*evd = append(*evd, *parseEnumValueDefinition(l))
 	}
 
 	l.get()
 
-	if len(*ret) == 0 {
-		err = errors.New("Expecting at least one enum value definition")
-		ret = nil
-		return
+	if len(*evd) == 0 {
+		panic(errors.New("Expecting at least one enum value definition"))
 	}
 
-	return
+	return evd
 }
 
 // https://graphql.github.io/graphql-spec/draft/#EnumValuesDefinition
 func parseEnumValueDefinition(l *lexer) *enumValueDefinition {
+	evd := &enumValueDefinition{}
 
 	locStart := l.location().Start
 
-	desc, _ := parseDescription(l)
-
-	ev, err := parseEnumValue(l)
-
-	if err != nil {
-		return
+	if descriptionExists(l) {
+		evd.Description = parseDescription(l)
 	}
 
-	dirs, _ := parseDirectives(l)
+	evd.EnumValue = *parseEnumValue(l)
 
-	ret = &enumValueDefinition{}
+	if directivesExist(l) {
+		evd.Directives = parseDirectives(l)
+	}
 
-	ret.Description = desc
-	ret.EnumValue = *ev
-	ret.Directives = dirs
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
+	evd.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	return
+	return evd
 }
 
 // https://graphql.github.io/graphql-spec/draft/#InputObjectTypeDefinition
 func parseInputObjectTypeDefinition(l *lexer) *inputObjectTypeDefinition {
+	iotd := &inputObjectTypeDefinition{}
 
 	locStart := l.location().Start
 
-	desc, _ := parseDescription(l)
+	if descriptionExists(l) {
+		iotd.Description = parseDescription(l)
+	}
 
 	if !l.tokenEquals(kwInput) {
-		err = errors.New("Expecting 'input' keyword for input object type definition")
-		return
+		panic(errors.New("Expecting 'input' keyword for input object type definition"))
 	}
 
 	l.get()
 
-	nam, err := parseName(l)
+	iotd.Name = *parseName(l)
 
-	if err != nil {
-		return
+	if directivesExist(l) {
+		iotd.Directives = parseDirectives(l)
 	}
 
-	dirs, _ := parseDirectives(l)
+	if inputFieldsDefinitionExists(l) {
+		iotd.InputFieldsDefinition = parseInputFieldsDefinition(l)
+	}
 
-	ifds, _ := parseInputFieldsDefinition(l)
+	iotd.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	ret = &inputObjectTypeDefinition{}
-
-	ret.Description = desc
-	ret.Directives = dirs
-	ret.Name = *nam
-	ret.InputFieldsDefinition = ifds
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-	return ret, nil
+	return iotd
 }
 
 // https://graphql.github.io/graphql-spec/draft/#InputFieldsDefinition
 func parseInputFieldsDefinition(l *lexer) *inputFieldsDefinition {
+	ifd := &inputFieldsDefinition{}
 
 	if !l.tokenEquals(tokBraceL.string()) {
-		err = errors.New("Expecting '{' for input fields definition")
-		return
+		panic(errors.New("Expecting '{' for input fields definition"))
 	}
 
 	l.get()
-
-	ret = &inputFieldsDefinition{}
 
 	for !l.tokenEquals(tokBraceR.string()) {
-		var ivd *inputValueDefinition
-
-		ivd, err = parseInputValueDefinition(l)
-
-		if err != nil {
-			return
-		}
-
-		*ret = append(*ret, *ivd)
+		*ifd = append(*ifd, *parseInputValueDefinition(l))
 	}
 
 	l.get()
 
-	if len(*ret) == 0 {
-		ret = nil
-		err = errors.New("Expecting at least one input field definition")
-		return
+	if len(*ifd) == 0 {
+		panic(errors.New("Expecting at least one input field definition"))
 	}
 
-	return
+	return ifd
 }
 
 // https://graphql.github.io/graphql-spec/draft/#DirectiveDefinition
 func parseDirectiveDefinition(l *lexer) *directiveDefinition {
+	dd := &directiveDefinition{}
 
 	locStart := l.location().Start
 
-	desc, _ := parseDescription(l)
+	if descriptionExists(l) {
+		dd.Description = parseDescription(l)
+	}
 
 	if !l.tokenEquals(kwDirective) {
-		err = errors.New("Expecting 'directive' keyword for directive definition")
-		return
+		panic(errors.New("Expecting 'directive' keyword for directive definition"))
 	}
 
 	l.get()
 
 	if !l.tokenEquals(tokAt.string()) {
-		err = errors.New("Expecting '@' for directive definition")
-		return
+		panic(errors.New("Expecting '@' for directive definition"))
 	}
 
 	l.get()
 
-	nam, err := parseName(l)
+	dd.Name = *parseName(l)
 
-	if err != nil {
-		return
+	if argumentsDefinitionExist(l) {
+		dd.ArgumentsDefinition = parseArgumentsDefinition(l)
 	}
-
-	argsDef, _ := parseArgumentsDefinition(l)
 
 	if !l.tokenEquals(kwOn) {
-		err = errors.New("Expecting 'on' keyworkd for directive definition")
-		return
+		panic(errors.New("Expecting 'on' keyworkd for directive definition"))
 	}
 
 	l.get()
 
-	dls, err := parseDirectiveLocations(l)
+	dd.DirectiveLocations = *parseDirectiveLocations(l)
 
-	if err != nil {
-		return
-	}
+	dd.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	ret = &directiveDefinition{}
-
-	ret.Description = desc
-	ret.Name = *nam
-	ret.ArgumentsDefinition = argsDef
-	ret.DirectiveLocations = *dls
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-	return
+	return dd
 }
 
 // https://graphql.github.io/graphql-spec/draft/#DirectiveLocations
 func parseDirectiveLocations(l *lexer) *directiveLocations {
-
-	ret = &directiveLocations{}
+	dl := &directiveLocations{}
 
 	if l.tokenEquals(tokPipe.string()) {
 		l.get()
 	}
 
-	dl, err := parseDirectiveLocation(l)
-
-	if err != nil {
-		ret = nil
-		return
-	}
-
-	*ret = append(*ret, *dl)
+	*dl = append(*dl, *parseDirectiveLocation(l))
 
 	for l.tokenEquals(tokPipe.string()) {
 		l.get()
 
-		var dl *directiveLocation
-
-		dl, err = parseDirectiveLocation(l)
-
-		if err != nil {
-			return
-		}
-
-		*ret = append(*ret, *dl)
+		*dl = append(*dl, *parseDirectiveLocation(l))
 	}
 
-	return
+	return dl
 }
 
 // https://graphql.github.io/graphql-spec/draft/#TypeExtension
 func parseTypeExtension(l *lexer) typeExtension {
-
-	ret, _ = parseScalarTypeExtension(l)
-
-	if ret != nil {
-		return
+	if scalarTypeExtensionExists(l) {
+		return parseScalarTypeExtension(l)
 	}
 
-	ret, _ = parseObjectTypeExtension(l)
-
-	if ret != nil {
-		return
+	if objectTypeExtensionExists(l) {
+		return parseObjectTypeExtension(l)
 	}
 
-	ret, _ = parseInterfaceTypeExtension(l)
-
-	if ret != nil {
-		return
+	if interfaceTypeExtensionExists(l) {
+		return parseInterfaceTypeExtension(l)
 	}
 
-	ret, _ = parseUnionTypeExtension(l)
-
-	if ret != nil {
-		return
+	if unionTypeExtensionExists(l) {
+		return parseUnionTypeExtension(l)
 	}
 
-	ret, _ = parseEnumTypeExtension(l)
-
-	if ret != nil {
-		return
+	if enumTypeExtensionExists(l) {
+		return parseEnumTypeExtension(l)
 	}
 
-	ret, _ = parseInputObjectTypeExtension(l)
-
-	if ret != nil {
-		return
+	if inputObjectTypeExtensionExists(l) {
+		return parseInputObjectTypeExtension(l)
 	}
 
-	err = errors.New("Expecting type extension")
-	return
+	panic(errors.New("Expecting type extension"))
 }
 
 // https://graphql.github.io/graphql-spec/draft/#ScalarTypeExtension
 func parseScalarTypeExtension(l *lexer) *scalarTypeExtension {
+	ste := &scalarTypeExtension{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(kwExtend, kwScalar) {
-		err = errors.New("Expecting 'extend scalar' keywords for scalar type extension")
-		return
+		panic(errors.New("Expecting 'extend scalar' keywords for scalar type extension"))
 	}
 
 	l.get()
 	l.get()
 
-	nam, err := parseName(l)
+	ste.Name = *parseName(l)
 
-	if err != nil {
-		return
-	}
+	ste.Directives = *parseDirectives(l)
 
-	dirs, err := parseDirectives(l)
+	ste.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	if err != nil {
-		return
-	}
-
-	ret = &scalarTypeExtension{}
-
-	ret.Name = *nam
-	ret.Directives = *dirs
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-	return
+	return ste
 }
 
 // https://graphql.github.io/graphql-spec/draft/#ObjectTypeExtension
 func parseObjectTypeExtension(l *lexer) *objectTypeExtension {
+	ote := &objectTypeExtension{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(kwExtend, kwType) {
-		err = errors.New("Expecting 'extend type' keywords for object type extension")
-		return
+		panic(errors.New("Expecting 'extend type' keywords for object type extension"))
 	}
 
 	l.get()
 	l.get()
 
-	nam, err := parseName(l)
+	ote.Name = *parseName(l)
 
-	if err != nil {
-		return
+	if implementsInterfacesExists(l) {
+		ote.ImplementsInterfaces = parseImplementsInterfaces(l)
 	}
 
-	ii, _ := parseImplementsInterfaces(l)
-
-	dirs, _ := parseDirectives(l)
-
-	fds, _ := parseFieldsDefinition(l)
-
-	if ii == nil && dirs == nil && fds == nil {
-		err = errors.New("Expecting at least one of 'implements interface', 'directives', 'fields definition' for object type extension")
-		return
+	if directivesExist(l) {
+		ote.Directives = parseDirectives(l)
 	}
 
-	ret = &objectTypeExtension{}
+	if fieldsDefinitionExists(l) {
+		ote.FieldsDefinition = parseFieldsDefinition(l)
+	}
+	if ote.ImplementsInterfaces == nil &&
+		ote.Directives == nil &&
+		ote.FieldsDefinition == nil {
+		panic(errors.New("Expecting at least one of 'implements interface', 'directives', 'fields definition' for object type extension"))
+	}
 
-	ret.Name = *nam
-	ret.ImplementsInterfaces = ii
-	ret.Directives = dirs
-	ret.FieldsDefinition = fds
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
+	ote.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	return
+	return ote
 }
 
 // https://graphql.github.io/graphql-spec/draft/#InterfaceTypeExtension
 func parseInterfaceTypeExtension(l *lexer) *interfaceTypeExtension {
+	ite := &interfaceTypeExtension{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(kwExtend, kwInterface) {
-		err = errors.New("Expecting 'extend interface' keywords for interface type extension")
-		return
+		panic(errors.New("Expecting 'extend interface' keywords for interface type extension"))
 	}
 
 	l.get()
 	l.get()
 
-	nam, err := parseName(l)
+	ite.Name = *parseName(l)
 
-	if err != nil {
-		return
+	if directivesExist(l) {
+		ite.Directives = parseDirectives(l)
 	}
 
-	dirs, _ := parseDirectives(l)
-
-	fds, _ := parseFieldsDefinition(l)
-
-	if dirs == nil && fds == nil {
-		err = errors.New("Expecting at least one of 'directives', 'fields definition' for interface type extension")
-		return
+	if fieldsDefinitionExists(l) {
+		ite.FieldsDefinition = parseFieldsDefinition(l)
 	}
 
-	ret = &interfaceTypeExtension{}
+	if ite.Directives == nil && ite.FieldsDefinition == nil {
+		panic(errors.New("Expecting at least one of 'directives', 'fields definition' for interface type extension"))
+	}
 
-	ret.Name = *nam
-	ret.Directives = dirs
-	ret.FieldsDefinition = fds
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
+	ite.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	return
+	return ite
 }
 
 // https://graphql.github.io/graphql-spec/draft/#UnionTypeExtension
 func parseUnionTypeExtension(l *lexer) *unionTypeExtension {
+	ute := &unionTypeExtension{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(kwExtend, tsdlUnion) {
-		err = errors.New("Expecting 'extend union' keywords for union type extension")
-		return
+		panic(errors.New("Expecting 'extend union' keywords for union type extension"))
 	}
 
 	l.get()
 	l.get()
 
-	nam, err := parseName(l)
+	ute.Name = *parseName(l)
 
-	if err != nil {
-		return
+	if directivesExist(l) {
+		ute.Directives = parseDirectives(l)
 	}
 
-	dirs, _ := parseDirectives(l)
-
-	umt, _ := parseUnionMemberTypes(l)
-
-	if dirs == nil && umt == nil {
-		err = errors.New("Expecting at  least one of 'directives', 'union member types' for union type extension")
-		return
+	if unionMemberTypesExist(l) {
+		ute.UnionMemberTypes = parseUnionMemberTypes(l)
 	}
 
-	ret = &unionTypeExtension{}
+	if ute.Directives == nil && ute.UnionMemberTypes == nil {
+		panic(errors.New("Expecting at  least one of 'directives', 'union member types' for union type extension"))
+	}
 
-	ret.Name = *nam
-	ret.Directives = dirs
-	ret.UnionMemberTypes = umt
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
+	ute.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	return
+	return ute
 }
 
 // https://graphql.github.io/graphql-spec/draft/#EnumTypeExtension
 func parseEnumTypeExtension(l *lexer) *enumTypeExtension {
+	ete := &enumTypeExtension{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(kwExtend, tsdlEnum) {
-		err = errors.New("Expecting 'extend enum' keywords for enum type extension")
-		return
+		panic(errors.New("Expecting 'extend enum' keywords for enum type extension"))
 	}
 
 	l.get()
 	l.get()
 
-	nam, err := parseName(l)
+	ete.Name = *parseName(l)
 
-	if err != nil {
-		return
+	if directivesExist(l) {
+		ete.Directives = parseDirectives(l)
 	}
 
-	dirs, _ := parseDirectives(l)
-
-	evd, _ := parseEnumValuesDefinition(l)
-
-	if dirs == nil && evd == nil {
-		err = errors.New("Expecting at least one of 'directives', 'enum values definition' for enum type extension")
-		return
+	if enumValuesDefinitionExist(l) {
+		ete.EnumValuesDefinition = parseEnumValuesDefinition(l)
 	}
 
-	ret = &enumTypeExtension{}
+	if ete.Directives == nil && ete.EnumValuesDefinition == nil {
+		panic(errors.New("Expecting at least one of 'directives', 'enum values definition' for enum type extension"))
+	}
 
-	ret.Name = *nam
-	ret.Directives = dirs
-	ret.EnumValuesDefinition = evd
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
+	ete.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	return
+	return ete
 }
 
 // https://graphql.github.io/graphql-spec/draft/#DirectiveLocation
 func parseDirectiveLocation(l *lexer) *directiveLocation {
-
-	edl, err := parseExecutableDirectiveLocation(l)
-
-	if err == nil {
-		ret = (*directiveLocation)(edl)
-		return
+	if executableDirectiveLocationExists(l) {
+		return (*directiveLocation)(parseExecutableDirectiveLocation(l))
 	}
 
-	tsdl, err := parseTypeSystemDirectiveLocation(l)
-
-	if err != nil {
-		err = errors.Wrap(err, "Expecting a directive location")
-		ret = nil
-		return
+	if typeSystemDirectiveLocationExists(l) {
+		return (*directiveLocation)(parseTypeSystemDirectiveLocation(l))
 	}
 
-	ret = (*directiveLocation)(tsdl)
-
-	return
+	panic(errors.New("Expecting a directive location"))
 }
 
 // https://graphql.github.io/graphql-spec/draft/#ExecutableDirectiveLocation
 func parseExecutableDirectiveLocation(l *lexer) *executableDirectiveLocation {
-
 	tok := l.current()
 
 	for i := range executableDirectiveLocations {
 		if string(executableDirectiveLocations[i]) == tok.value {
 			l.get()
 
-			ret = &executableDirectiveLocations[i]
-
-			return
+			return &executableDirectiveLocations[i]
 		}
 	}
 
-	err = errors.New("Expecting executable directive location")
-	return
+	panic(errors.New("Expecting executable directive location"))
 }
 
 // https://graphql.github.io/graphql-spec/draft/#TypeSystemDirectiveLocation
 func parseTypeSystemDirectiveLocation(l *lexer) *typeSystemDirectiveLocation {
-
 	tok := l.current()
 
 	for i := range typeSystemDirectiveLocations {
 		if string(typeSystemDirectiveLocations[i]) == tok.value {
 			l.get()
 
-			ret = &typeSystemDirectiveLocations[i]
-
-			return
+			return &typeSystemDirectiveLocations[i]
 		}
 	}
 
-	err = errors.New("Expecting type systen directive location")
-	return
+	panic(errors.New("Expecting type systen directive location"))
 }
 
 // https://graphql.github.io/graphql-spec/draft/#TypeSystemExtension
 func parseTypeSystemExtension(l *lexer) typeSystemExtension {
-
-	ret, err = parseSchemaExtension(l)
-
-	if err != nil {
-		return
+	if schemaExtensionExists(l) {
+		return parseSchemaExtension(l)
 	}
 
-	ret, err = parseTypeExtension(l)
-
-	if err != nil {
-		err = errors.Wrap(err, "Expecting type system extension")
-		ret = nil
-		return
+	if typeExtensionExists(l) {
+		return parseTypeExtension(l)
 	}
 
-	return
+	panic(errors.New("Expecting type system extension"))
 }
 
 // https://graphql.github.io/graphql-spec/draft/#SchemaExtension
 func parseSchemaExtension(l *lexer) *schemaExtension {
+	se := &schemaExtension{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(kwExtend, kwSchema) {
-		err = errors.New("Expecting 'extend schema' keywords for schema extension")
-		return
+		panic(errors.New("Expecting 'extend schema' keywords for schema extension"))
 	}
 
 	l.get()
 	l.get()
 
-	dirs, _ := parseDirectives(l)
+	if directivesExist(l) {
+		se.Directives = parseDirectives(l)
+	}
 
 	if !l.tokenEquals(tokBraceL.string()) {
-		err = errors.New("Expecting '{' for schema extension")
-		return
+		panic(errors.New("Expecting '{' for schema extension"))
 	}
 
 	l.get()
 
-	rotds, _ := parseRootOperationTypeDefinitions(l)
-
-	if !l.tokenEquals(tokBraceR.string()) {
-		err = errors.New("Expecting '}' for schema extension")
-		return
+	if rootOperationTypeDefinitionsExist(l) {
+		se.RootOperationTypeDefinitions = parseRootOperationTypeDefinitions(l)
 	}
 
 	l.get()
 
-	if dirs == nil && rotds == nil {
-		err = errors.New("Expecting directives or root operation type definitions for schema extension")
-		return
+	if se.Directives == nil && se.RootOperationTypeDefinitions == nil {
+		panic(errors.New("Expecting directives or root operation type definitions for schema extension"))
 	}
 
-	ret = &schemaExtension{}
+	se.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	ret.Directives = dirs
-	ret.RootOperationTypeDefinitions = rotds
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-	return
+	return se
 }
 
 // https://graphql.github.io/graphql-spec/draft/#InputObjectTypeExtension
 func parseInputObjectTypeExtension(l *lexer) *inputObjectTypeExtension {
+	iote := &inputObjectTypeExtension{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(kwExtend, kwInput) {
-		err = errors.New("Expecting 'extend' keyword for input object type extension")
-		return
+		panic(errors.New("Expecting 'extend' keyword for input object type extension"))
 	}
 
 	l.get()
 	l.get()
 
-	nam, err := parseName(l)
+	iote.Name = *parseName(l)
 
-	if err != nil {
-		return
+	if directivesExist(l) {
+		iote.Directives = parseDirectives(l)
 	}
 
-	dirs, _ := parseDirectives(l)
-
-	idfs, _ := parseInputFieldsDefinition(l)
-
-	if dirs == nil && idfs == nil {
-		err = errors.New("Expecting at lease one of 'directives', 'input fields definition' fo input object type extension")
-		return
+	if inputFieldsDefinitionExists(l) {
+		iote.InputFieldsDefinition = parseInputFieldsDefinition(l)
 	}
 
-	ret = &inputObjectTypeExtension{}
+	if iote.Directives == nil && iote.InputFieldsDefinition == nil {
+		panic(errors.New("Expecting at lease one of 'directives', 'input fields definition' fo input object type extension"))
+	}
 
-	ret.Name = *nam
-	ret.Directives = dirs
-	ret.InputFieldsDefinition = idfs
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
+	iote.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	return
+	return iote
 }
 
 // https://graphql.github.io/graphql-spec/draft/#OperationDefinition
@@ -1319,55 +1028,41 @@ func parseOperationDefinition(l *lexer) *operationDefinition {
 	// Shorthand query
 	// https://graphql.github.io/graphql-spec/draft/#sec-Language.Operations.Query-shorthand
 	if l.tokenEquals(tokBraceL.string()) {
-		var shorthandQuery *selectionSet
+		od := &operationDefinition{}
+		od.OperationType = kwQuery
+		od.SelectionSet = *parseSelectionSet(l)
+		od.Loc = location{locStart, l.prevLocation().End, l.source}
 
-		shorthandQuery, err = parseSelectionSet(l)
-
-		if err != nil {
-			return
-		}
-
-		ret = &operationDefinition{}
-
-		ret.OperationType = kwQuery
-		ret.SelectionSet = *shorthandQuery
-		ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-		return
+		return od
 	} else if !l.tokenEquals(kwQuery) &&
 		!l.tokenEquals(kwMutation) &&
 		!l.tokenEquals(kwSubscription) {
-		err = errors.New("Expecting one of 'query', 'mutation', 'subscription' for operation definition")
-		return
+		panic(errors.New("Expecting one of 'query', 'mutation', 'subscription' for operation definition"))
 	} else {
+		od := &operationDefinition{}
+
 		tok := l.get()
 
 		opType := tok.value
 
-		nam, _ := parseName(l)
-
-		varDef, _ := parseVariableDefinitions(l)
-
-		directives, _ := parseDirectives(l)
-
-		var selSet *selectionSet
-
-		selSet, err = parseSelectionSet(l)
-
-		if err != nil {
-			return
+		if nameExists(l) {
+			od.Name = parseName(l)
 		}
 
-		ret = &operationDefinition{}
+		if variableDefinitionsExist(l) {
+			od.VariableDefinitions = parseVariableDefinitions(l)
+		}
 
-		ret.OperationType = operationType(opType)
-		ret.Name = nam
-		ret.VariableDefinitions = varDef
-		ret.Directives = directives
-		ret.SelectionSet = *selSet
-		ret.Loc = location{locStart, tok.end, l.source}
+		if directivesExist(l) {
+			od.Directives = parseDirectives(l)
+		}
 
-		return
+		od.SelectionSet = *parseSelectionSet(l)
+
+		od.OperationType = operationType(opType)
+		od.Loc = location{locStart, tok.end, l.source}
+
+		return od
 	}
 }
 
@@ -1377,938 +1072,870 @@ func parseFragmentDefinition(l *lexer) *fragmentDefinition {
 	locStart := l.location().Start
 
 	if !l.tokenEquals(kwFragment) {
-		err = errors.New("Expecting fragment keyword")
-		return
+		panic(errors.New("Expecting fragment keyword"))
 	} else {
+		fd := &fragmentDefinition{}
+
 		l.get()
 
-		var nam *fragmentName
+		fd.FragmentName = *parseFragmentName(l)
 
-		nam, err = parseFragmentName(l)
-
-		if err != nil {
-			return
+		if fd.FragmentName.Value == kwOn {
+			panic(errors.New("Fragment name cannot be 'on'"))
 		}
 
-		if nam.Value == kwOn {
-			err = errors.New("Fragment name cannot be 'on'")
-			return
+		fd.TypeCondition = *parseTypeCondition(l)
+
+		if directivesExist(l) {
+			fd.Directives = parseDirectives(l)
 		}
 
-		var typeCond *typeCondition
+		fd.SelectionSet = *parseSelectionSet(l)
+		fd.Loc = location{locStart, l.prevLocation().End, l.source}
 
-		typeCond, err = parseTypeCondition(l)
-
-		if err != nil {
-			return
-		}
-
-		directives, _ := parseDirectives(l)
-
-		var selectionSet *selectionSet
-
-		selectionSet, err = parseSelectionSet(l)
-
-		if err != nil {
-			return
-		}
-
-		ret = &fragmentDefinition{}
-
-		ret.FragmentName = *nam
-		ret.TypeCondition = *typeCond
-		ret.Directives = directives
-		ret.SelectionSet = *selectionSet
-		ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-		return
+		return fd
 	}
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Name
 func parseName(l *lexer) *name {
-
 	tok := l.current()
 
 	pattern := "^[_A-Za-z][_0-9A-Za-z]*$"
 
 	// If the current token is not a Name, return nil
 	if tok.kind != tokName {
-		err = errors.New("Not a name")
-		return
+		panic(errors.New("Not a name"))
 	}
 
 	// Check if the given name matches the regex provided by graphql spec at
 	// https://graphql.github.io/graphql-spec/draft/#Name
 	match, err := regexp.MatchString(pattern, tok.value)
 	if err != nil {
-		err = errors.Wrap(err, "failed to parse name: ")
-		return
+		panic(errors.Wrap(err, "failed to parse name: "))
 	}
 
 	// If the name does not match the requirements, return an error.
 	if !match {
-		err = errors.New("invalid name - " + tok.value)
-		return
+		panic(errors.New("invalid name - " + tok.value))
 	}
 
 	l.get()
 
-	ret = &name{}
+	nm := &name{}
 
 	// Populate the Name struct.
-	ret.Value = tok.value
-	ret.Loc.Start = tok.start
-	ret.Loc.End = tok.end
-	ret.Loc.Source = l.source
+	nm.Value = tok.value
+	nm.Loc.Start = tok.start
+	nm.Loc.End = tok.end
+	nm.Loc.Source = l.source
 
 	// Return the AST Name object.
-	return
+	return nm
 }
 
 // https://graphql.github.io/graphql-spec/draft/#VariableDefinition
 func parseVariableDefinitions(l *lexer) *variableDefinitions {
-
 	if !l.tokenEquals(tokParenL.string()) {
-		err = errors.New("Expecting '(' opener for variable definitions")
-		return
+		panic(errors.New("Expecting '(' opener for variable definitions"))
 	} else {
 		l.get()
 
-		ret = &variableDefinitions{}
+		vd := &variableDefinitions{}
 
 		for !l.tokenEquals(tokParenR.string()) {
-			var varDef *variableDefinition
-
-			varDef, err = parseVariableDefinition(l)
-
-			if err != nil {
-				return
-			}
-
-			*ret = append(*ret, *varDef)
+			*vd = append(*vd, *parseVariableDefinition(l))
 		}
 
 		l.get()
 
-		if len(*ret) == 0 {
-			err = errors.New("Expecting at least one variable definition")
-			return
+		if len(*vd) == 0 {
+			panic(errors.New("Expecting at least one variable definition"))
 		}
 
-		return
+		return vd
 	}
 }
 
 // https://graphql.github.io/graphql-spec/draft/#VariableDefinition
 func parseVariableDefinition(l *lexer) *variableDefinition {
+	vd := &variableDefinition{}
 
 	locStart := l.location().Start
 
-	_var, err := parseVariable(l)
-
-	if err != nil {
-		return
-	}
+	vd.Variable = *parseVariable(l)
 
 	if !l.tokenEquals(tokColon.string()) {
-		err = errors.New("Expecting a colon after variable name")
-		return
+		panic(errors.New("Expecting a colon after variable name"))
 	}
 
-	_typ, err := parseType(l)
+	vd.Type = parseType(l)
 
-	if err != nil {
-		return
+	if defaultValueExists(l) {
+		vd.DefaultValue = parseDefaultValue(l)
 	}
 
-	locEnd := _typ.Location().End
+	if directivesExist(l) {
+		vd.Directives = parseDirectives(l)
+	}
 
-	defVal, _ := parseDefaultValue(l)
+	vd.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	directives, _ := parseDirectives(l)
-
-	ret = &variableDefinition{}
-
-	ret.Variable = *_var
-	ret.Type = _typ
-	ret.DefaultValue = defVal
-	ret.Directives = directives
-	ret.Loc = location{locStart, locEnd, l.source}
-
-	return
+	return vd
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Type
 func parseType(l *lexer) _type {
-
-	ret, err = parseNamedType(l)
-
-	if err == nil {
-		return
+	if namedTypeExists(l) {
+		return parseNamedType(l)
 	}
 
-	ret, err = parseListType(l)
-
-	if err == nil {
-		return
+	if listTypeExists(l) {
+		return parseListType(l)
 	}
 
-	ret, err = parseNonNullType(l)
-
-	if err != nil {
-		err = errors.Wrap(err, "Expecting a type")
-		return
+	if nonNullTypeExists(l) {
+		return parseNonNullType(l)
 	}
 
-	return
+	panic(errors.New("Expecting a type"))
 }
 
 // https://graphql.github.io/graphql-spec/draft/#ListType
 func parseListType(l *lexer) *listType {
+	lt := &listType{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(tokBracketL.string()) {
-		err = errors.New("Expecting '[' for list type")
-		return
+		panic(errors.New("Expecting '[' for list type"))
 	}
 
 	l.get()
 
-	_typ, err := parseType(l)
-
-	if err != nil {
-		return
-	}
+	lt.OfType = parseType(l)
 
 	if !l.tokenEquals(tokBracketR.string()) {
-		err = errors.New("Expecting ']' for list type")
-		return
+		panic(errors.New("Expecting ']' for list type"))
 	}
 
 	l.get()
 
-	ret = &listType{}
+	lt.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	ret.OfType = _typ
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-	return
+	return lt
 }
 
 // https://graphql.github.io/graphql-spec/draft/#NonNullType
 func parseNonNullType(l *lexer) *nonNullType {
+	nnt := &nonNullType{}
 
 	locStart := l.location().Start
 
-	var _typ _type
+	if namedTypeExists(l) {
+		nnt.OfType = parseNamedType(l)
+	} else if listTypeExists(l) {
+		nnt.OfType = parseListType(l)
+	}
 
-	_typ, err = parseNamedType(l)
-
-	if err != nil {
-		_typ, err = parseListType(l)
-
-		if err != nil {
-			return
-		}
+	if nnt.OfType == nil {
+		panic(errors.New("Expecting a type for a non null value"))
 	}
 
 	if !l.tokenEquals(tokBang.string()) {
-		err = errors.New("Expecting '!' at the end of a non null type")
-		return
+		panic(errors.New("Expecting '!' at the end of a non null type"))
 	}
 
 	l.get()
 
-	ret = &nonNullType{}
+	nnt.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	ret.OfType = _typ
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-	return
+	return nnt
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Directives
 func parseDirectives(l *lexer) *directives {
 
-	ret = &directives{}
+	dirs := &directives{}
 
 	for l.tokenEquals(tokAt.string()) {
-		var dir *directive
-
-		dir, err = parseDirective(l)
-
-		if err != nil {
-			ret = nil
-			return
-		}
-
-		*ret = append(*ret, *dir)
+		*dirs = append(*dirs, *parseDirective(l))
 	}
 
-	if len(*ret) == 0 {
-		err = errors.New("Expecting at least one directive")
-		ret = nil
-		return
+	if len(*dirs) == 0 {
+		panic(errors.New("Expecting at least one directive"))
 	}
 
-	return
+	return dirs
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Directive
 func parseDirective(l *lexer) *directive {
+	dir := &directive{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(tokAt.string()) {
-		err = errors.New("Expecting '@' for directive")
-		return
+		panic(errors.New("Expecting '@' for directive"))
 	} else {
 		l.get()
 
-		var nam *name
+		dir.Name = *parseName(l)
 
-		nam, err = parseName(l)
-
-		if err != nil {
-			return
+		if argumentsExist(l) {
+			dir.Arguments = parseArguments(l)
 		}
 
-		args, _ := parseArguments(l)
+		dir.Loc = location{locStart, l.prevLocation().End, l.source}
 
-		ret = &directive{}
-
-		ret.Name = *nam
-		ret.Arguments = args
-		ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-		return
+		return dir
 	}
 }
 
 // https://graphql.github.io/graphql-spec/draft/#SelectionSet
 func parseSelectionSet(l *lexer) *selectionSet {
+	ss := &selectionSet{}
 
 	if !l.tokenEquals(tokBraceL.string()) {
-		err = errors.New("Expecting '{' for selection set")
-		return
+		panic(errors.New("Expecting '{' for selection set"))
 	} else {
 		l.get()
 
-		ret = &selectionSet{}
-
 		for !l.tokenEquals(tokBraceR.string()) {
-			var sel selection
-
-			sel, err = parseSelection(l)
-
-			if err != nil {
-				ret = nil
-				return
-			}
-
-			*ret = append(*ret, sel)
+			*ss = append(*ss, parseSelection(l))
 		}
 
 		l.get()
 
-		if len(*ret) == 0 {
-			ret = nil
-			err = errors.New("Expecting at least one selection")
-			return
+		if len(*ss) == 0 {
+			panic(errors.New("Expecting at least one selection"))
 		}
 
-		return
+		return ss
 	}
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Selection
 func parseSelection(l *lexer) selection {
-
-	ret, err = parseField(l)
-
-	if err == nil {
-		return
+	if fieldExists(l) {
+		return parseField(l)
 	}
 
-	ret, err = parseFragmentSpread(l)
-
-	if err == nil {
-		return
+	if fragmentSpreadExists(l) {
+		return parseFragmentSpread(l)
 	}
 
-	ret, err = parseInlineFragment(l)
-
-	if err != nil {
-		err = errors.Wrap(err, "Expecting a selection")
-		ret = nil
-		return
+	if inlineFragmentExists(l) {
+		return parseInlineFragment(l)
 	}
 
-	return
+	panic(errors.New("Expecting a selection"))
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Variable
 func parseVariable(l *lexer) *variable {
+	v := &variable{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(tokDollar.string()) {
-		err = errors.New("Expecting '$' for varible")
-		return
+		panic(errors.New("Expecting '$' for varible"))
 	} else {
-		var nam *name
+		v.Name = *parseName(l)
+		v.Loc = location{locStart, l.prevLocation().End, l.source}
 
-		nam, err = parseName(l)
-
-		if err != nil {
-			return
-		}
-
-		ret = &variable{}
-
-		ret.Name = *nam
-		ret.Loc = location{locStart, nam.Location().End, l.source}
-
-		return
+		return v
 	}
 }
 
 // https://graphql.github.io/graphql-spec/draft/#DefaultValue
 func parseDefaultValue(l *lexer) *defaultValue {
+	dv := &defaultValue{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(tokEquals.string()) {
-		err = errors.New("Expecting '=' for default value")
-		return
+		panic(errors.New("Expecting '=' for default value"))
 	} else {
-		var val value
+		dv.Value = parseValue(l)
+		dv.Loc = location{locStart, l.prevLocation().End, l.source}
 
-		val, err = parseValue(l)
-
-		if err != nil {
-			return
-		}
-
-		ret = &defaultValue{}
-
-		ret.Value = val
-		ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-		return
+		return dv
 	}
 }
 
-// ! need to check variable type in order to parse its value
 // https://graphql.github.io/graphql-spec/draft/#Value
 func parseValue(l *lexer) value {
-
-	// need to parse dynamic variables
-	//_var, _ := parseVariable(l)
-
-	ret, err = parseIntValue(l)
-
-	if err == nil {
-		return
-	}
-
-	ret, err = parseFloatValue(l)
-
-	if err == nil {
-		return
-	}
-
-	ret, err = parseStringValue(l)
-
-	if err == nil {
-		return
-	}
-
-	ret, err = parseBooleanValue(l)
-
-	if err == nil {
-		return
-	}
-
-	ret, err = parseNullValue(l)
-
-	if err == nil {
-		return
-	}
-
-	ret, err = parseEnumValue(l)
-
-	if err == nil {
-		return
-	}
-
-	ret, err = parseListValue(l)
-
-	if err == nil {
-		return
-	}
-
-	ret, err = parseObjectValue(l)
-
-	if err != nil {
-		err = errors.Wrap(err, "Expecting a value")
-		ret = nil
-		return
-	}
-
-	return
+	// ! Rewrite this
+	return nil
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Arguments
 func parseArguments(l *lexer) *arguments {
+	args := &arguments{}
 
 	if !l.tokenEquals(tokParenL.string()) {
-		err = errors.New("Expecting '(' for arguments")
-		return
+		panic(errors.New("Expecting '(' for arguments"))
 	} else {
 		l.get()
 
-		ret = &arguments{}
-
 		for !l.tokenEquals(tokParenR.string()) {
-			var arg *argument
-
-			arg, err = parseArgument(l)
-
-			if err != nil {
-				ret = nil
-				return
-			}
-
-			*ret = append(*ret, *arg)
+			*args = append(*args, *parseArgument(l))
 
 		}
 
 		l.get()
 
-		if len(*ret) == 0 {
-			err = errors.New("Expecting at least one argument")
-			ret = nil
-			return
+		if len(*args) == 0 {
+			panic(errors.New("Expecting at least one argument"))
 		}
 
-		return
+		return args
 	}
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Argument
 func parseArgument(l *lexer) *argument {
+	arg := &argument{}
 
-	nam, err := parseName(l)
-
-	if err != nil {
-		return
-	}
+	arg.Name = *parseName(l)
 
 	if !l.tokenEquals(tokColon.string()) {
-		err = errors.New("Expecting colon after argument name")
-		return
+		panic(errors.New("Expecting colon after argument name"))
 	}
 
 	l.get()
 
-	val, err := parseValue(l)
+	arg.Value = parseValue(l)
 
-	if err != nil {
-		return
-	}
+	arg.Loc = location{arg.Name.Location().Start, l.prevLocation().End, l.source}
 
-	ret = &argument{}
-
-	ret.Name = *nam
-	ret.Value = val
-	ret.Loc = location{nam.Location().Start, l.prevLocation().End, l.source}
-
-	return
+	return arg
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Field
 func parseField(l *lexer) *field {
+	f := &field{}
 
 	locStart := l.location().Start
 
-	alia, err := parseName(l)
-
-	if err != nil {
-		return
+	if aliasExists(l) {
+		f.Alias = parseAlias(l)
 	}
 
-	nam := &name{}
+	f.Name = *parseName(l)
 
-	if l.tokenEquals(tokColon.string()) {
-		l.get()
-
-		nam, err = parseName(l)
-
-		if err != nil {
-			return
-		}
-	} else {
-		*nam = *alia
-
-		alia = nil
+	if argumentsExist(l) {
+		f.Arguments = parseArguments(l)
 	}
 
-	args, _ := parseArguments(l)
+	if directivesExist(l) {
+		f.Directives = parseDirectives(l)
+	}
 
-	dirs, _ := parseDirectives(l)
+	if selectionSetExists(l) {
+		f.SelectionSet = parseSelectionSet(l)
+	}
 
-	selSet, _ := parseSelectionSet(l)
+	f.Loc = location{locStart, l.prevLocation().End, l.source}
 
-	ret = &field{}
-
-	ret.Alias = (*alias)(alia)
-	ret.Name = *nam
-	ret.Arguments = args
-	ret.Directives = dirs
-	ret.SelectionSet = selSet
-	ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-	return
+	return f
 }
 
 // https://graphql.github.io/graphql-spec/draft/#FragmentSpread
 func parseFragmentSpread(l *lexer) *fragmentSpread {
+	fs := &fragmentSpread{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(tokSpread.string()) {
-		err = errors.New("Expecting '...' operator for a fragment spread")
-		return
+		panic(errors.New("Expecting '...' operator for a fragment spread"))
 	} else {
 		l.get()
 
-		var fname *fragmentName
+		fs.FragmentName = *parseFragmentName(l)
 
-		fname, err = parseFragmentName(l)
-
-		if err != nil {
-			return
+		if directivesExist(l) {
+			fs.Directives = parseDirectives(l)
 		}
 
-		directives, _ := parseDirectives(l)
+		fs.Loc = location{locStart, l.prevLocation().End, l.source}
 
-		ret = &fragmentSpread{}
-
-		ret.FragmentName = *fname
-		ret.Directives = directives
-		ret.Loc = location{locStart, l.prevLocation().End, l.source}
-
-		return
+		return fs
 	}
 }
 
 // https://graphql.github.io/graphql-spec/draft/#InlineFragment
 func parseInlineFragment(l *lexer) *inlineFragment {
+	inf := &inlineFragment{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(tokSpread.string()) {
-		err = errors.New("Expecting '...' for an inline fragment")
-		return
+		panic(errors.New("Expecting '...' for an inline fragment"))
 	} else {
 		l.get()
 
-		typeCon, _ := parseTypeCondition(l)
-
-		directives, _ := parseDirectives(l)
-
-		var selSet *selectionSet
-
-		selSet, err = parseSelectionSet(l)
-
-		if err != nil {
-			return
+		if typeConditionExists(l) {
+			inf.TypeCondition = parseTypeCondition(l)
 		}
 
-		ret = &inlineFragment{}
+		if directivesExist(l) {
+			inf.Directives = parseDirectives(l)
+		}
 
-		ret.TypeCondition = typeCon
-		ret.Directives = directives
-		ret.SelectionSet = *selSet
-		ret.Loc = location{locStart, l.prevLocation().End, l.source}
+		inf.SelectionSet = *parseSelectionSet(l)
+		inf.Loc = location{locStart, l.prevLocation().End, l.source}
 
-		return
+		return inf
 	}
 }
 
 // https://graphql.github.io/graphql-spec/draft/#FragmentName
 func parseFragmentName(l *lexer) *fragmentName {
-
-	nam, err := parseName(l)
-
-	if err != nil {
-		return
-	}
+	nam := parseName(l)
 
 	if nam.Value == kwOn {
-		err = errors.New("Fragment name cannot be 'on'")
-		return
+		panic(errors.New("Fragment name cannot be 'on'"))
 	}
 
-	ret = &fragmentName{}
-	*ret = fragmentName(*nam)
-	ret.Loc = *nam.Location()
+	fn := &fragmentName{}
+	*fn = fragmentName(*nam)
+	fn.Loc = *nam.Location()
 
-	return
+	return fn
 }
 
 // https://graphql.github.io/graphql-spec/draft/#TypeCondition
 func parseTypeCondition(l *lexer) *typeCondition {
+	tc := &typeCondition{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(kwOn) {
-		err = errors.New("Expecting 'on' keyword for a type condition")
-		return
+		panic(errors.New("Expecting 'on' keyword for a type condition"))
 	} else {
-		var namedTyp *namedType
+		tc.NamedType = *parseNamedType(l)
+		tc.Loc = location{locStart, l.prevLocation().End, l.source}
 
-		namedTyp, err = parseNamedType(l)
-
-		if err != nil {
-			return
-		}
-
-		ret = &typeCondition{}
-
-		ret.NamedType = *namedTyp
-		ret.Loc = location{locStart, namedTyp.Location().End, l.source}
-
-		return
+		return tc
 	}
 }
 
 // https://graphql.github.io/graphql-spec/draft/#NamedType
 func parseNamedType(l *lexer) *namedType {
+	nam := parseName(l)
 
-	nam, err := parseName(l)
+	nt := new(namedType)
 
-	if err != nil {
-		return
-	}
+	*nt = namedType(*nam)
 
-	ret = new(namedType)
-
-	*ret = namedType(*nam)
-
-	return
+	return nt
 }
 
-// ! Check numeric values
 // https://graphql.github.io/graphql-spec/draft/#IntValue
 func parseIntValue(l *lexer) *intValue {
+	iv := &intValue{}
 
 	tok := l.current()
 
 	intVal, err := strconv.ParseInt(tok.value, 10, 64)
 
 	if err != nil {
-		return
+		panic(errors.Wrap(err, "Failed parsing int value"))
 	}
 
 	l.get()
 
-	ret = &intValue{}
+	iv.Value = intVal
+	iv.Loc = location{tok.start, tok.end, l.source}
 
-	ret.Value = intVal
-	ret.Loc = location{tok.start, tok.end, l.source}
-
-	return
+	return iv
 }
 
 // https://graphql.github.io/graphql-spec/draft/#FloatValue
 func parseFloatValue(l *lexer) *floatValue {
+	fv := &floatValue{}
 
 	tok := l.current()
 
 	floatVal, err := strconv.ParseFloat(tok.value, 64)
 
 	if err != nil {
-		return
+		panic(errors.Wrap(err, "Failed parsing flot value"))
 	}
 
 	l.get()
 
-	ret = &floatValue{}
+	fv.Value = floatVal
+	fv.Loc = location{tok.start, tok.end, l.source}
 
-	ret.Value = floatVal
-	ret.Loc = location{tok.start, tok.end, l.source}
-
-	return
+	return fv
 }
 
 // ! Have a discussion about this function
 // https://graphql.github.io/graphql-spec/draft/#StringValue
 func parseStringValue(l *lexer) *stringValue {
-
 	tok := l.current()
 
-	ret = &stringValue{}
+	sv := &stringValue{}
 
-	ret.Value = tok.value
-	ret.Loc = location{tok.start, tok.end, l.source}
+	if singleQuotesStringValueExists(l) {
+		sv.Value = *parseSingleQuotesStringValue(l)
+	}
 
-	return
+	if blockStringExists(l) {
+		sv.Value = *parseBlockString(l)
+	}
+
+	sv.Value = tok.value
+	sv.Loc = location{tok.start, tok.end, l.source}
+
+	return sv
 }
+
+func parseSingleQuotesStringValue(l *lexer) *string {
+	if singleQuotesStringValueExists(l) {
+		var strVal *string
+
+		*strVal = l.current().value[1 : len(l.current().value)-1]
+
+		reg, err := regexp.Compile("/[\u0009\u000A\u000D\u0020-\uFFFF]/")
+
+		if err != nil {
+			panic(err)
+		}
+
+		reg.MatchString(*strVal)
+
+		return strVal
+	}
+
+	panic(errors.New("Expecting single quotes for a string value"))
+}
+
+func parseBlockString(l *lexer) *string {
+	if blockStringExists(l) {
+		var strVal *string
+
+		*strVal = l.current().value[3 : len(l.current().value)-3]
+
+		return strVal
+	}
+
+	panic(errors.New("Expecting triple quotes for a block string"))
+}
+
+//! Handle all strings
 
 // https://graphql.github.io/graphql-spec/draft/#BooleanValue
 func parseBooleanValue(l *lexer) *booleanValue {
+	bv := &booleanValue{}
 
 	tok := l.current()
 
 	boolVal, err := strconv.ParseBool(tok.value)
 
 	if err != nil {
-		return
+		panic(errors.Wrap(err, "Failed parsing bool value"))
 	}
 
 	l.get()
 
-	ret = &booleanValue{}
+	bv.Value = boolVal
+	bv.Loc = location{tok.start, tok.end, l.source}
 
-	ret.Value = boolVal
-	ret.Loc = location{tok.start, tok.end, l.source}
-
-	return
+	return bv
 }
 
 // https://graphql.github.io/graphql-spec/draft/#NullValue
 func parseNullValue(l *lexer) *nullValue {
+	nv := &nullValue{}
 
 	tok := l.current()
 
 	if tok.value != kwNull {
-		err = errors.New("Expecting 'null' keyword")
-		return
+		panic(errors.New("Expecting 'null' keyword"))
 	} else {
 		l.get()
 
-		ret = &nullValue{}
-		ret.Loc = location{tok.start, tok.end, l.source}
+		nv.Loc = location{tok.start, tok.end, l.source}
 
-		return
+		return nv
 	}
 }
 
 // https://graphql.github.io/graphql-spec/draft/#EnumValue
 func parseEnumValue(l *lexer) *enumValue {
-
-	nam, err := parseName(l)
-
-	if err != nil {
-		return
-	}
+	nam := parseName(l)
 
 	switch nam.Value {
 	case kwTrue, kwFalse, kwNull:
-		err = errors.New("Enum value cannot be 'true', 'false' or 'null'")
-		return
+		panic(errors.New("Enum value cannot be 'true', 'false' or 'null'"))
 	default:
-		ret = &enumValue{}
+		nv := &enumValue{}
 
-		ret.Name = *nam
-		ret.Loc = location{nam.Location().Start, nam.Location().End, l.source}
+		nv.Name = *nam
+		nv.Loc = location{nam.Location().Start, nam.Location().End, l.source}
 
-		return
+		return nv
 	}
 }
 
 // https://graphql.github.io/graphql-spec/draft/#ListValue
 func parseListValue(l *lexer) *listValue {
+	lv := &listValue{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(tokBracketL.string()) {
-		return nil, errors.New("Expecting '[' for a list value")
+		panic(errors.New("Expecting '[' for a list value"))
 	} else {
 		l.get()
 
-		ret = &listValue{}
-
 		for !l.tokenEquals(tokBracketR.string()) {
-			var val value
-
-			val, err = parseValue(l)
-
-			if err != nil {
-				return
-			}
-
-			ret.Values = append(ret.Values, val)
+			lv.Values = append(lv.Values, parseValue(l))
 		}
 
-		ret.Loc = location{locStart, l.prevLocation().End, l.source}
+		lv.Loc = location{locStart, l.prevLocation().End, l.source}
 
-		return
+		return lv
 	}
 }
 
 // https://graphql.github.io/graphql-spec/draft/#ObjectValue
 func parseObjectValue(l *lexer) *objectValue {
+	ov := &objectValue{}
 
 	locStart := l.location().Start
 
 	if !l.tokenEquals(tokBraceL.string()) {
-		err = errors.New("Expecting '{' for an object value")
-		return
+		panic(errors.New("Expecting '{' for an object value"))
 	} else {
 		l.get()
 
-		ret = &objectValue{}
-
 		for !l.tokenEquals(tokBraceR.string()) {
-			var objField *objectField
-
-			objField, err = parseObjectField(l)
-
-			if err != nil {
-				return
-			}
-
-			ret.Values = append(ret.Values, *objField)
+			ov.Values = append(ov.Values, *parseObjectField(l))
 		}
 
-		ret.Loc = location{locStart, l.prevLocation().End, l.source}
+		ov.Loc = location{locStart, l.prevLocation().End, l.source}
 
-		return
+		return ov
 	}
 }
 
 // https://graphql.github.io/graphql-spec/draft/#ObjectField
 func parseObjectField(l *lexer) *objectField {
+	of := &objectField{}
 
-	nam, err := parseName(l)
-
-	if err != nil {
-		return
-	}
+	of.Name = *parseName(l)
 
 	if !l.tokenEquals(tokColon.string()) {
-		err = errors.New("Expecting color after object field name")
-		return
+		panic(errors.New("Expecting color after object field name"))
 	}
 
 	l.get()
 
-	val, err := parseValue(l)
+	of.Value = parseValue(l)
+	of.Loc = location{of.Name.Location().Start, l.prevLocation().End, l.source}
 
-	if err != nil {
-		return
-	}
+	return of
+}
 
-	ret = &objectField{}
+func typeConditionExists(l *lexer) bool {
+	return false
+}
 
-	ret.Name = *nam
-	ret.Value = val
-	ret.Loc = location{nam.Location().Start, l.prevLocation().End, l.source}
+func aliasExists(l *lexer) bool {
+	return false
+}
 
-	return
+func selectionSetExists(l *lexer) bool {
+	return false
+}
+
+func parseAlias(l *lexer) *alias {
+	return nil
+}
+
+func fieldExists(l *lexer) bool {
+	return false
+}
+
+func fragmentSpreadExists(l *lexer) bool {
+	return false
+}
+
+func inlineFragmentExists(l *lexer) bool {
+	return false
+}
+
+func argumentsExist(l *lexer) bool {
+	return false
+}
+
+func namedTypeExists(l *lexer) bool {
+	return false
+}
+
+func listTypeExists(l *lexer) bool {
+	return false
+}
+
+func nonNullTypeExists(l *lexer) bool {
+	return false
+}
+
+func nameExists(l *lexer) bool {
+	return false
+}
+
+func variableDefinitionsExist(l *lexer) bool {
+	return false
+}
+
+func rootOperationTypeDefinitionsExist(l *lexer) bool {
+	return false
+}
+
+func schemaExtensionExists(l *lexer) bool {
+	return false
+}
+
+func typeExtensionExists(l *lexer) bool {
+	return false
+}
+
+func executableDirectiveLocationExists(l *lexer) bool {
+	return false
+}
+
+func typeSystemDirectiveLocationExists(l *lexer) bool {
+	return false
+}
+
+func scalarTypeExtensionExists(l *lexer) bool {
+	return false
+}
+
+func objectTypeExtensionExists(l *lexer) bool {
+	return false
+}
+
+func interfaceTypeExtensionExists(l *lexer) bool {
+	return false
+}
+
+func unionTypeExtensionExists(l *lexer) bool {
+	return false
+}
+
+func enumTypeExtensionExists(l *lexer) bool {
+	return false
+}
+
+func inputObjectTypeExtensionExists(l *lexer) bool {
+	return false
+}
+
+func inputFieldsDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func enumValuesDefinitionExist(l *lexer) bool {
+	return false
+}
+
+func unionMemberTypesExist(l *lexer) bool {
+	return false
+}
+
+func defaultValueExists(l *lexer) bool {
+	return false
+}
+func argumentsDefinitionExist(l *lexer) bool {
+	return false
+}
+
+func implementsInterfacesExists(l *lexer) bool {
+	return false
+}
+
+func fieldsDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func descriptionExists(l *lexer) bool {
+	return false
+}
+
+func scalarTypeDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func objectTypeDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func interfaceTypeDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func unionTypeDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func enumTypeDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func inputObjectTypeDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func directivesExist(l *lexer) bool {
+	return false
+}
+
+func schemaDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func typeDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func directiveDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func operationDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func fragmentDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func executableDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func typeSystemDefinitionExists(l *lexer) bool {
+	return false
+}
+
+func typeSystemExtensionExists(l *lexer) bool {
+	return false
+}
+
+func singleQuotesStringValueExists(l *lexer) bool {
+	return string(l.current().value[0]) == "\"" &&
+		string(l.current().value[1]) != "\""
+}
+
+func blockStringExists(l *lexer) bool {
+	return string(l.current().value[0]) == "\"" &&
+		string(l.current().value[1]) == "\"" &&
+		string(l.current().value[2]) == "\""
 }
