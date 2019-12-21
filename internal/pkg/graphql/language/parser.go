@@ -320,7 +320,7 @@ func parseImplementsInterfaces(l *lexer) *implementsInterfaces {
 
 // https://graphql.github.io/graphql-spec/draft/#FieldsDefinition
 func parseFieldsDefinition(l *lexer) *fieldsDefinition {
-	fd := &fieldsDefinition{}
+	fds := &fieldsDefinition{}
 
 	if l.tokenEquals(tokBraceL.string()) {
 		panic(errors.New("Expecting '{' for fields definition"))
@@ -329,16 +329,16 @@ func parseFieldsDefinition(l *lexer) *fieldsDefinition {
 	l.get()
 
 	for !l.tokenEquals(tokBraceR.string()) {
-		(*fd) = append(*fd, *parseFieldDefinition(l))
+		(*fds) = append(*fds, *parseFieldDefinition(l))
 	}
 
 	l.get()
 
-	if len(*fd) == 0 {
+	if len(*fds) == 0 {
 		panic(errors.New("Expecting at lease one field definition"))
 	}
 
-	return fd
+	return fds
 }
 
 // https://graphql.github.io/graphql-spec/draft/#FieldsDefinition
@@ -376,7 +376,7 @@ func parseFieldDefinition(l *lexer) *fieldDefinition {
 
 // https://graphql.github.io/graphql-spec/draft/#ArgumentsDefinition
 func parseArgumentsDefinition(l *lexer) *argumentsDefinition {
-	ad := &argumentsDefinition{}
+	argsDef := &argumentsDefinition{}
 
 	if !l.tokenEquals(tokParenL.string()) {
 		panic(errors.New("Expecting '(' for arguments definition"))
@@ -385,16 +385,16 @@ func parseArgumentsDefinition(l *lexer) *argumentsDefinition {
 	l.get()
 
 	for !l.tokenEquals(tokParenR.string()) {
-		*ad = append(*ad, *parseInputValueDefinition(l))
+		*argsDef = append(*argsDef, *parseInputValueDefinition(l))
 	}
 
 	l.get()
 
-	if len(*ad) == 0 {
+	if len(*argsDef) == 0 {
 		panic(errors.New("Expecting at least one input value definitions"))
 	}
 
-	return ad
+	return argsDef
 }
 
 // https://graphql.github.io/graphql-spec/draft/#InputValueDefinition
@@ -575,7 +575,7 @@ func parseEnumValuesDefinition(l *lexer) *enumValuesDefinition {
 	return evd
 }
 
-// https://graphql.github.io/graphql-spec/draft/#EnumValuesDefinition
+// https://graphql.github.io/graphql-spec/draft/#EnumValuesDefinitionvd
 func parseEnumValueDefinition(l *lexer) *enumValueDefinition {
 	evd := &enumValueDefinition{}
 
@@ -693,30 +693,30 @@ func parseDirectiveDefinition(l *lexer) *directiveDefinition {
 
 // https://graphql.github.io/graphql-spec/draft/#DirectiveLocations
 func parseDirectiveLocations(l *lexer) *directiveLocations {
-	dl := &directiveLocations{}
+	dls := &directiveLocations{}
 
 	if l.tokenEquals(tokPipe.string()) {
 		l.get()
 	}
 
-	*dl = append(*dl, *parseDirectiveLocation(l))
+	*dls = append(*dls, *parseDirectiveLocation(l))
 
 	for l.tokenEquals(tokPipe.string()) {
 		l.get()
 
-		*dl = append(*dl, *parseDirectiveLocation(l))
+		*dls = append(*dls, *parseDirectiveLocation(l))
 	}
 
-	return dl
+	return dls
 }
 
 // https://graphql.github.io/graphql-spec/draft/#TypeExtension
 func parseTypeExtension(l *lexer) typeExtension {
-	if scalarTypeExtensionExists(l) {
+	if scalarTypeDefinitionExists(l) {
 		return parseScalarTypeExtension(l)
 	}
 
-	if objectTypeExtensionExists(l) {
+	if objectTypeDefinitionExists(l) {
 		return parseObjectTypeExtension(l)
 	}
 
@@ -753,9 +753,7 @@ func parseScalarTypeExtension(l *lexer) *scalarTypeExtension {
 	l.get()
 
 	ste.Name = *parseName(l)
-
 	ste.Directives = *parseDirectives(l)
-
 	ste.Loc = location{locStart, l.prevLocation().End, l.source}
 
 	return ste
@@ -787,6 +785,7 @@ func parseObjectTypeExtension(l *lexer) *objectTypeExtension {
 	if fieldsDefinitionExists(l) {
 		ote.FieldsDefinition = parseFieldsDefinition(l)
 	}
+
 	if ote.ImplementsInterfaces == nil &&
 		ote.Directives == nil &&
 		ote.FieldsDefinition == nil {
@@ -798,6 +797,7 @@ func parseObjectTypeExtension(l *lexer) *objectTypeExtension {
 	return ote
 }
 
+// !HERE
 // https://graphql.github.io/graphql-spec/draft/#InterfaceTypeExtension
 func parseInterfaceTypeExtension(l *lexer) *interfaceTypeExtension {
 	ite := &interfaceTypeExtension{}
