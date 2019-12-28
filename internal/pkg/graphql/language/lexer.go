@@ -176,7 +176,7 @@ func (l *lexer) tokenEquals(tokVals ...string) bool {
 	}
 
 	for i, val := range tokVals {
-		if l.tokens[l.currentTokenIndex+i].value != val {
+		if val != "" && l.tokens[l.currentTokenIndex+i].value != val {
 			return false
 		}
 	}

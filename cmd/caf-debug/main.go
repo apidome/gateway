@@ -9,7 +9,6 @@ import (
 func main() {
 	query := `
 	{
-		"""Hello"""
 		user(id: 4) {
 		  id
 		  name
@@ -18,11 +17,9 @@ func main() {
 	  }
 	`
 
-	doc, err := language.Parse(query)
+	_, err := language.Parse(query)
 
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	fmt.Print(doc)
 }

@@ -12,14 +12,8 @@ func isNilInterface(i interface{}) bool {
 	return reflect.ValueOf(i).IsNil()
 }
 
-func Parse(doc string) (*document, error) {
+func Parse(doc string) (ret *document, err error) {
 	l, err := newlexer(doc)
-
-	if err != nil {
-		return nil, err
-	}
-
-	pDoc := parseDocument(l)
 
 	// recover syntax errors
 	defer func() {
@@ -28,10 +22,11 @@ func Parse(doc string) (*document, error) {
 		}
 	}()
 
-	return pDoc, nil
+	ret = parseDocument(l)
+
+	return
 }
 
-// ! Redo error management
 // https://graphql.github.io/graphql-spec/draft/#Document
 func parseDocument(l *lexer) *document {
 	doc := &document{}
@@ -797,7 +792,6 @@ func parseObjectTypeExtension(l *lexer) *objectTypeExtension {
 	return ote
 }
 
-// !HERE
 // https://graphql.github.io/graphql-spec/draft/#InterfaceTypeExtension
 func parseInterfaceTypeExtension(l *lexer) *interfaceTypeExtension {
 	ite := &interfaceTypeExtension{}
@@ -1364,10 +1358,11 @@ func parseDefaultValue(l *lexer) *defaultValue {
 	}
 }
 
-// https://graphql.github.io/graphql-spec/draft/#Value
+//! https://graphql.github.io/graphql-spec/draft/#Value
 func parseValue(l *lexer) value {
-	// ! Rewrite this
-	return nil
+	str := &stringValue{}
+	str.Value = l.get().value
+	return str
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Arguments
@@ -1573,8 +1568,7 @@ func parseFloatValue(l *lexer) *floatValue {
 	return fv
 }
 
-// ! Have a discussion about this function
-// https://graphql.github.io/graphql-spec/draft/#StringValue
+//! https://graphql.github.io/graphql-spec/draft/#StringValue
 func parseStringValue(l *lexer) *stringValue {
 	tok := l.current()
 
@@ -1594,6 +1588,7 @@ func parseStringValue(l *lexer) *stringValue {
 	return sv
 }
 
+//! https://graphql.github.io/graphql-spec/draft/#StringValue
 func parseSingleQuotesStringValue(l *lexer) *string {
 	if singleQuotesStringValueExists(l) {
 		var strVal *string
@@ -1614,6 +1609,7 @@ func parseSingleQuotesStringValue(l *lexer) *string {
 	panic(errors.New("Expecting single quotes for a string value"))
 }
 
+//! https://graphql.github.io/graphql-spec/draft/#StringValue
 func parseBlockString(l *lexer) *string {
 	if blockStringExists(l) {
 		var strVal *string
@@ -1625,8 +1621,6 @@ func parseBlockString(l *lexer) *string {
 
 	panic(errors.New("Expecting triple quotes for a block string"))
 }
-
-//! Handle all strings
 
 // https://graphql.github.io/graphql-spec/draft/#BooleanValue
 func parseBooleanValue(l *lexer) *booleanValue {
@@ -1742,200 +1736,301 @@ func parseObjectField(l *lexer) *objectField {
 	return of
 }
 
-func typeConditionExists(l *lexer) bool {
-	return false
-}
-
-func aliasExists(l *lexer) bool {
-	return false
-}
-
-func selectionSetExists(l *lexer) bool {
-	return false
-}
-
+// https://graphql.github.io/graphql-spec/draft/#Alias
 func parseAlias(l *lexer) *alias {
-	return nil
+	a := &alias{}
+	a.Value = parseName(l).Value
+
+	if !l.tokenEquals(tokColon.string()) {
+		panic(errors.New("Expecting colon after alias name"))
+	}
+
+	return a
 }
 
+// https://graphql.github.io/graphql-spec/draft/#TypeCondition
+func typeConditionExists(l *lexer) bool {
+	return l.tokenEquals(kwOn)
+}
+
+// https://graphql.github.io/graphql-spec/draft/#Alias
+func aliasExists(l *lexer) bool {
+	return l.tokens[l.currentTokenIndex+1].value == tokColon.string()
+}
+
+// https://graphql.github.io/graphql-spec/draft/#SelectionSet
+func selectionSetExists(l *lexer) bool {
+	return l.tokenEquals(tokBraceL.string())
+}
+
+// https://graphql.github.io/graphql-spec/draft/#Field
 func fieldExists(l *lexer) bool {
-	return false
+	return nameExists(l)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#FragmentSpread
 func fragmentSpreadExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokSpread.string())
 }
 
+// https://graphql.github.io/graphql-spec/draft/#InlineFragment
 func inlineFragmentExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokSpread.string()) && l.tokens[l.currentTokenIndex+1].value == kwOn
 }
 
+// https://graphql.github.io/graphql-spec/draft/#Arguments
 func argumentsExist(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokParenL.string())
 }
 
+// https://graphql.github.io/graphql-spec/draft/#NamedType
 func namedTypeExists(l *lexer) bool {
-	return false
+	return nameExists(l)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#ListType
 func listTypeExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokBracketL.string())
 }
 
+// https://graphql.github.io/graphql-spec/draft/#NonNullType
 func nonNullTypeExists(l *lexer) bool {
-	return false
+	return (namedTypeExists(l) || listTypeExists(l)) && l.tokens[l.currentTokenIndex+1].value == tokBang.string()
 }
 
+// https://graphql.github.io/graphql-spec/draft/#Name
 func nameExists(l *lexer) bool {
-	return false
+	tok := l.current()
+
+	pattern := "^[_A-Za-z][_0-9A-Za-z]*$"
+
+	// If the current token is not a Name, return nil
+	if tok.kind != tokName {
+		return false
+	}
+
+	// Check if the given name matches the regex provided by graphql spec at
+	// https://graphql.github.io/graphql-spec/draft/#Name
+	match, err := regexp.MatchString(pattern, tok.value)
+	if err != nil {
+		return false
+	}
+
+	// If the name does not match the requirements, return an error.
+	if !match {
+		return false
+	}
+
+	return true
 }
 
+// https://graphql.github.io/graphql-spec/draft/#VariableDefinitions
 func variableDefinitionsExist(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokParenL.string())
 }
 
+// https://graphql.github.io/graphql-spec/draft/#RootOperationTypeDefinition
 func rootOperationTypeDefinitionsExist(l *lexer) bool {
-	return false
+	return operationTypeExists(l)
 }
 
-func schemaExtensionExists(l *lexer) bool {
-	return false
+// https://graphql.github.io/graphql-spec/draft/#OperationType
+func operationTypeExists(l *lexer) bool {
+	return l.tokenEquals(kwQuery) || l.tokenEquals(kwMutation) || l.tokenEquals(kwSubscription)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#TypeExtension
 func typeExtensionExists(l *lexer) bool {
-	return false
+	return scalarTypeExtensionExists(l) || objectTypeExtensionExists(l) || interfaceTypeExtensionExists(l) ||
+		unionTypeExtensionExists(l) || enumTypeExtensionExists(l) || inputObjectTypeExtensionExists(l)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#SchemaExtension
+func schemaExtensionExists(l *lexer) bool {
+	return l.tokenEquals(kwExtend, kwSchema)
+}
+
+// https://graphql.github.io/graphql-spec/draft/#ExecutableDirectiveLocation
 func executableDirectiveLocationExists(l *lexer) bool {
+	for _, edl := range executableDirectiveLocations {
+		if l.tokenEquals((string)(edl)) {
+			return true
+		}
+	}
+
 	return false
 }
 
+// https://graphql.github.io/graphql-spec/draft/#TypeSystemDirectiveLocation
 func typeSystemDirectiveLocationExists(l *lexer) bool {
+	for _, tsdl := range typeSystemDirectiveLocations {
+		if l.tokenEquals((string)(tsdl)) {
+			return true
+		}
+	}
+
 	return false
 }
 
+// https://graphql.github.io/graphql-spec/draft/#ScalarTypeExtension
 func scalarTypeExtensionExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(kwExtend, kwScalar)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#ObjectTypeExtension
 func objectTypeExtensionExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(kwExtend, kwType)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#InterfaceTypeExtension
 func interfaceTypeExtensionExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(kwExtend, kwInterface)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#UnionTypeExtension
 func unionTypeExtensionExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(kwExtend, kwUnion)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#EnumTypeExtension
 func enumTypeExtensionExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(kwExtend, kwEnum)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#InputObjectTypeExtension
 func inputObjectTypeExtensionExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(kwExtend, kwInput)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#InputFieldsDefinition
 func inputFieldsDefinitionExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokParenL.string())
 }
 
+// https://graphql.github.io/graphql-spec/draft/#EnumValuesDefinition
 func enumValuesDefinitionExist(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokBracketL.string())
 }
 
+// https://graphql.github.io/graphql-spec/draft/#UnionMemberTypes
 func unionMemberTypesExist(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokEquals.string())
 }
 
+// https://graphql.github.io/graphql-spec/draft/#DefaultValue
 func defaultValueExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokEquals.string())
 }
+
+// https://graphql.github.io/graphql-spec/draft/#ArgumentsDefinition
 func argumentsDefinitionExist(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokParenL.string())
 }
 
+// https://graphql.github.io/graphql-spec/draft/#ImplementsInterfaces
 func implementsInterfacesExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(kwImplements)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#FieldsDefinition
 func fieldsDefinitionExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokBracketL.string())
 }
 
+// https://graphql.github.io/graphql-spec/draft/#Description
 func descriptionExists(l *lexer) bool {
+	return stringValueExists(l)
+}
+
+//! https://graphql.github.io/graphql-spec/draft/#StringValue
+func stringValueExists(l *lexer) bool {
 	return false
 }
 
+// https://graphql.github.io/graphql-spec/draft/#ScalarTypeDefinition
 func scalarTypeDefinitionExists(l *lexer) bool {
-	return false
+	return descriptionExists(l) || l.tokenEquals(kwScalar)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#ObjectTypeDefinition
 func objectTypeDefinitionExists(l *lexer) bool {
-	return false
+	return descriptionExists(l) || l.tokenEquals(kwType)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#InterfaceTypeDefinition
 func interfaceTypeDefinitionExists(l *lexer) bool {
-	return false
+	return descriptionExists(l) || l.tokenEquals(kwInterface)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#UnionTypeDefinition
 func unionTypeDefinitionExists(l *lexer) bool {
-	return false
+	return descriptionExists(l) || l.tokenEquals(kwUnion)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#EnumTypeDefinition
 func enumTypeDefinitionExists(l *lexer) bool {
-	return false
+	return descriptionExists(l) || l.tokenEquals(kwEnum)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#InputObjectTypeDefinition
 func inputObjectTypeDefinitionExists(l *lexer) bool {
-	return false
+	return descriptionExists(l) || l.tokenEquals(kwInput)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#Directives
 func directivesExist(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokAt.string())
 }
 
+// https://graphql.github.io/graphql-spec/draft/#SchemaDefinition
 func schemaDefinitionExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(kwSchema)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#TypeDefinition
 func typeDefinitionExists(l *lexer) bool {
-	return false
+	return scalarTypeDefinitionExists(l) || objectTypeDefinitionExists(l) || interfaceTypeDefinitionExists(l) ||
+		unionTypeDefinitionExists(l) || enumTypeDefinitionExists(l) || inputObjectTypeDefinitionExists(l)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#DirectiveDefinition
 func directiveDefinitionExists(l *lexer) bool {
-	return false
+	return descriptionExists(l) || l.tokenEquals(kwDirective)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#OperationDefinition
 func operationDefinitionExists(l *lexer) bool {
-	return false
+	return operationTypeExists(l) || selectionSetExists(l)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#FragmentDefinition
 func fragmentDefinitionExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(kwFragment)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#ExecutableDefinition
 func executableDefinitionExists(l *lexer) bool {
-	return false
+	return operationDefinitionExists(l) || fragmentDefinitionExists(l)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#TypeSystemDefinition
 func typeSystemDefinitionExists(l *lexer) bool {
-	return false
+	return schemaDefinitionExists(l) || typeDefinitionExists(l) || directiveDefinitionExists(l)
 }
 
+// https://graphql.github.io/graphql-spec/draft/#TypeSystemExtension
 func typeSystemExtensionExists(l *lexer) bool {
-	return false
+	return schemaExtensionExists(l) || typeExtensionExists(l)
 }
 
 func singleQuotesStringValueExists(l *lexer) bool {
-	return string(l.current().value[0]) == "\"" &&
-		string(l.current().value[1]) != "\""
+	return l.current().value == "\"\""
 }
 
 func blockStringExists(l *lexer) bool {
-	return string(l.current().value[0]) == "\"" &&
-		string(l.current().value[1]) == "\"" &&
-		string(l.current().value[2]) == "\""
+	return l.current().value == "\"\"\""
+}
+
+func getUnexpected(l *lexer) string {
+	return l.current().value
 }
