@@ -1607,7 +1607,7 @@ func parseSingleQuotesStringValue(l *lexer) *string {
 		!strings.Contains(*strVal, "\n") {
 		return strVal
 	} else {
-		panic(errors.New("Expecting a string value"))
+		panic(errors.New("Expecting a string v alue"))
 	}
 }
 
