@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -1568,7 +1569,7 @@ func parseFloatValue(l *lexer) *floatValue {
 	return fv
 }
 
-//! https://graphql.github.io/graphql-spec/draft/#StringValue
+// https://graphql.github.io/graphql-spec/draft/#StringValue
 func parseStringValue(l *lexer) *stringValue {
 	tok := l.current()
 
@@ -1590,23 +1591,24 @@ func parseStringValue(l *lexer) *stringValue {
 
 //! https://graphql.github.io/graphql-spec/draft/#StringValue
 func parseSingleQuotesStringValue(l *lexer) *string {
-	if singleQuotesStringValueExists(l) {
-		var strVal *string
+	var strVal *string
 
-		*strVal = l.current().value[1 : len(l.current().value)-1]
+	*strVal = l.current().value[1 : len(l.current().value)-1]
 
-		reg, err := regexp.Compile("/[\u0009\u000A\u000D\u0020-\uFFFF]/")
+	reg, err := regexp.Compile("/[\u0009\u000A\u000D\u0020-\uFFFF]/")
 
-		if err != nil {
-			panic(err)
-		}
-
-		reg.MatchString(*strVal)
-
-		return strVal
+	if err != nil {
+		panic(err)
 	}
 
-	panic(errors.New("Expecting single quotes for a string value"))
+	if reg.MatchString(*strVal) &&
+		!strings.Contains(*strVal, "\"") &&
+		!strings.Contains(*strVal, " \\ ") &&
+		!strings.Contains(*strVal, "\n") {
+		return strVal
+	} else {
+		panic(errors.New("Expecting a string value"))
+	}
 }
 
 //! https://graphql.github.io/graphql-spec/draft/#StringValue
