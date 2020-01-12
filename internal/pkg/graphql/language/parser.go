@@ -1359,11 +1359,95 @@ func parseDefaultValue(l *lexer) *defaultValue {
 	}
 }
 
-//! https://graphql.github.io/graphql-spec/draft/#Value
+// https://graphql.github.io/graphql-spec/draft/#Value
 func parseValue(l *lexer) value {
-	str := &stringValue{}
-	str.Value = l.get().value
-	return str
+	if variableExists(l) {
+		return parseVariable(l)
+	}
+
+	if intValueExists(l) {
+		return parseIntValue(l)
+	}
+
+	if floatValueExists(l) {
+		return parseFloatValue(l)
+	}
+
+	if stringValueExists(l) {
+		return parseStringValue(l)
+	}
+
+	if booleanValueExists(l) {
+		return parseBooleanValue(l)
+	}
+
+	if nullValueExists(l) {
+		return parseNullValue(l)
+	}
+
+	if enumValueExists(l) {
+		return parseEnumValue(l)
+	}
+
+	if listValueExists(l) {
+		return parseListValue(l)
+	}
+
+	if objectValueExists(l) {
+		return parseObjectValue(l)
+	}
+
+	panic(errors.New("No valid value found."))
+}
+
+// https://graphql.github.io/graphql-spec/draft/#IntValue
+func intValueExists(l *lexer) bool {
+	_, err := strconv.ParseInt(l.current().value, 10, 64)
+	return err == nil
+}
+
+// https://graphql.github.io/graphql-spec/draft/#FloatValue
+func floatValueExists(l *lexer) bool {
+	_, err := strconv.ParseFloat(l.current().value, 64)
+	return err == nil
+}
+
+// https://graphql.github.io/graphql-spec/draft/#StringValue
+func stringValueExists(l *lexer) bool {
+	return singleQuotesStringValueExists(l) && blockStringExists(l)
+}
+
+// https://graphql.github.io/graphql-spec/draft/#BooleanValue
+func booleanValueExists(l *lexer) bool {
+	_, err := strconv.ParseBool(l.current().value)
+	return err == nil
+}
+
+// https://graphql.github.io/graphql-spec/draft/#NullValue
+func nullValueExists(l *lexer) bool {
+	return l.current().value == kwNull
+}
+
+// https://graphql.github.io/graphql-spec/draft/#EnumValue
+func enumValueExists(l *lexer) bool {
+	str := l.current().value
+
+	return nameExists(l) && str != kwTrue && str != kwFalse && str != kwNull
+}
+
+// https://graphql.github.io/graphql-spec/draft/#ListValue
+func listValueExists(l *lexer) bool {
+	return l.tokenEquals(tokBracketL.string())
+}
+
+// https://graphql.github.io/graphql-spec/draft/#ObjectValue
+func objectValueExists(l *lexer) bool {
+	return l.tokenEquals(tokBraceL.string())
+}
+
+// https://graphql.github.io/graphql-spec/draft/#Variable
+func variableExists(l *lexer) bool {
+	return string(l.current().value[0]) == tokDollar.string()
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Arguments
@@ -1589,39 +1673,95 @@ func parseStringValue(l *lexer) *stringValue {
 	return sv
 }
 
-//! https://graphql.github.io/graphql-spec/draft/#StringValue
+// https://graphql.github.io/graphql-spec/draft/#StringValue
 func parseSingleQuotesStringValue(l *lexer) *string {
 	var strVal *string
 
 	*strVal = l.current().value[1 : len(l.current().value)-1]
 
-	reg, err := regexp.Compile("/[\u0009\u000A\u000D\u0020-\uFFFF]/")
+	if len(*strVal) == 0 {
+		return strVal
+	}
+
+	if !validateSourceText(*strVal) {
+		panic(errors.New("Unsupported characters in a string value"))
+	}
+
+	str := *strVal
+
+	for i, _ := range str {
+		if str[i] == '\\' {
+			if i+1 >= len(str) {
+				panic(errors.New("Backslashes are not allowed in a string value"))
+			} else {
+				if str[i+1] == 'u' {
+					if i+5 >= len(str) {
+						panic(errors.New("Invalid escaped unicode character in string"))
+					} else {
+						if !validateEscapedUnicode(str[i+1 : i+6]) {
+							panic(errors.New(("Invalid escaped unicode character in string")))
+						}
+					}
+				} else {
+					switch str[i+1] {
+					case '"', '\\', '/', 'b', 'f', 'n', 'r', 't':
+					default:
+						panic(errors.New("Invalid escaped character in string"))
+					}
+				}
+			}
+		}
+	}
+
+	return strVal
+}
+
+// https://graphql.github.io/graphql-spec/draft/#StringValue
+func parseBlockString(l *lexer) *string {
+	var strVal *string
+
+	*strVal = l.current().value[3 : len(l.current().value)-3]
+
+	str := *strVal
+
+	if validateSourceText(str) &&
+		!strings.Contains(str, "\"\"\"") &&
+		!strings.Contains(str, "\\\"\"\"") {
+		return strVal
+	}
+
+	if str == "\\\"\"\"" {
+		return strVal
+	}
+
+	panic(errors.New("Invalid characters in block string"))
+}
+
+// https://graphql.github.io/graphql-spec/draft/#SourceCharacter
+func validateSourceText(str string) bool {
+	reg, err := regexp.Compile("/[\u0009\u000A\u000D\u0020-\uFFFF]*/")
 
 	if err != nil {
 		panic(err)
 	}
 
-	if reg.MatchString(*strVal) &&
-		!strings.Contains(*strVal, "\"") &&
-		!strings.Contains(*strVal, " \\ ") &&
-		!strings.Contains(*strVal, "\n") {
-		return strVal
-	} else {
-		panic(errors.New("Expecting a string value"))
-	}
+	return reg.MatchString(str)
 }
 
-//! https://graphql.github.io/graphql-spec/draft/#StringValue
-func parseBlockString(l *lexer) *string {
-	if blockStringExists(l) {
-		var strVal *string
-
-		*strVal = l.current().value[3 : len(l.current().value)-3]
-
-		return strVal
+func validateEscapedUnicode(str string) bool {
+	if str[0] != 'u' {
+		return false
 	}
 
-	panic(errors.New("Expecting triple quotes for a block string"))
+	str = str[1:len(str)]
+
+	reg, err := regexp.Compile("/[0-9A-Fa-f]{4}/")
+
+	if err != nil {
+		panic(err)
+	}
+
+	return reg.MatchString(str)
 }
 
 // https://graphql.github.io/graphql-spec/draft/#BooleanValue
@@ -1942,11 +2082,6 @@ func fieldsDefinitionExists(l *lexer) bool {
 // https://graphql.github.io/graphql-spec/draft/#Description
 func descriptionExists(l *lexer) bool {
 	return stringValueExists(l)
-}
-
-//! https://graphql.github.io/graphql-spec/draft/#StringValue
-func stringValueExists(l *lexer) bool {
-	return false
 }
 
 // https://graphql.github.io/graphql-spec/draft/#ScalarTypeDefinition
