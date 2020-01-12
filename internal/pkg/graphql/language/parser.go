@@ -1359,63 +1359,91 @@ func parseDefaultValue(l *lexer) *defaultValue {
 	}
 }
 
-//! https://graphql.github.io/graphql-spec/draft/#Value
+// https://graphql.github.io/graphql-spec/draft/#Value
 func parseValue(l *lexer) value {
 	if variableExists(l) {
 		return parseVariable(l)
 	}
 
 	if intValueExists(l) {
-
+		return parseIntValue(l)
 	}
 
-	str := &stringValue{}
-	str.Value = l.get().value
-	return str
+	if floatValueExists(l) {
+		return parseFloatValue(l)
+	}
+
+	if stringValueExists(l) {
+		return parseStringValue(l)
+	}
+
+	if booleanValueExists(l) {
+		return parseBooleanValue(l)
+	}
+
+	if nullValueExists(l) {
+		return parseNullValue(l)
+	}
+
+	if enumValueExists(l) {
+		return parseEnumValue(l)
+	}
+
+	if listValueExists(l) {
+		return parseListValue(l)
+	}
+
+	if objectValueExists(l) {
+		return parseObjectValue(l)
+	}
+
+	panic(errors.New("No valid value found."))
 }
 
-//!
 // https://graphql.github.io/graphql-spec/draft/#IntValue
 func intValueExists(l *lexer) bool {
-	return false
+	_, err := strconv.ParseInt(l.current().value, 10, 64)
+	return err == nil
 }
 
 // https://graphql.github.io/graphql-spec/draft/#FloatValue
 func floatValueExists(l *lexer) bool {
-	return false
+	_, err := strconv.ParseFloat(l.current().value, 64)
+	return err == nil
 }
 
 // https://graphql.github.io/graphql-spec/draft/#StringValue
 func stringValueExists(l *lexer) bool {
-	return false
+	return singleQuotesStringValueExists(l) && blockStringExists(l)
 }
 
 // https://graphql.github.io/graphql-spec/draft/#BooleanValue
 func booleanValueExists(l *lexer) bool {
-	return false
+	_, err := strconv.ParseBool(l.current().value)
+	return err == nil
 }
 
 // https://graphql.github.io/graphql-spec/draft/#NullValue
 func nullValueExists(l *lexer) bool {
-	return false
+	return l.current().value == kwNull
 }
 
 // https://graphql.github.io/graphql-spec/draft/#EnumValue
 func enumValueExists(l *lexer) bool {
-	return false
+	str := l.current().value
+
+	return nameExists(l) && str != kwTrue && str != kwFalse && str != kwNull
 }
 
 // https://graphql.github.io/graphql-spec/draft/#ListValue
 func listValueExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokBracketL.string())
 }
 
 // https://graphql.github.io/graphql-spec/draft/#ObjectValue
 func objectValueExists(l *lexer) bool {
-	return false
+	return l.tokenEquals(tokBraceL.string())
 }
-
-//!
 
 // https://graphql.github.io/graphql-spec/draft/#Variable
 func variableExists(l *lexer) bool {
@@ -2054,11 +2082,6 @@ func fieldsDefinitionExists(l *lexer) bool {
 // https://graphql.github.io/graphql-spec/draft/#Description
 func descriptionExists(l *lexer) bool {
 	return stringValueExists(l)
-}
-
-// https://graphql.github.io/graphql-spec/draft/#StringValue
-func stringValueExists(l *lexer) bool {
-	return singleQuotesStringValueExists(l) || blockStringExists(l)
 }
 
 // https://graphql.github.io/graphql-spec/draft/#ScalarTypeDefinition
