@@ -1336,6 +1336,7 @@ func parseVariable(l *lexer) *variable {
 	if !l.tokenEquals(tokDollar.string()) {
 		panic(errors.New("Expecting '$' for varible"))
 	} else {
+		l.get()
 		v.Name = *parseName(l)
 		v.Loc = location{locStart, l.prevLocation().End, l.source}
 
