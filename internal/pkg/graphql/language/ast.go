@@ -445,6 +445,7 @@ var _ value = (*floatValue)(nil)
 var _ value = (*stringValue)(nil)
 var _ value = (*booleanValue)(nil)
 var _ value = (*enumValue)(nil)
+var _ value = (*variable)(nil)
 
 type defaultValue struct {
 	Value value
@@ -539,6 +540,10 @@ func (nv nullValue) GetValue() interface{} {
 type variable struct {
 	Name name
 	locator
+}
+
+func (v variable) GetValue() interface{} {
+	return v.Name
 }
 
 type description stringValue
