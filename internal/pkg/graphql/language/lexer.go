@@ -428,12 +428,10 @@ func lex(doc string) ([]token, error) {
 					// If the current token is of type FLOAT, and the current token is not exponent
 					// character, return an error
 				} else if kind == tokFloat {
-					if runes[i] != 'e' && runes[i] != 'E' {
-						return nil, errors.New("unexpected character '" +
-							string(runes[i]) +
-							"' at position " +
-							strconv.Itoa(i))
-					}
+					return nil, errors.New("unexpected character '" +
+						string(runes[i]) +
+						"' at position " +
+						strconv.Itoa(i))
 				}
 
 				// Append the character to the token variable.
