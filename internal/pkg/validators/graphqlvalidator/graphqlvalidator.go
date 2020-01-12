@@ -3,7 +3,7 @@ package graphqlvalidator
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/omeryahud/caf/internal/pkg/graphql/language/parser"
+	"github.com/omeryahud/caf/internal/pkg/graphql/language"
 	"github.com/pkg/errors"
 )
 
@@ -33,7 +33,7 @@ func (gv GraphQLValidator) Validate(path, method string, bytes []byte) error {
 	}
 
 	// Parse the query in order to get an AST object.
-	ast, err := parser.Parse(body.Query)
+	ast, err := language.Parse(body.Query)
 	if err != nil {
 		return errors.Wrap(err, "GraphQL parser failed: ")
 	}
