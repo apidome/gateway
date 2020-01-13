@@ -16,7 +16,7 @@ func isNilInterface(i interface{}) bool {
 func Parse(doc string) (ret *document, err error) {
 	l, err := newlexer(doc)
 
-	// recover syntax errors
+	//recover syntax errors
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)

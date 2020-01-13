@@ -186,13 +186,14 @@ func (l *lexer) tokenEquals(tokVals ...string) bool {
 
 func lex(doc string) ([]token, error) {
 	var (
-		whiteSpaceOn  bool
-		stringOn      bool
-		blockStringOn bool
-		commentOn     bool
-		tok           string
-		kind          tokenKind
-		tokens        []token
+		whiteSpaceOn   bool
+		stringOn       bool
+		blockStringOn  bool
+		exponentPartOn bool
+		commentOn      bool
+		tok            string
+		kind           tokenKind
+		tokens         []token
 	)
 
 	runes := []rune(doc)
@@ -234,8 +235,10 @@ func lex(doc string) ([]token, error) {
 				if kind == tokInt {
 					kind = tokFloat
 				} else if kind == tokFloat {
-					// If we met '.' when the token kind is FLOAT, return an error.
-					return nil, errors.New("unexpected character '.' at position " + strconv.Itoa(i))
+					if exponentPartOn {
+						// If we met '.' when the token kind is FLOAT, return an error.
+						return nil, errors.New("unexpected character '.' at position " + strconv.Itoa(i))
+					}
 				}
 
 				// Append the character to the token.
@@ -419,6 +422,7 @@ func lex(doc string) ([]token, error) {
 				if kind == tokInt {
 					if runes[i] == 'e' || runes[i] == 'E' {
 						kind = tokFloat
+						exponentPartOn = true
 					} else {
 						return nil, errors.New("unexpected character '" +
 							string(runes[i]) +
