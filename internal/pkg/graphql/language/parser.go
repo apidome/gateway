@@ -17,11 +17,11 @@ func Parse(doc string) (ret *document, err error) {
 	l, err := newlexer(doc)
 
 	// recover syntax errors
-	//defer func() {
-	//	if r := recover(); r != nil {
-	//		err = r.(error)
-	//	}
-	//}()
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
 
 	ret = parseDocument(l)
 
