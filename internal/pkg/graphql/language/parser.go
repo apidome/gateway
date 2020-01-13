@@ -17,11 +17,11 @@ func Parse(doc string) (ret *document, err error) {
 	l, err := newlexer(doc)
 
 	// recover syntax errors
-	defer func() {
-		if r := recover(); r != nil {
-			err = r.(error)
-		}
-	}()
+	//defer func() {
+	//	if r := recover(); r != nil {
+	//		err = r.(error)
+	//	}
+	//}()
 
 	ret = parseDocument(l)
 
@@ -1164,6 +1164,7 @@ func parseVariableDefinition(l *lexer) *variableDefinition {
 		panic(errors.New("Expecting a colon after variable name"))
 	}
 
+	l.get()
 	vd.Type = parseType(l)
 
 	if defaultValueExists(l) {
@@ -1415,7 +1416,7 @@ func floatValueExists(l *lexer) bool {
 
 // https://graphql.github.io/graphql-spec/draft/#StringValue
 func stringValueExists(l *lexer) bool {
-	return singleQuotesStringValueExists(l) && blockStringExists(l)
+	return singleQuotesStringValueExists(l) || blockStringExists(l)
 }
 
 // https://graphql.github.io/graphql-spec/draft/#BooleanValue
@@ -1668,6 +1669,7 @@ func parseStringValue(l *lexer) *stringValue {
 		sv.Value = *parseBlockString(l)
 	}
 
+	l.get()
 	sv.Value = tok.value
 	sv.Loc = location{tok.start, tok.end, l.source}
 
@@ -1719,7 +1721,7 @@ func parseSingleQuotesStringValue(l *lexer) *string {
 
 // https://graphql.github.io/graphql-spec/draft/#StringValue
 func parseBlockString(l *lexer) *string {
-	var strVal *string
+	strVal := new(string)
 
 	*strVal = l.current().value[3 : len(l.current().value)-3]
 
@@ -1740,7 +1742,7 @@ func parseBlockString(l *lexer) *string {
 
 // https://graphql.github.io/graphql-spec/draft/#SourceCharacter
 func validateSourceText(str string) bool {
-	reg, err := regexp.Compile("/[\u0009\u000A\u000D\u0020-\uFFFF]*/")
+	reg, err := regexp.Compile("[\u0009\u000A\u000D\u0020-\uFFFF]*")
 
 	if err != nil {
 		panic(err)
@@ -1888,6 +1890,7 @@ func parseAlias(l *lexer) *alias {
 		panic(errors.New("Expecting colon after alias name"))
 	}
 
+	l.get()
 	return a
 }
 
@@ -2162,11 +2165,11 @@ func typeSystemExtensionExists(l *lexer) bool {
 }
 
 func singleQuotesStringValueExists(l *lexer) bool {
-	return l.current().value == "\"\""
+	return l.current().kind == tokString
 }
 
 func blockStringExists(l *lexer) bool {
-	return l.current().value == "\"\"\""
+	return l.current().kind == tokBlockString
 }
 
 func getUnexpected(l *lexer) string {
