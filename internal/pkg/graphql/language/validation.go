@@ -21,7 +21,7 @@ func validateOperationNameUniqueness(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Lone-Anonymous-Operation
-func validateLoneAnonymousOperaation(doc document) {
+func validateLoneAnonymousOperation(doc document) {
 
 }
 
@@ -47,6 +47,46 @@ func validateLeafFieldSelections(doc document) {
 
 // http://spec.graphql.org/draft/#sec-Argument-Names
 func validateArgumentNames(doc document) {
+
+}
+
+// http://spec.graphql.org/draft/#sec-Argument-Uniqueness
+func validateArgumentUniqueness(doc document) {
+
+}
+
+// http://spec.graphql.org/draft/#sec-Fragment-Name-Uniqueness
+func validateFragmentNameUniqueness(doc document) {
+
+}
+
+// http://spec.graphql.org/draft/#sec-Fragment-Spread-Type-Existence
+func validateFragmentSpreadTypeExistence(doc document) {
+
+}
+
+// http://spec.graphql.org/draft/#sec-Fragments-On-Composite-Types
+func validateFragmentsOnCompositeTypes(doc document) {
+
+}
+
+// http://spec.graphql.org/draft/#sec-Fragments-Must-Be-Used
+func validateFragmentsMustBeUsed(doc document) {
+
+}
+
+// http://spec.graphql.org/draft/#sec-Fragment-spread-target-defined
+func validateFragmentSpreadTargetDefined(doc document) {
+
+}
+
+// http://spec.graphql.org/draft/#sec-Fragment-spreads-must-not-form-cycles
+func validateFragmentSpreadsMustNotFormCycles(doc document) {
+
+}
+
+// http://spec.graphql.org/draft/#sec-Fragment-spread-is-possible
+func validateFragmentSpreadIsPossible(doc document) {
 
 }
 
