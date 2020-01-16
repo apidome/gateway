@@ -231,6 +231,9 @@ func lex(doc string) ([]token, error) {
 					continue
 				}
 
+				// Turn off the white space flag.
+				whiteSpaceOn = false
+
 				// If the kind of the token is INT, set it to FLOAT.
 				if kind == tokInt {
 					kind = tokFloat
@@ -411,6 +414,9 @@ func lex(doc string) ([]token, error) {
 					continue
 				}
 
+				// Turn off the white space flag.
+				whiteSpaceOn = false
+
 				// If the current character is the first character of the token,
 				// set the token kind to NAME.
 				if tok == "" {
@@ -446,6 +452,9 @@ func lex(doc string) ([]token, error) {
 				if commentOn {
 					continue
 				}
+
+				// Turn off the white space flag.
+				whiteSpaceOn = false
 
 				// If the current character (which is a digit) is the first character
 				// of the token, set the kind as an INT.
