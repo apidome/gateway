@@ -8,13 +8,17 @@ import (
 
 func main() {
 	query := `
-	{
-		user(id: 4) {
-		  id
+	query getDogName {
+		dog {
 		  name
-		  profilePic(width: 100, height: 50)
+		  color
 		}
 	  }
+	  
+	  extend type Dog {
+		color: String
+	  }
+	  
 	`
 
 	_, err := language.Parse(query)

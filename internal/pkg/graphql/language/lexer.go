@@ -35,6 +35,7 @@ const (
 	kwTrue         = "true"
 	kwFalse        = "false"
 	kwNull         = "null"
+	kwRepeatable   = "repeatable"
 )
 
 const (
