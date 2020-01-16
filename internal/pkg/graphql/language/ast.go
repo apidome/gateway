@@ -62,6 +62,8 @@ type executableDirectiveLocation directiveLocation
 
 type typeSystemDirectiveLocation directiveLocation
 
+type description stringValue
+
 type location struct {
 	Start  int
 	End    int
@@ -809,7 +811,6 @@ type value interface {
 	GetValue() interface{}
 }
 
-var _ value = (*defaultValue)(nil)
 var _ value = (*objectField)(nil)
 var _ value = (*objectValue)(nil)
 var _ value = (*listValue)(nil)
@@ -819,19 +820,6 @@ var _ value = (*stringValue)(nil)
 var _ value = (*booleanValue)(nil)
 var _ value = (*enumValue)(nil)
 var _ value = (*variable)(nil)
-
-type defaultValue struct {
-	Value value
-	locator
-}
-
-func (d *defaultValue) value() value {
-	return d
-}
-
-func (dv defaultValue) GetValue() interface{} {
-	return dv.Value.GetValue()
-}
 
 type objectField struct {
 	Name  name
@@ -963,4 +951,11 @@ func (v variable) GetValue() interface{} {
 	return v.Name
 }
 
-type description stringValue
+type defaultValue struct {
+	Value value
+	locator
+}
+
+func (dv defaultValue) GetValue() interface{} {
+	return dv.Value.GetValue()
+}
