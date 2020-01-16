@@ -714,6 +714,12 @@ func parseDirectiveLocations(l *lexer) *directiveLocations {
 
 // https://graphql.github.io/graphql-spec/draft/#TypeExtension
 func parseTypeExtension(l *lexer) typeExtension {
+	if !l.tokenEquals(kwExtend) {
+		panic(errors.New("Expecting 'extend' keyword"))
+	}
+
+	l.get()
+
 	if scalarTypeDefinitionExists(l) {
 		return parseScalarTypeExtension(l)
 	}
@@ -747,11 +753,10 @@ func parseScalarTypeExtension(l *lexer) *scalarTypeExtension {
 
 	locStart := l.location().Start
 
-	if !l.tokenEquals(kwExtend, kwScalar) {
+	if !l.tokenEquals(kwScalar) {
 		panic(errors.New("Expecting 'extend scalar' keywords for scalar type extension"))
 	}
 
-	l.get()
 	l.get()
 
 	ste.Name = *parseName(l)
@@ -767,11 +772,10 @@ func parseObjectTypeExtension(l *lexer) *objectTypeExtension {
 
 	locStart := l.location().Start
 
-	if !l.tokenEquals(kwExtend, kwType) {
+	if !l.tokenEquals(kwType) {
 		panic(errors.New("Expecting 'extend type' keywords for object type extension"))
 	}
 
-	l.get()
 	l.get()
 
 	ote.Name = *parseName(l)
@@ -805,11 +809,10 @@ func parseInterfaceTypeExtension(l *lexer) *interfaceTypeExtension {
 
 	locStart := l.location().Start
 
-	if !l.tokenEquals(kwExtend, kwInterface) {
+	if !l.tokenEquals(kwInterface) {
 		panic(errors.New("Expecting 'extend interface' keywords for interface type extension"))
 	}
 
-	l.get()
 	l.get()
 
 	ite.Name = *parseName(l)
@@ -837,11 +840,10 @@ func parseUnionTypeExtension(l *lexer) *unionTypeExtension {
 
 	locStart := l.location().Start
 
-	if !l.tokenEquals(kwExtend, tsdlUnion) {
+	if !l.tokenEquals(tsdlUnion) {
 		panic(errors.New("Expecting 'extend union' keywords for union type extension"))
 	}
 
-	l.get()
 	l.get()
 
 	ute.Name = *parseName(l)
@@ -869,11 +871,10 @@ func parseEnumTypeExtension(l *lexer) *enumTypeExtension {
 
 	locStart := l.location().Start
 
-	if !l.tokenEquals(kwExtend, tsdlEnum) {
+	if !l.tokenEquals(tsdlEnum) {
 		panic(errors.New("Expecting 'extend enum' keywords for enum type extension"))
 	}
 
-	l.get()
 	l.get()
 
 	ete.Name = *parseName(l)
@@ -995,11 +996,10 @@ func parseInputObjectTypeExtension(l *lexer) *inputObjectTypeExtension {
 
 	locStart := l.location().Start
 
-	if !l.tokenEquals(kwExtend, kwInput) {
+	if !l.tokenEquals(kwInput) {
 		panic(errors.New("Expecting 'extend' keyword for input object type extension"))
 	}
 
-	l.get()
 	l.get()
 
 	iote.Name = *parseName(l)
@@ -1993,8 +1993,7 @@ func operationTypeExists(l *lexer) bool {
 
 // https://graphql.github.io/graphql-spec/draft/#TypeExtension
 func typeExtensionExists(l *lexer) bool {
-	return scalarTypeExtensionExists(l) || objectTypeExtensionExists(l) || interfaceTypeExtensionExists(l) ||
-		unionTypeExtensionExists(l) || enumTypeExtensionExists(l) || inputObjectTypeExtensionExists(l)
+	return l.tokenEquals(kwExtend)
 }
 
 // https://graphql.github.io/graphql-spec/draft/#SchemaExtension
