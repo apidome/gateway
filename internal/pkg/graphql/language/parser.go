@@ -25,6 +25,8 @@ func Parse(doc string) (ret *document, err error) {
 
 	ret = parseDocument(l)
 
+	validateDocument(nil, ret)
+
 	return
 }
 
@@ -672,6 +674,10 @@ func parseDirectiveDefinition(l *lexer) *directiveDefinition {
 
 	if argumentsDefinitionExist(l) {
 		dd.ArgumentsDefinition = parseArgumentsDefinition(l)
+	}
+
+	if l.tokenEquals(kwRepeatable) {
+		l.get()
 	}
 
 	if !l.tokenEquals(kwOn) {
@@ -1574,15 +1580,15 @@ func parseInlineFragment(l *lexer) *inlineFragment {
 }
 
 // https://graphql.github.io/graphql-spec/draft/#FragmentName
-func parseFragmentName(l *lexer) *fragmentName {
+func parseFragmentName(l *lexer) *name {
 	nam := parseName(l)
 
 	if nam.Value == kwOn {
 		panic(errors.New("Fragment name cannot be 'on'"))
 	}
 
-	fn := &fragmentName{}
-	*fn = fragmentName(*nam)
+	fn := &name{}
+	*fn = name(*nam)
 	fn.Loc = *nam.Location()
 
 	return fn
