@@ -64,7 +64,46 @@ func validateFragmentSpreadTargetDefined(doc document) {
 
 // http://spec.graphql.org/draft/#sec-Fragment-spreads-must-not-form-cycles
 func validateFragmentSpreadsMustNotFormCycles(doc document) {
+	fragmentsDict := make(map[string]fragmentDefinition)
 
+	// Populate the fragment dictionary with all the fragments in the document.
+	// the key of the dictionary is the name of the fragment definition for easy
+	// access.
+	for _, def := range doc.Definitions {
+		if fragDef, ok := def.(*fragmentDefinition); ok {
+			fragmentsDict[fragDef.FragmentName.Value] = *fragDef
+		}
+	}
+
+	// For each fragment, call detectFragmentCycles()
+	for _, fragDef := range fragmentsDict {
+		visited := make(map[string]struct{}, 0)
+		detectFragmentCycles(fragDef, visited, fragmentsDict)
+	}
+}
+
+func detectFragmentCycles(fragDef fragmentDefinition,
+	visited map[string]struct{},
+	fragmentDict map[string]fragmentDefinition) {
+	// spreads is a set that contains all fragment spreads descendants of fragDef.
+	spreads := make(map[string]struct{}, 0)
+
+	// Extract all fragment spreads descendants of fragDef.
+	extractUsedFragmentsNames(fragDef.GetSelectionSet(), spreads)
+
+	// For each spread, make sure that it is not already exists in visited.
+	// If it is, panic.
+	for spread := range spreads {
+		if _, ok := visited[spread]; ok {
+			panic(errors.New("The graph of fragment spreads must not form any cycles including spreading itself"))
+		}
+
+		// Add the spread to the visited set.
+		visited[spread] = struct{}{}
+
+		// Call detectFragmentCycles with the target of spread.
+		detectFragmentCycles(fragmentDict[spread], visited, fragmentDict)
+	}
 }
 
 // http://spec.graphql.org/draft/#sec-Fragment-spread-is-possible
