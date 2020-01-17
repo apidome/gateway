@@ -1603,6 +1603,7 @@ func parseTypeCondition(l *lexer) *typeCondition {
 	if !l.tokenEquals(kwOn) {
 		panic(errors.New("Expecting 'on' keyword for a type condition"))
 	} else {
+		l.get()
 		tc.NamedType = *parseNamedType(l)
 		tc.Loc = location{locStart, l.prevLocation().End, l.source}
 

@@ -36,7 +36,7 @@ func validateInputObjectFieldUniqueness(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Required-Fields
-func validateInputObjectRequiredFieds(doc document) {
+func validateInputObjectRequiredFields(doc document) {
 
 }
 
