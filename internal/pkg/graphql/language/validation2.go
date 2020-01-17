@@ -2,25 +2,6 @@ package language
 
 import "github.com/pkg/errors"
 
-// http://spec.graphql.org/draft/#sec-Fragments-Must-Be-Used
-func validateFragmentsMustBeUsed(doc document) {
-	fragmentSpreadTargets := make(map[string]struct{}, 0)
-
-	// Extract fragment spread targets from all the definitions in the document.
-	for _, def := range doc.Definitions {
-		exeDef := def.(executableDefinition)
-		extractUsedFragmentsNames(exeDef.GetSelectionSet(), fragmentSpreadTargets)
-	}
-
-	for _, def := range doc.Definitions {
-		if fragDef, ok := def.(*fragmentDefinition); ok {
-			if _, ok := fragmentSpreadTargets[fragDef.FragmentName.Value]; !ok {
-				panic(errors.New("all defined fragments in a graphql document must be used"))
-			}
-		}
-	}
-}
-
 func extractUsedFragmentsNames(selectionSet selectionSet, targetsSet map[string]struct{}) {
 	for _, selection := range selectionSet {
 		// If the selection is a fragment spread, append it's name to the names slice.
@@ -33,9 +14,52 @@ func extractUsedFragmentsNames(selectionSet selectionSet, targetsSet map[string]
 	}
 }
 
+// http://spec.graphql.org/draft/#sec-Fragments-Must-Be-Used
+func validateFragmentsMustBeUsed(doc document) {
+	fragmentSpreadTargets := make(map[string]struct{}, 0)
+
+	// Extract fragment spread targets from all the definitions in the document.
+	for _, def := range doc.Definitions {
+		exeDef := def.(executableDefinition)
+		extractUsedFragmentsNames(exeDef.GetSelectionSet(), fragmentSpreadTargets)
+	}
+
+	// For each fragment definition in the document, check if it's name exists
+	// in the fragment spread targets set. If not, panic.
+	for _, def := range doc.Definitions {
+		if fragDef, ok := def.(*fragmentDefinition); ok {
+			if _, ok := fragmentSpreadTargets[fragDef.FragmentName.Value]; !ok {
+				panic(errors.New("Defined fragments must be used within a document"))
+			}
+		}
+	}
+}
+
 // http://spec.graphql.org/draft/#sec-Fragment-spread-target-defined
 func validateFragmentSpreadTargetDefined(doc document) {
+	fragmentSpreadTargets := make(map[string]struct{}, 0)
+	fragmentDefinitionsNames := make(map[string]struct{})
 
+	// Collect all the fragment definitions' names into a dictionary of names.
+	for _, def := range doc.Definitions {
+		if fragDef, ok := def.(*fragmentDefinition); ok {
+			fragmentDefinitionsNames[fragDef.FragmentName.Value] = struct{}{}
+		}
+	}
+
+	// Extract fragment spread targets from all the definitions in the document.
+	for _, def := range doc.Definitions {
+		exeDef := def.(executableDefinition)
+		extractUsedFragmentsNames(exeDef.GetSelectionSet(), fragmentSpreadTargets)
+	}
+
+	// Verify that all the targets in the targets set are referring to a defined fragment.
+	// If not, panic.
+	for target := range fragmentSpreadTargets {
+		if _, ok := fragmentDefinitionsNames[target]; !ok {
+			panic(errors.New("Named fragment spreads must refer to fragments defined within the document"))
+		}
+	}
 }
 
 // http://spec.graphql.org/draft/#sec-Fragment-spreads-must-not-form-cycles
