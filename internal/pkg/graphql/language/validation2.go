@@ -1,8 +1,36 @@
 package language
 
+import "github.com/pkg/errors"
+
 // http://spec.graphql.org/draft/#sec-Fragments-Must-Be-Used
 func validateFragmentsMustBeUsed(doc document) {
+	fragmentSpreadTargets := make(map[string]struct{}, 0)
 
+	// Extract fragment spread targets from all the definitions in the document.
+	for _, def := range doc.Definitions {
+		exeDef := def.(executableDefinition)
+		extractUsedFragmentsNames(exeDef.GetSelectionSet(), fragmentSpreadTargets)
+	}
+
+	for _, def := range doc.Definitions {
+		if fragDef, ok := def.(*fragmentDefinition); ok {
+			if _, ok := fragmentSpreadTargets[fragDef.FragmentName.Value]; !ok {
+				panic(errors.New("all defined fragments in a graphql document must be used"))
+			}
+		}
+	}
+}
+
+func extractUsedFragmentsNames(selectionSet selectionSet, targetsSet map[string]struct{}) {
+	for _, selection := range selectionSet {
+		// If the selection is a fragment spread, append it's name to the names slice.
+		// Else, extract the fragment names from all spreads in the selection's selectionSet.
+		if fragmentSpread, ok := selection.(*fragmentSpread); ok {
+			targetsSet[fragmentSpread.FragmentName.Value] = struct{}{}
+		} else if selection.Selections() != nil {
+			extractUsedFragmentsNames(*selection.Selections(), targetsSet)
+		}
+	}
 }
 
 // http://spec.graphql.org/draft/#sec-Fragment-spread-target-defined
