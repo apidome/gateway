@@ -1323,12 +1323,12 @@ func parseSelection(l *lexer) selection {
 		return parseField(l)
 	}
 
-	if fragmentSpreadExists(l) {
-		return parseFragmentSpread(l)
-	}
-
 	if inlineFragmentExists(l) {
 		return parseInlineFragment(l)
+	}
+
+	if fragmentSpreadExists(l) {
+		return parseFragmentSpread(l)
 	}
 
 	panic(errors.New("Expecting a selection"))
@@ -1685,7 +1685,7 @@ func parseStringValue(l *lexer) *stringValue {
 
 // https://graphql.github.io/graphql-spec/draft/#StringValue
 func parseSingleQuotesStringValue(l *lexer) *string {
-	var strVal *string
+	strVal := new(string)
 
 	*strVal = l.current().value[1 : len(l.current().value)-1]
 
@@ -1842,6 +1842,8 @@ func parseListValue(l *lexer) *listValue {
 		for !l.tokenEquals(tokBracketR.string()) {
 			lv.Values = append(lv.Values, parseValue(l))
 		}
+
+		l.get()
 
 		lv.Loc = location{locStart, l.prevLocation().End, l.source}
 

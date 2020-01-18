@@ -8,17 +8,21 @@ import (
 
 func main() {
 	query := `
-	query getDogName {
-		dog {
-		  name
-		  color
+	query inlineFragmentTyping {
+		profiles(handles: ["zuck", "cocacola"]) {
+		  handle
+		  ... on User {
+			friends {
+			  count
+			}
+		  }
+		  ... on Page {
+			likers {
+			  count
+			}
+		  }
 		}
 	  }
-	  
-	  extend type Dog {
-		color: String
-	  }
-	  
 	`
 
 	_, err := language.Parse(query)
