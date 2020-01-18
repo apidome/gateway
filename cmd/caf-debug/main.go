@@ -8,18 +8,14 @@ import (
 
 func main() {
 	query := `
-	query inlineFragmentTyping {
-		profiles(handles: ["zuck", "cocacola"]) {
-		  handle
-		  ... on User {
-			friends {
-			  count
-			}
-		  }
-		  ... on Page {
-			likers {
-			  count
-			}
+	query inlineFragmentNoType($expandedInfo: Boolean) {
+		user(handle: "zuck") {
+		  id
+		  name
+		  ... @include(if: $expandedInfo) {
+			firstName
+			lastName
+			birthday
 		  }
 		}
 	  }

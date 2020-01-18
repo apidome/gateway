@@ -1932,7 +1932,22 @@ func fragmentSpreadExists(l *lexer) bool {
 
 // https://graphql.github.io/graphql-spec/draft/#InlineFragment
 func inlineFragmentExists(l *lexer) bool {
-	return l.tokenEquals(tokSpread.string()) && l.tokens[l.currentTokenIndex+1].value == kwOn
+	if !l.tokenEquals(tokSpread.string()) {
+		return false
+	}
+
+	tmpLexer := *l
+	tmpLexer.get()
+
+	if typeConditionExists(&tmpLexer) {
+		parseTypeCondition(&tmpLexer)
+	}
+
+	if directivesExist(&tmpLexer) {
+		parseDirectives(&tmpLexer)
+	}
+
+	return selectionSetExists(&tmpLexer)
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Arguments
@@ -1998,7 +2013,17 @@ func operationTypeExists(l *lexer) bool {
 
 // https://graphql.github.io/graphql-spec/draft/#TypeExtension
 func typeExtensionExists(l *lexer) bool {
-	return l.tokenEquals(kwExtend)
+	return (scalarTypeExtensionExists(l) ||
+		objectTypeExtensionExists(l) ||
+		interfaceTypeExtensionExists(l) ||
+		unionTypeExtensionExists(l) ||
+		enumTypeExtensionExists(l) ||
+		inputObjectTypeExtensionExist(l))
+}
+
+// http://spec.graphql.org/draft/#InputObjectTypeExtension
+func inputObjectTypeExtensionExist(l *lexer) bool {
+	return l.tokenEquals(kwExtend, kwInput)
 }
 
 // https://graphql.github.io/graphql-spec/draft/#SchemaExtension
