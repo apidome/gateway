@@ -1864,6 +1864,8 @@ func parseObjectValue(l *lexer) *objectValue {
 			ov.Values = append(ov.Values, *parseObjectField(l))
 		}
 
+		l.get()
+
 		ov.Loc = location{locStart, l.prevLocation().End, l.source}
 
 		return ov

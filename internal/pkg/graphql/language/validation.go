@@ -1,6 +1,7 @@
 package language
 
-func validateDocument(sysDef typeSystemDefinition, docRoot *document) {
+// Main validation function
+func validateDocument(schema *document, docRoot *document) {
 
 }
 
@@ -35,59 +36,131 @@ func validateOperationNameUniqueness(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Lone-Anonymous-Operation
-// func validateLoneAnonymousOperation(doc document) {
-// 	if len(doc.Definitions) > 1 {
-// 		for _, op := range doc.Definitions {
-// 			execDef, isExecDef := op.(executableDefinition)
+func validateLoneAnonymousOperation(doc *document) {
+	operations := getOperationDefinitions(doc)
 
-// 			if isExecDef {
+	anonymous := getAnonymousOperationDefinitions(doc)
 
-// 			}
-// 		}
-// 	}
-// }
-
-// http://spec.graphql.org/draft/#sec-Single-root-field
-func validateSingleRootField(doc document) {
-
+	if len(operations) > 1 {
+		if len(anonymous) != 0 {
+			panic("An anonymous operation must be the only operation in a document")
+		}
+	}
 }
 
-// http://spec.graphql.org/draft/#sec-Field-Selections-on-Objects-Interfaces-and-Unions-Types
+//! http://spec.graphql.org/draft/#sec-Single-root-field
+func validateSingleRootField(doc *document, schema *schemaDefinition) {
+	//TODO When the relevant execution function is done, come back here
+}
+
+//! http://spec.graphql.org/draft/#sec-Field-Selections-on-Objects-Interfaces-and-Unions-Types
 func validateFieldSelectionsOnObjectsInterfaceAndUnionsTypes(doc document) {
 
 }
 
-// http://spec.graphql.org/draft/#sec-Field-Selection-Merging
+//! http://spec.graphql.org/draft/#sec-Field-Selection-Merging
 func validateFieldSelectionMerging(doc document) {
 
 }
 
-// http://spec.graphql.org/draft/#sec-Leaf-Field-Selections
+//! http://spec.graphql.org/draft/#sec-Leaf-Field-Selections
 func validateLeafFieldSelections(doc document) {
 
 }
 
-// http://spec.graphql.org/draft/#sec-Argument-Names
+//! http://spec.graphql.org/draft/#sec-Argument-Names
 func validateArgumentNames(doc document) {
 
 }
 
-// http://spec.graphql.org/draft/#sec-Argument-Uniqueness
+//! http://spec.graphql.org/draft/#sec-Argument-Uniqueness
 func validateArgumentUniqueness(doc document) {
 
 }
 
-// http://spec.graphql.org/draft/#sec-Fragment-Name-Uniqueness
+//! http://spec.graphql.org/draft/#sec-Fragment-Name-Uniqueness
 func validateFragmentNameUniqueness(doc document) {
 
 }
 
-// http://spec.graphql.org/draft/#sec-Fragment-Spread-Type-Existence
+//! http://spec.graphql.org/draft/#sec-Fragment-Spread-Type-Existence
 func validateFragmentSpreadTypeExistence(doc document) {
 
 }
 
-// http://spec.graphql.org/draft/#sec-Fragments-On-Composite-Types
+//! http://spec.graphql.org/draft/#sec-Fragments-On-Composite-Types
 func validateFragmentsOnCompositeTypes(doc document) {
 
+}
+
+// Helper functions
+
+func getOperationDefinitions(doc *document) []operationDefinition {
+	operationDefinitions := make([]operationDefinition, 0)
+
+	for _, def := range doc.Definitions {
+		opDef, isOpDef := def.(*operationDefinition)
+
+		if isOpDef {
+			operationDefinitions = append(operationDefinitions, *opDef)
+		}
+	}
+
+	return operationDefinitions
+}
+
+func getExecutableDefinitions(doc *document) []executableDefinition {
+	executableDefinitions := make([]executableDefinition, 0)
+
+	for _, def := range doc.Definitions {
+		execDef, isExecDef := def.(executableDefinition)
+
+		if isExecDef {
+			executableDefinitions = append(executableDefinitions, execDef)
+		}
+	}
+
+	return executableDefinitions
+}
+
+func getAnonymousOperationDefinitions(doc *document) []operationDefinition {
+	anons := make([]operationDefinition, 0)
+
+	for _, def := range doc.Definitions {
+		opDef, isOpDef := def.(*operationDefinition)
+
+		if isOpDef {
+			if opDef.Name == nil {
+				anons = append(anons, *opDef)
+			}
+		}
+	}
+
+	return anons
+}
+
+func getSubscriptionOperations(doc *document) []operationDefinition {
+	subscriptions := make([]operationDefinition, 0)
+
+	for _, def := range doc.Definitions {
+		opDef, isOpDef := def.(*operationDefinition)
+
+		if isOpDef {
+			if opDef.OperationType == operationSubscription {
+				subscriptions = append(subscriptions, *opDef)
+			}
+		}
+	}
+
+	return subscriptions
+}
+
+func getRootSubscriptionType(schema *schemaDefinition) *rootOperationTypeDefinition {
+	for i, _ := range schema.RootOperationTypeDefinitions {
+		if schema.RootOperationTypeDefinitions[i].OperationType == operationSubscription {
+			return &schema.RootOperationTypeDefinitions[i]
+		}
+	}
+
+	return nil
 }
