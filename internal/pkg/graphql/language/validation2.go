@@ -19,7 +19,8 @@ func validateFragmentsMustBeUsed(doc document) {
 	for _, def := range doc.Definitions {
 		if fragDef, ok := def.(*fragmentDefinition); ok {
 			if _, ok := fragmentSpreadTargets[fragDef.FragmentName.Value]; !ok {
-				panic(errors.New("Defined fragments must be used within a document"))
+				panic(errors.New("Defined fragments must be used within " +
+					"a document"))
 			}
 		}
 	}
@@ -47,7 +48,8 @@ func validateFragmentSpreadTargetDefined(doc document) {
 	// If not, panic.
 	for target := range fragmentSpreadTargets {
 		if _, ok := fragmentDefinitionsNames[target]; !ok {
-			panic(errors.New("Named fragment spreads must refer to fragments defined within the document"))
+			panic(errors.New("Named fragment spreads must refer to fragments" +
+				" defined within the document"))
 		}
 	}
 }
@@ -115,7 +117,29 @@ func validateVariableAreInputTypes(doc document) {
 
 // http://spec.graphql.org/draft/#sec-All-Variable-Uses-Defined
 func validateAllVariableUsesDefined(doc document) {
+	fragmentsPool := getFragmentsPool(doc)
 
+	for _, def := range doc.Definitions {
+		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
+			usedVariablesSet := make(map[string]struct{}, 0)
+			extractUsedVariablesNames(opDef.SelectionSet, usedVariablesSet, fragmentsPool)
+
+			definedVariables := make(map[string]struct{}, 0)
+			if opDef.VariableDefinitions != nil {
+				for _, variable := range *opDef.VariableDefinitions {
+					definedVariables[variable.Variable.Name.Value] = struct{}{}
+				}
+			}
+
+			for usedVariable := range usedVariablesSet {
+				if _, isUsedVariableDefined := definedVariables[usedVariable]; !isUsedVariableDefined {
+					panic(errors.New("Variables are scoped on a per‐operation " +
+						"basis. That means that any variable used within the context of " +
+						"an operation must be defined at the top level of that operation"))
+				}
+			}
+		}
+	}
 }
 
 // http://spec.graphql.org/draft/#sec-All-Variables-Used
@@ -130,7 +154,9 @@ func validateAllVariablesUsed(doc document) {
 
 				for _, variable := range *opDef.VariableDefinitions {
 					if _, isVariableUsed := usedVariablesSet[variable.Variable.Name.Value]; !isVariableUsed {
-						panic(errors.New("All variables defined by an operation must be used in that operation or a fragment transitively included by that operation"))
+						panic(errors.New("All variables defined by an operation" +
+							" must be used in that operation or a fragment transitively " +
+							"included by that operation"))
 					}
 				}
 			}
@@ -209,7 +235,8 @@ func detectFragmentCycles(fragDef fragmentDefinition,
 	// If it is, panic.
 	for spread := range spreads {
 		if _, ok := visited[spread]; ok {
-			panic(errors.New("The graph of fragment spreads must not form any cycles including spreading itself"))
+			panic(errors.New("The graph of fragment spreads must not" +
+				" form any cycles including spreading itself"))
 		}
 
 		// Add the spread to the visited set.
