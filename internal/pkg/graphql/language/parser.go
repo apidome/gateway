@@ -13,7 +13,7 @@ func isNilInterface(i interface{}) bool {
 	return reflect.ValueOf(i).IsNil()
 }
 
-func Parse(doc string) (ret *document, err error) {
+func Parse(schema *document, doc string) (ret *document, err error) {
 	l, err := newlexer(doc)
 
 	//recover syntax errors
@@ -25,7 +25,22 @@ func Parse(doc string) (ret *document, err error) {
 
 	ret = parseDocument(l)
 
-	validateDocument(nil, ret)
+	validateDocument(schema, ret)
+
+	return
+}
+
+func ParseSchema(doc string) (ret *document, err error) {
+	l, err := newlexer(doc)
+
+	//recover syntax errors
+	defer func() {
+		if r := recover(); r != nil {
+			err = r.(error)
+		}
+	}()
+
+	ret = parseDocument(l)
 
 	return
 }

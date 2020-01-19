@@ -107,12 +107,38 @@ func validateDirectivesAreUniquePerLocation(doc document) {
 
 // http://spec.graphql.org/draft/#sec-Variable-Uniqueness
 func validateVariableUniqueness(doc document) {
+	for _, def := range doc.Definitions {
+		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
+			if opDef.VariableDefinitions != nil {
+				variablesSet := make(map[string]struct{}, 0)
 
+				for _, variable := range *opDef.VariableDefinitions {
+					if _, isVariableExists := variablesSet[variable.Variable.Name.Value]; isVariableExists {
+						panic(errors.New("If any operation defines more than one" +
+							" variable with the same name, it is ambiguous and invalid"))
+					}
+
+					variablesSet[variable.Variable.Name.Value] = struct{}{}
+				}
+			}
+		}
+	}
 }
 
 // http://spec.graphql.org/draft/#sec-Variables-Are-Input-Types
-func validateVariableAreInputTypes(doc document) {
-
+func validateVariableAreInputTypes(schema document, doc document) {
+	for _, def := range doc.Definitions {
+		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
+			if opDef.VariableDefinitions != nil {
+				for _, variable := range *opDef.VariableDefinitions {
+					if !isInputType(schema, variable.Type) {
+						panic(errors.New("Variables can only be input types. " +
+							"Objects, unions, and interfaces cannot be used as inputs."))
+					}
+				}
+			}
+		}
+	}
 }
 
 // http://spec.graphql.org/draft/#sec-All-Variable-Uses-Defined
@@ -245,4 +271,19 @@ func detectFragmentCycles(fragDef fragmentDefinition,
 		// Call detectFragmentCycles with the target of spread.
 		detectFragmentCycles(*fragmentsPool[spread], visited, fragmentsPool)
 	}
+}
+
+func isInputType(schema document, variableType _type) bool {
+	// TODO: Implement this function after omeryahud will fix _type interface
+	//for _, def := range schema.Definitions {
+	//	if typeDef, isTypeDef := def.(typeDefinition); isTypeDef {
+	//
+	//	}
+	//}
+	return false
+}
+
+func isOutputType(schema document, variableType _type) bool {
+	// TODO: Implement this function after omeryahud will fix _type interface
+	return false
 }
