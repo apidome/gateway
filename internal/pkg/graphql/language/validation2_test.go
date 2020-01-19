@@ -61,26 +61,24 @@ extend type Query {
 `
 
 	query := `
-query takesBoolean($atOtherHomes: Boolean) {
+query A($atOtherHomes: Boolean) {
+  ...HouseTrainedFragment
+}
+
+query B($atOtherHomes: Boolean) {
+  ...HouseTrainedFragment
+}
+
+fragment HouseTrainedFragment {
   dog {
     isHousetrained(atOtherHomes: $atOtherHomes)
   }
-}
-
-query takesComplexInput($complexInput: ComplexInput) {
-  findDog(complex: $complexInput) {
-    name
-  }
-}
-
-query TakesListOfBooleanBang($booleans: [Boolean!]) {
-  booleanList(booleanListArg: $booleans)
 }
 `
 
 	schemaAST, err := ParseSchema(rawSchema)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 
 	queryAST, err := Parse(schemaAST, query)
@@ -88,5 +86,7 @@ query TakesListOfBooleanBang($booleans: [Boolean!]) {
 		t.Fatal(err)
 	}
 
-	validateVariableAreInputTypes(*schemaAST, *queryAST)
+	validateVariableUniqueness(*queryAST)
+
+	t.Log("Validation Succeeded")
 }

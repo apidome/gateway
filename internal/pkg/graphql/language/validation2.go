@@ -107,7 +107,22 @@ func validateDirectivesAreUniquePerLocation(doc document) {
 
 // http://spec.graphql.org/draft/#sec-Variable-Uniqueness
 func validateVariableUniqueness(doc document) {
+	variablesSet := make(map[string]struct{}, 0)
 
+	for _, def := range doc.Definitions {
+		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
+			if opDef.VariableDefinitions != nil {
+				for _, variable := range *opDef.VariableDefinitions {
+					if _, isVariableExists := variablesSet[variable.Variable.Name.Value]; isVariableExists {
+						panic(errors.New("If any operation defines more than one" +
+							" variable with the same name, it is ambiguous and invalid"))
+					}
+
+					variablesSet[variable.Variable.Name.Value] = struct{}{}
+				}
+			}
+		}
+	}
 }
 
 // http://spec.graphql.org/draft/#sec-Variables-Are-Input-Types
