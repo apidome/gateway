@@ -756,6 +756,7 @@ func (i *inlineFragment) Selections() *selectionSet {
 
 type _type interface {
 	_type() _type
+	GetTypeName() string
 	locatorInterface
 }
 
@@ -769,6 +770,10 @@ func (n *namedType) _type() _type {
 	return n
 }
 
+func (n *namedType) GetTypeName() string {
+	return n.Value
+}
+
 type listType struct {
 	Kind   string
 	OfType _type
@@ -779,6 +784,10 @@ func (n *listType) _type() _type {
 	return n
 }
 
+func (n *listType) GetTypeName() string {
+	return n.OfType.GetTypeName()
+}
+
 type nonNullType struct {
 	Kind   string
 	OfType _type
@@ -787,6 +796,10 @@ type nonNullType struct {
 
 func (n *nonNullType) _type() _type {
 	return n
+}
+
+func (n *nonNullType) GetTypeName() string {
+	return n.OfType.GetTypeName()
 }
 
 type typeCondition struct {
