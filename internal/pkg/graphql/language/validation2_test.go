@@ -61,18 +61,20 @@ extend type Query {
 `
 
 	query := `
-query A($atOtherHomes: Boolean) {
-  ...HouseTrainedFragment
+query takesCat($cat: Cat) {
+  dsfsdf
 }
 
-query B($atOtherHomes: Boolean) {
-  ...HouseTrainedFragment
+query takesDogBang($dog: Dog!) {
+  sdfsdfsd
 }
 
-fragment HouseTrainedFragment on Dog {
-  dog {
-    isHousetrained(atOtherHomes: $atOtherHomes)
-  }
+query takesListOfPet($pets: [Pet]) {
+  sdfsdf
+}
+
+query takesCatOrDog($catOrDog: CatOrDog) {
+  sdfsdf
 }
 `
 
@@ -86,7 +88,7 @@ fragment HouseTrainedFragment on Dog {
 		t.Fatal(err)
 	}
 
-	validateVariableUniqueness(*queryAST)
+	validateVariableAreInputTypes(*schemaAST, *queryAST)
 
 	t.Log("Validation Succeeded")
 }

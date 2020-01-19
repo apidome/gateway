@@ -201,8 +201,8 @@ func extractUsedFragmentsNames(selectionSet selectionSet, targetsSet map[string]
 		// Else, extract the fragment names from all spreads in the selection's selectionSet.
 		if fragmentSpread, ok := selection.(*fragmentSpread); ok {
 			targetsSet[fragmentSpread.FragmentName.Value] = struct{}{}
-		} else if selection.Selections() != nil {
-			extractUsedFragmentsNames(*selection.Selections(), targetsSet)
+		} else if selection.GetSelections() != nil {
+			extractUsedFragmentsNames(*selection.GetSelections(), targetsSet)
 		}
 	}
 }
@@ -224,7 +224,7 @@ func extractUsedVariablesNames(selectionSet selectionSet,
 				extractUsedVariablesNames(*field.SelectionSet, variablesSet, fragmentsPool)
 			}
 		} else if inlineFrag, isInlineFrag := selection.(*inlineFragment); isInlineFrag {
-			extractUsedVariablesNames(*inlineFrag.Selections(), variablesSet, fragmentsPool)
+			extractUsedVariablesNames(*inlineFrag.GetSelections(), variablesSet, fragmentsPool)
 		} else if fragSpread, isFragSpread := selection.(*fragmentSpread); isFragSpread {
 			extractUsedVariablesNames(fragmentsPool[fragSpread.FragmentName.Value].SelectionSet,
 				variablesSet,
@@ -274,12 +274,46 @@ func detectFragmentCycles(fragDef fragmentDefinition,
 }
 
 func isInputType(schema document, variableType _type) bool {
-	// TODO: Implement this function after omeryahud will fix _type interface
-	//for _, def := range schema.Definitions {
-	//	if typeDef, isTypeDef := def.(typeDefinition); isTypeDef {
-	//
-	//	}
-	//}
+	basicScalars := map[string]struct{}{
+		"Boolean": struct{}{},
+		"String":  struct{}{},
+		"Int":     struct{}{},
+		"Float":   struct{}{},
+	}
+
+	if _, isBasicType := basicScalars[variableType.GetTypeName()]; isBasicType {
+		return true
+	}
+
+	if nonNullType, isNonNullType := variableType.(*nonNullType); isNonNullType {
+		// Let unwrappedType be the unwrapped type of type.
+		// Return IsInputType(unwrappedType)
+		return isInputType(schema, nonNullType.OfType)
+	}
+
+	if listType, isListType := variableType.(*listType); isListType {
+		// Let unwrappedType be the unwrapped type of type.
+		// Return IsInputType(unwrappedType)
+		return isInputType(schema, listType.OfType)
+	}
+
+	for _, def := range schema.Definitions {
+		if typeDef, isTypeDef := def.(typeDefinition); isTypeDef {
+			if typeDef.GetName().Value == variableType.GetTypeName() {
+				switch typeDef.(type) {
+				case *scalarTypeDefinition, *enumTypeDefinition, *inputObjectTypeDefinition:
+					{
+						return true
+					}
+				default:
+					{
+						return false
+					}
+				}
+			}
+		}
+	}
+
 	return false
 }
 
