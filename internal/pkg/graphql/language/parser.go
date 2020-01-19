@@ -148,9 +148,7 @@ func parseSchemaDefinition(l *lexer) *schemaDefinition {
 		panic(errors.New("Missing '}' for schema definition"))
 	}
 
-	locEnd := l.current().end
-
-	l.get()
+	locEnd := l.get().end
 
 	schDef.Loc = location{locStart, locEnd, l.source}
 
@@ -289,6 +287,8 @@ func parseObjectTypeDefinition(l *lexer) *objectTypeDefinition {
 		panic(errors.New("Expecting 'type' keyword for object type definition"))
 	}
 
+	l.get()
+
 	otd.Name = *parseName(l)
 
 	if implementsInterfacesExists(l) {
@@ -316,6 +316,8 @@ func parseImplementsInterfaces(l *lexer) *implementsInterfaces {
 		panic(errors.New("Expecting 'implements' keyword"))
 	}
 
+	l.get()
+
 	if l.tokenEquals(tokAmp.string()) {
 		l.get()
 	}
@@ -335,7 +337,7 @@ func parseImplementsInterfaces(l *lexer) *implementsInterfaces {
 func parseFieldsDefinition(l *lexer) *fieldsDefinition {
 	fds := &fieldsDefinition{}
 
-	if l.tokenEquals(tokBraceL.string()) {
+	if !l.tokenEquals(tokBraceL.string()) {
 		panic(errors.New("Expecting '{' for fields definition"))
 	}
 
@@ -1186,6 +1188,7 @@ func parseVariableDefinition(l *lexer) *variableDefinition {
 	}
 
 	l.get()
+
 	vd.Type = parseType(l)
 
 	if defaultValueExists(l) {
@@ -1359,6 +1362,7 @@ func parseVariable(l *lexer) *variable {
 		panic(errors.New("Expecting '$' for varible"))
 	} else {
 		l.get()
+
 		v.Name = *parseName(l)
 		v.Loc = location{locStart, l.prevLocation().End, l.source}
 
@@ -1375,6 +1379,8 @@ func parseDefaultValue(l *lexer) *defaultValue {
 	if !l.tokenEquals(tokEquals.string()) {
 		panic(errors.New("Expecting '=' for default value"))
 	} else {
+		l.get()
+
 		dv.Value = parseValue(l)
 		dv.Loc = location{locStart, l.prevLocation().End, l.source}
 
@@ -1484,7 +1490,6 @@ func parseArguments(l *lexer) *arguments {
 
 		for !l.tokenEquals(tokParenR.string()) {
 			*args = append(*args, *parseArgument(l))
-
 		}
 
 		l.get()
@@ -1619,6 +1624,7 @@ func parseTypeCondition(l *lexer) *typeCondition {
 		panic(errors.New("Expecting 'on' keyword for a type condition"))
 	} else {
 		l.get()
+
 		tc.NamedType = *parseNamedType(l)
 		tc.Loc = location{locStart, l.prevLocation().End, l.source}
 

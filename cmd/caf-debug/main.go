@@ -21,7 +21,7 @@ func main() {
 	  }
 	`
 
-	_, err := language.Parse(query)
+	_, err := language.Parse(nil, query)
 
 	if err != nil {
 		fmt.Println(err)
