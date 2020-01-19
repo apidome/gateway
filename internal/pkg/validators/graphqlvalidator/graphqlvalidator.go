@@ -33,7 +33,7 @@ func (gv GraphQLValidator) Validate(path, method string, bytes []byte) error {
 	}
 
 	// Parse the query in order to get an AST object.
-	ast, err := language.Parse(body.Query)
+	ast, err := language.Parse(nil, body.Query)
 	if err != nil {
 		return errors.Wrap(err, "GraphQL parser failed: ")
 	}
