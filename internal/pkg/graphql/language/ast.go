@@ -698,7 +698,8 @@ func (i *inputObjectTypeExtension) GetDirectives() *directives {
 type selection interface {
 	locatorInterface
 	selection() selection
-	Selections() *selectionSet
+	GetSelections() *selectionSet
+	GetDirectives() *directives
 }
 
 var _ selection = (*field)(nil)
@@ -720,8 +721,12 @@ func (f *field) selection() selection {
 	return f
 }
 
-func (f *field) Selections() *selectionSet {
+func (f *field) GetSelections() *selectionSet {
 	return f.SelectionSet
+}
+
+func (f *field) GetDirectives() *directives {
+	return f.Directives
 }
 
 type fragmentSpread struct {
@@ -734,9 +739,13 @@ func (f *fragmentSpread) selection() selection {
 	return f
 }
 
-// ! Find the fragment definition by its name and return its selection set
-func (f *fragmentSpread) Selections() *selectionSet {
+// TODO Find the fragment definition by its name and return its selection set
+func (f *fragmentSpread) GetSelections() *selectionSet {
 	return &selectionSet{}
+}
+
+func (f *fragmentSpread) GetDirectives() *directives {
+	return f.Directives
 }
 
 type inlineFragment struct {
@@ -750,8 +759,12 @@ func (i *inlineFragment) selection() selection {
 	return i
 }
 
-func (i *inlineFragment) Selections() *selectionSet {
+func (i *inlineFragment) GetSelections() *selectionSet {
 	return &i.SelectionSet
+}
+
+func (i *inlineFragment) GetDirectives() *directives {
+	return i.Directives
 }
 
 type _type interface {
