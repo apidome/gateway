@@ -301,7 +301,9 @@ func isInputType(schema document, variableType _type) bool {
 		if typeDef, isTypeDef := def.(typeDefinition); isTypeDef {
 			if typeDef.GetName().Value == variableType.GetTypeName() {
 				switch typeDef.(type) {
-				case *scalarTypeDefinition, *enumTypeDefinition, *inputObjectTypeDefinition:
+				case *scalarTypeDefinition,
+					*enumTypeDefinition,
+					*inputObjectTypeDefinition:
 					{
 						return true
 					}
@@ -318,6 +320,49 @@ func isInputType(schema document, variableType _type) bool {
 }
 
 func isOutputType(schema document, variableType _type) bool {
-	// TODO: Implement this function after omeryahud will fix _type interface
+	basicScalars := map[string]struct{}{
+		"Boolean": struct{}{},
+		"String":  struct{}{},
+		"Int":     struct{}{},
+		"Float":   struct{}{},
+	}
+
+	if _, isBasicType := basicScalars[variableType.GetTypeName()]; isBasicType {
+		return true
+	}
+
+	if nonNullType, isNonNullType := variableType.(*nonNullType); isNonNullType {
+		// Let unwrappedType be the unwrapped type of type.
+		// Return IsInputType(unwrappedType)
+		return isOutputType(schema, nonNullType.OfType)
+	}
+
+	if listType, isListType := variableType.(*listType); isListType {
+		// Let unwrappedType be the unwrapped type of type.
+		// Return IsInputType(unwrappedType)
+		return isOutputType(schema, listType.OfType)
+	}
+
+	for _, def := range schema.Definitions {
+		if typeDef, isTypeDef := def.(typeDefinition); isTypeDef {
+			if typeDef.GetName().Value == variableType.GetTypeName() {
+				switch typeDef.(type) {
+				case *scalarTypeDefinition,
+					*objectTypeDefinition,
+					*interfaceTypeDefinition,
+					*unionTypeDefinition,
+					*enumTypeDefinition:
+					{
+						return true
+					}
+				default:
+					{
+						return false
+					}
+				}
+			}
+		}
+	}
+
 	return false
 }
