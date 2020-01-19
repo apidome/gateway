@@ -455,7 +455,7 @@ func parseInterfaceTypeDefinition(l *lexer) *interfaceTypeDefinition {
 		itd.Description = parseDescription(l)
 	}
 
-	if !l.tokenEquals(tsdlInterface) {
+	if !l.tokenEquals(kwInterface) {
 		panic(errors.New("Expecting 'interface' keyword for interface type definition"))
 	}
 
@@ -486,7 +486,7 @@ func parseUnionTypeDefinition(l *lexer) *unionTypeDefinition {
 		utd.Description = parseDescription(l)
 	}
 
-	if !l.tokenEquals(tsdlUnion) {
+	if !l.tokenEquals(kwUnion) {
 		panic(errors.New("Expecting 'union' keyowrd for union type definition"))
 	}
 
@@ -546,7 +546,7 @@ func parseEnumTypeDefinition(l *lexer) *enumTypeDefinition {
 		etd.Description = parseDescription(l)
 	}
 
-	if !l.tokenEquals(tsdlEnum) {
+	if !l.tokenEquals(kwEnum) {
 		panic(errors.New("Expecting 'enum' keyword for enum type definition"))
 	}
 
@@ -1206,16 +1206,16 @@ func parseVariableDefinition(l *lexer) *variableDefinition {
 
 // https://graphql.github.io/graphql-spec/draft/#Type
 func parseType(l *lexer) _type {
+	if nonNullTypeExists(l) {
+		return parseNonNullType(l)
+	}
+
 	if namedTypeExists(l) {
 		return parseNamedType(l)
 	}
 
 	if listTypeExists(l) {
 		return parseListType(l)
-	}
-
-	if nonNullTypeExists(l) {
-		return parseNonNullType(l)
 	}
 
 	panic(errors.New("Expecting a type"))
@@ -2136,7 +2136,7 @@ func implementsInterfacesExists(l *lexer) bool {
 
 // https://graphql.github.io/graphql-spec/draft/#FieldsDefinition
 func fieldsDefinitionExists(l *lexer) bool {
-	return l.tokenEquals(tokBracketL.string())
+	return l.tokenEquals(tokBraceL.string())
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Description
