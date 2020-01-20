@@ -229,7 +229,10 @@ func isVariableUsageAllowed(varDef *variableDefinition /*, variableUsage */) boo
 	_, isVariableTypeANonNullType := variableType.(*nonNullType)
 	nonNullLocationType, isLocationTypeANonNullType := locationType.(*nonNullType)
 
+	// If locationType is a non‐null type AND variableType is NOT a non‐null type:
 	if isLocationTypeANonNullType && !isVariableTypeANonNullType {
+		// Let hasNonNullVariableDefaultValue be true if a default value exists for
+		// variableDefinition and is not the value null.
 		if varDef.DefaultValue != nil {
 			if _, isNullValue := (*varDef).DefaultValue.Value.(*nullValue); !isNullValue {
 				hasNonNullVariableDefaultValue = true
