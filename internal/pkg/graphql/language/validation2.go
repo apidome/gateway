@@ -213,8 +213,27 @@ func validateAllVariableUsagesAreAllowed(doc document) {
 }
 
 func isVariableUsageAllowed(varDef *variableDefinition) bool {
-	// TODO: Implement this.
-	return false
+	var (
+		hasNonNullVariableDefaultValue bool
+		hasLocationDefaultValue        bool
+	)
+	variableType := varDef.Type
+	locationType := nonNullType{}._type()
+
+	_, isVariableTypeIsNonNullType := variableType.(*nonNullType)
+	_, isLocationTypeIsNonNullType := locationType.(*nonNullType)
+
+	if !isVariableTypeIsNonNullType && !isLocationTypeIsNonNullType {
+		if varDef.DefaultValue != nil {
+			if _, isNullValue := (*varDef).DefaultValue.Value.(*nullValue); isNullValue {
+				hasNonNullVariableDefaultValue = true
+			}
+		}
+
+		// Let hasLocationDefaultValue be true if a default value exists for the Argument
+		// or ObjectField where variableUsage is located.
+
+	}
 }
 
 func areTypesCompatible() bool {
