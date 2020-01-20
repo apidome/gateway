@@ -212,16 +212,20 @@ func validateAllVariableUsagesAreAllowed(doc document) {
 	}
 }
 
-func isVariableUsageAllowed(varDef *variableDefinition) bool {
+func isVariableUsageAllowed(varDef *variableDefinition /*, variableUsage */) bool {
 	var (
 		hasNonNullVariableDefaultValue bool
 		hasLocationDefaultValue        bool
 	)
-	variableType := varDef.Type
+
+	// TODO: Replace this with a function argument.
 	locationType := nonNullType{}._type()
 
+	// Let variableType be the expected type of variableDefinition
+	variableType := varDef.Type
+
 	_, isVariableTypeIsNonNullType := variableType.(*nonNullType)
-	_, isLocationTypeIsNonNullType := locationType.(*nonNullType)
+	nonNullLocationType, isLocationTypeIsNonNullType := locationType.(*nonNullType)
 
 	if !isVariableTypeIsNonNullType && !isLocationTypeIsNonNullType {
 		if varDef.DefaultValue != nil {
@@ -232,8 +236,25 @@ func isVariableUsageAllowed(varDef *variableDefinition) bool {
 
 		// Let hasLocationDefaultValue be true if a default value exists for the Argument
 		// or ObjectField where variableUsage is located.
+		if locationType.DefaultValue {
+			hasLocationDefaultValue = true
+		}
 
+		// If hasNonNullVariableDefaultValue is NOT true AND hasLocationDefaultValue is
+		// NOT true, return false.
+		if !hasNonNullVariableDefaultValue && !hasLocationDefaultValue {
+			return false
+		}
+
+		// Let nullableLocationType be the unwrapped nullable type of locationType.
+		nullableLocationType := nonNullLocationType.OfType
+
+		// Check if the types are compatible.
+		return areTypesCompatible(variableType, nullableLocationType)
 	}
+
+	// Check if the types are compatible.
+	return areTypesCompatible(variableType, locationType)
 }
 
 func areTypesCompatible(variableType, locationType _type) bool {
