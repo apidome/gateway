@@ -236,9 +236,62 @@ func isVariableUsageAllowed(varDef *variableDefinition) bool {
 	}
 }
 
-func areTypesCompatible() bool {
-	// TODO: Implement this.
-	return false
+func areTypesCompatible(variableType, locationType _type) bool {
+	nonNullVariableType, isVariableTypeIsNonNullType := variableType.(*nonNullType)
+	nonNullLocationType, isLocationTypeIsNonNullType := locationType.(*nonNullType)
+
+	// If locationType is a non‐null type:
+	if isLocationTypeIsNonNullType {
+		// If variableType is NOT a non‐null type, return false.
+		if !isVariableTypeIsNonNullType {
+			return false
+		}
+
+		// Let nullableLocationType be the unwrapped nullable type of locationType.
+		nullableLocationType := nonNullLocationType.OfType
+
+		// Let nullableVariableType be the unwrapped nullable type of variableType.
+		nullableVariableType := nonNullVariableType.OfType
+
+		// Return the result of areTypesCompatible with the unwrapped types.
+		return areTypesCompatible(nullableVariableType, nullableLocationType)
+	}
+
+	// Otherwise, if variableType is a non‐null type:
+	if isVariableTypeIsNonNullType {
+		// Let nullableVariableType be the unwrapped nullable type of variableType.
+		nullableVariableType := nonNullVariableType.OfType
+
+		// Return the result of areTypesCompatible with the unwrapped types.
+		return areTypesCompatible(nullableVariableType, locationType)
+	}
+
+	listVariableType, isVariableTypeAListType := variableType.(*listType)
+	listLocationType, isLocationTypeAListType := locationType.(*listType)
+
+	// Otherwise, if locationType is a list type:
+	if isLocationTypeAListType {
+		// If variableType is NOT a list type, return false.
+		if !isVariableTypeAListType {
+			return false
+		}
+
+		// Let itemLocationType be the unwrapped item type of locationType.
+		itemLocationType := listLocationType.OfType
+
+		// Let itemVariableType be the unwrapped item type of variableType.
+		itemVariableType := listVariableType.OfType
+
+		// Return the result of areTypesCompatible with the unwrapped types.
+		return areTypesCompatible(itemVariableType, itemLocationType)
+	}
+
+	// Return true if variableType and locationType are identical, otherwise false.
+	return variableType.GetTypeName() == locationType.GetTypeName()
+}
+
+func collectVariableUsages() {
+
 }
 
 func extractUsedFragmentsNames(selectionSet selectionSet, targetsSet map[string]struct{}) {
