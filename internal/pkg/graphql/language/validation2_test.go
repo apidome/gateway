@@ -61,20 +61,13 @@ extend type Query {
 `
 
 	query := `
-query takesCat($cat: Cat) {
-  dsfsdf
-}
-
-query takesDogBang($dog: Dog!) {
-  sdfsdfsd
-}
-
-query takesListOfPet($pets: [Pet]) {
-  sdfsdf
-}
-
-query takesCatOrDog($catOrDog: CatOrDog) {
-  sdfsdf
+query ($foo: Boolean = true, $bar: Boolean = false) {
+  field @skip(if: [$foo]) {
+    subfieldA
+  }
+  field @skip(if: {a: $bar}) {
+    subfieldB
+  }
 }
 `
 
@@ -88,7 +81,7 @@ query takesCatOrDog($catOrDog: CatOrDog) {
 		t.Fatal(err)
 	}
 
-	validateVariableAreInputTypes(*schemaAST, *queryAST)
+	validateAllVariableUsesDefined(*queryAST)
 
 	t.Log("Validation Succeeded")
 }

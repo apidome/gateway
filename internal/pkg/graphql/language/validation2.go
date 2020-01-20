@@ -192,7 +192,34 @@ func validateAllVariablesUsed(doc document) {
 
 // http://spec.graphql.org/draft/#sec-All-Variable-Usages-are-Allowed
 func validateAllVariableUsagesAreAllowed(doc document) {
+	for _, def := range doc.Definitions {
+		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
+			variableUsages := make(map[string]struct{})
+			fragmentsPool := getFragmentsPool(doc)
+			extractUsedVariablesNames(opDef.SelectionSet, variableUsages, fragmentsPool)
 
+			for varUsage := range variableUsages {
+				for _, varDef := range *opDef.VariableDefinitions {
+					if varUsage == varDef.Variable.Name.Value {
+						if !isVariableUsageAllowed(&varDef) {
+							panic(errors.New("Variable usages must be compatible" +
+								" with the arguments they are passed to"))
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+func isVariableUsageAllowed(varDef *variableDefinition) bool {
+	// TODO: Implement this.
+	return false
+}
+
+func areTypesCompatible() bool {
+	// TODO: Implement this.
+	return false
 }
 
 func extractUsedFragmentsNames(selectionSet selectionSet, targetsSet map[string]struct{}) {
@@ -210,16 +237,63 @@ func extractUsedFragmentsNames(selectionSet selectionSet, targetsSet map[string]
 func extractUsedVariablesNames(selectionSet selectionSet,
 	variablesSet map[string]struct{},
 	fragmentsPool map[string]*fragmentDefinition) {
+	// Loop over the selection in the selection set.
 	for _, selection := range selectionSet {
+		// If the selection is a field, extract its variable usages
+		// (the field's arguments, and the field's directive's arguments).
 		if field, isField := selection.(*field); isField {
 			if field.Arguments != nil {
+				// For each argument, if it is a variable, add it to the variables set.
+				// If it is a list, check each item in the list.
+				// If it is an object, check each value in the object.
 				for _, arg := range *field.Arguments {
-					if variable, isVariable := arg.Value.(*variable); isVariable {
-						variablesSet[variable.Name.Value] = struct{}{}
+					if _var, isVariable := arg.Value.(*variable); isVariable {
+						variablesSet[_var.Name.Value] = struct{}{}
+					} else if list, isList := arg.Value.(*listValue); isList {
+						for _, item := range list.Values {
+							if _var, isVariable := item.(*variable); isVariable {
+								variablesSet[_var.Name.Value] = struct{}{}
+							}
+						}
+					} else if object, isObject := arg.Value.(*objectValue); isObject {
+						for _, field := range object.Values {
+							if _var, isVariable := field.Value.(*variable); isVariable {
+								variablesSet[_var.Name.Value] = struct{}{}
+							}
+						}
 					}
 				}
 			}
 
+			// If the field has directives, check their arguments too.
+			if field.Directives != nil {
+				for _, directive := range *field.Directives {
+					if directive.Arguments != nil {
+						// For each argument, if it is a variable, add it to the variables set.
+						// If it is a list, check each item in the list.
+						// If it is an object, check each value in the object.
+						for _, arg := range *directive.Arguments {
+							if _var, isVariable := arg.Value.(*variable); isVariable {
+								variablesSet[_var.Name.Value] = struct{}{}
+							} else if list, isList := arg.Value.(*listValue); isList {
+								for _, item := range list.Values {
+									if _var, isVariable := item.(*variable); isVariable {
+										variablesSet[_var.Name.Value] = struct{}{}
+									}
+								}
+							} else if object, isObject := arg.Value.(*objectValue); isObject {
+								for _, field := range object.Values {
+									if _var, isVariable := field.Value.(*variable); isVariable {
+										variablesSet[_var.Name.Value] = struct{}{}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// If the field has a selection set, extract its variables too.
 			if field.SelectionSet != nil {
 				extractUsedVariablesNames(*field.SelectionSet, variablesSet, fragmentsPool)
 			}
