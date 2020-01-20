@@ -218,18 +218,20 @@ func isVariableUsageAllowed(varDef *variableDefinition /*, variableUsage */) boo
 		hasLocationDefaultValue        bool
 	)
 
+	// Let locationType be the expected type of the Argument, ObjectField, or ListValue
+	// entry where variableUsage is located.
 	// TODO: Replace this with a function argument.
 	locationType := nonNullType{}._type()
 
 	// Let variableType be the expected type of variableDefinition
 	variableType := varDef.Type
 
-	_, isVariableTypeIsNonNullType := variableType.(*nonNullType)
-	nonNullLocationType, isLocationTypeIsNonNullType := locationType.(*nonNullType)
+	_, isVariableTypeANonNullType := variableType.(*nonNullType)
+	nonNullLocationType, isLocationTypeANonNullType := locationType.(*nonNullType)
 
-	if !isVariableTypeIsNonNullType && !isLocationTypeIsNonNullType {
+	if isLocationTypeANonNullType && !isVariableTypeANonNullType {
 		if varDef.DefaultValue != nil {
-			if _, isNullValue := (*varDef).DefaultValue.Value.(*nullValue); isNullValue {
+			if _, isNullValue := (*varDef).DefaultValue.Value.(*nullValue); !isNullValue {
 				hasNonNullVariableDefaultValue = true
 			}
 		}
