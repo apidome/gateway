@@ -61,20 +61,10 @@ extend type Query {
 `
 
 	query := `
-query housetrainedQueryOne($atOtherHomes: Boolean) {
-  dog {
-    ...isHousetrainedFragment
+query booleanArgQuery($booleanArg: Boolean) {
+  arguments {
+    nonNullBooleanArgField(nonNullBooleanArg: $booleanArg)
   }
-}
-
-query housetrainedQueryTwo($atOtherHomes: Boolean) {
-  dog {
-    ...isHousetrainedFragment @skip(if: $atOtherHomesj)
-  }
-}
-
-fragment isHousetrainedFragment on Dog {
-  isHousetrained(atOtherHomes: $atOtherHomes)
 }
 `
 
@@ -88,7 +78,7 @@ fragment isHousetrainedFragment on Dog {
 		t.Fatal(err)
 	}
 
-	validateAllVariableUsesDefined(*queryAST)
+	validateAllVariableUsagesAreAllowed(*schemaAST, *queryAST)
 
 	t.Log("Validation Succeeded")
 }
