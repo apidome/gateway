@@ -403,6 +403,34 @@ func collectVariableUsages(selectionSet selectionSet,
 	fragmentsPool map[string]*fragmentDefinition) {
 	// Loop over the selection in the selection set.
 	for _, selection := range selectionSet {
+		// If the selection has directives, check their arguments too.
+		if selection.GetDirectives() != nil {
+			for _, directive := range *selection.GetDirectives() {
+				if directive.Arguments != nil {
+					// For each argument, if it is a variable, add it to the variables set.
+					// If it is a list, check each item in the list.
+					// If it is an object, check each value in the object.
+					for _, arg := range *directive.Arguments {
+						if _var, isVariable := arg.Value.(*variable); isVariable {
+							usages[&arg] = _var
+						} else if list, isList := arg.Value.(*listValue); isList {
+							for _, item := range list.Values {
+								if _var, isVariable := item.(*variable); isVariable {
+									usages[&list] = _var
+								}
+							}
+						} else if object, isObject := arg.Value.(*objectValue); isObject {
+							for _, field := range object.Values {
+								if _var, isVariable := field.Value.(*variable); isVariable {
+									usages[&field] = _var
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 		// If the selection is a field, extract its variable usages
 		// (the field's arguments, and the field's directive's arguments).
 		if field, isField := selection.(*field); isField {
@@ -423,34 +451,6 @@ func collectVariableUsages(selectionSet selectionSet,
 						for _, field := range object.Values {
 							if _var, isVariable := field.Value.(*variable); isVariable {
 								usages[&field] = _var
-							}
-						}
-					}
-				}
-			}
-
-			// If the field has directives, check their arguments too.
-			if field.Directives != nil {
-				for _, directive := range *field.Directives {
-					if directive.Arguments != nil {
-						// For each argument, if it is a variable, add it to the variables set.
-						// If it is a list, check each item in the list.
-						// If it is an object, check each value in the object.
-						for _, arg := range *directive.Arguments {
-							if _var, isVariable := arg.Value.(*variable); isVariable {
-								usages[&arg] = _var
-							} else if list, isList := arg.Value.(*listValue); isList {
-								for _, item := range list.Values {
-									if _var, isVariable := item.(*variable); isVariable {
-										usages[&list] = _var
-									}
-								}
-							} else if object, isObject := arg.Value.(*objectValue); isObject {
-								for _, field := range object.Values {
-									if _var, isVariable := field.Value.(*variable); isVariable {
-										usages[&field] = _var
-									}
-								}
 							}
 						}
 					}
@@ -488,6 +488,33 @@ func extractUsedVariablesNames(selectionSet selectionSet,
 	fragmentsPool map[string]*fragmentDefinition) {
 	// Loop over the selection in the selection set.
 	for _, selection := range selectionSet {
+		// If the selection has directives, check their arguments too.
+		if selection.GetDirectives() != nil {
+			for _, directive := range *selection.GetDirectives() {
+				if directive.Arguments != nil {
+					// For each argument, if it is a variable, add it to the variables set.
+					// If it is a list, check each item in the list.
+					// If it is an object, check each value in the object.
+					for _, arg := range *directive.Arguments {
+						if _var, isVariable := arg.Value.(*variable); isVariable {
+							variablesSet[_var.Name.Value] = struct{}{}
+						} else if list, isList := arg.Value.(*listValue); isList {
+							for _, item := range list.Values {
+								if _var, isVariable := item.(*variable); isVariable {
+									variablesSet[_var.Name.Value] = struct{}{}
+								}
+							}
+						} else if object, isObject := arg.Value.(*objectValue); isObject {
+							for _, field := range object.Values {
+								if _var, isVariable := field.Value.(*variable); isVariable {
+									variablesSet[_var.Name.Value] = struct{}{}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 		// If the selection is a field, extract its variable usages
 		// (the field's arguments, and the field's directive's arguments).
 		if field, isField := selection.(*field); isField {
@@ -508,34 +535,6 @@ func extractUsedVariablesNames(selectionSet selectionSet,
 						for _, field := range object.Values {
 							if _var, isVariable := field.Value.(*variable); isVariable {
 								variablesSet[_var.Name.Value] = struct{}{}
-							}
-						}
-					}
-				}
-			}
-
-			// If the field has directives, check their arguments too.
-			if field.Directives != nil {
-				for _, directive := range *field.Directives {
-					if directive.Arguments != nil {
-						// For each argument, if it is a variable, add it to the variables set.
-						// If it is a list, check each item in the list.
-						// If it is an object, check each value in the object.
-						for _, arg := range *directive.Arguments {
-							if _var, isVariable := arg.Value.(*variable); isVariable {
-								variablesSet[_var.Name.Value] = struct{}{}
-							} else if list, isList := arg.Value.(*listValue); isList {
-								for _, item := range list.Values {
-									if _var, isVariable := item.(*variable); isVariable {
-										variablesSet[_var.Name.Value] = struct{}{}
-									}
-								}
-							} else if object, isObject := arg.Value.(*objectValue); isObject {
-								for _, field := range object.Values {
-									if _var, isVariable := field.Value.(*variable); isVariable {
-										variablesSet[_var.Name.Value] = struct{}{}
-									}
-								}
 							}
 						}
 					}

@@ -61,15 +61,20 @@ extend type Query {
 `
 
 	query := `
-query {
-	field(arg: { field: true, field1: false })
-	field2 @skip(if: {f: true, f1: false})
+query housetrainedQueryOne($atOtherHomes: Boolean) {
+  dog {
+    ...isHousetrainedFragment
+  }
 }
 
-fragment a on Dog{
-	a @skip(if: {f: true, f2: false})
-	b
-	c
+query housetrainedQueryTwo($atOtherHomes: Boolean) {
+  dog {
+    ...isHousetrainedFragment @skip(if: $atOtherHomesj)
+  }
+}
+
+fragment isHousetrainedFragment on Dog {
+  isHousetrained(atOtherHomes: $atOtherHomes)
 }
 `
 
@@ -83,7 +88,7 @@ fragment a on Dog{
 		t.Fatal(err)
 	}
 
-	validateInputObjectFieldUniqueness(*queryAST)
+	validateAllVariableUsesDefined(*queryAST)
 
 	t.Log("Validation Succeeded")
 }
