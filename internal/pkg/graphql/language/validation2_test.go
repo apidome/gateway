@@ -81,7 +81,7 @@ query ($foo: Boolean = true, $bar: Boolean = false) {
 		t.Fatal(err)
 	}
 
-	validateAllVariableUsesDefined(*queryAST)
+	validateAllVariableUsagesAreAllowed(*queryAST)
 
 	t.Log("Validation Succeeded")
 }
