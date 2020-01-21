@@ -62,10 +62,10 @@ extend type Query {
 
 	query := `
 query ($foo: Boolean = true, $bar: Boolean = false) {
-  field @skip(if: [$foo]) {
+  field @skip(if: $foo) {
     subfieldA
   }
-  field @skip(if: {a: $bar}) {
+  field @skipp(if: $bar) {
     subfieldB
   }
 }
@@ -81,7 +81,7 @@ query ($foo: Boolean = true, $bar: Boolean = false) {
 		t.Fatal(err)
 	}
 
-	validateAllVariableUsagesAreAllowed(*queryAST)
+	validateDirectivesAreDefined(*schemaAST, *queryAST)
 
 	t.Log("Validation Succeeded")
 }
