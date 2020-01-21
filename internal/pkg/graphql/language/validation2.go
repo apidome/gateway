@@ -94,73 +94,27 @@ func validateInputObjectRequiredFields(doc document) {
 func validateDirectivesAreDefined(schema, doc document) {
 	for _, def := range doc.Definitions {
 		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
-			if !checkIfDirectivesInOperationDefined(schema, exeDef.GetSelectionSet()) {
-				panic(errors.New("GraphQL servers define what directives they " +
-					"support. For each usage of a directive, the directive must be " +
-					"available on that server"))
+			if exeDef.GetDirectives() != nil {
+				for _, directive := range *exeDef.GetDirectives() {
+					isDirectiveDefined(schema, directive)
+				}
 			}
-		}
-	}
-}
 
-func checkIfDirectivesInOperationDefined(schema document, selectionSet selectionSet) bool {
-	// A map that contains all graphql's built in directives for quick access.
-	builtInDirectiveNames := map[string]struct{}{
-		"skip":       struct{}{},
-		"include":    struct{}{},
-		"deprecated": struct{}{},
-	}
-
-	// For each selection, look for directives.
-	for _, selection := range selectionSet {
-		// If the selection is a field
-		if field, isField := selection.(*field); isField {
-			// And the field contains directives
-			if field.Directives != nil {
-				// For each directive, decide whether it is defined or not.
-				for _, directive := range *field.Directives {
-					// A flag that indicated if the directive is defined or not.
-					var isDirectiveDefined bool
-
-					// Check if the directive is a build in directive. If it is, turn on the
-					// flag. Else, Search the directive in the schema.
-					if _, isBuiltInDirective := builtInDirectiveNames[directive.Name.Value]; isBuiltInDirective {
-						isDirectiveDefined = true
-					} else {
-						// For each definition in the schema, if it is a directive definition,
-						// compare its name to the current directive from the document.
-						for _, def := range schema.Definitions {
-							if directiveDef, isDirectiveDef := def.(*directiveDefinition); isDirectiveDef {
-								// If the name are equal, turn on the flag.
-								if directiveDef.Name.Value == directive.Name.Value {
-									isDirectiveDefined = true
-								}
+			if opDef, isOpDef := exeDef.(*operationDefinition); isOpDef {
+				if opDef.VariableDefinitions != nil {
+					for _, varDef := range *opDef.VariableDefinitions {
+						if varDef.Directives != nil {
+							for _, directive := range *varDef.Directives {
+								isDirectiveDefined(schema, directive)
 							}
 						}
-					}
-
-					// If the flag is off (which means the directive is not a built in
-					// directive and we could not find a proper directive definition in
-					// the schema), return false.
-					if !isDirectiveDefined {
-						return false
 					}
 				}
 			}
 
-			// If the field contains a selection set, check it's directives too.
-			if field.SelectionSet != nil {
-				checkIfDirectivesInOperationDefined(schema, *field.SelectionSet)
-			}
-			// If the selection is an inline fragment, check it's selection set's directives.
-		} else if inlineFrag, isInlineFrag := selection.(*inlineFragment); isInlineFrag {
-			checkIfDirectivesInOperationDefined(schema, inlineFrag.SelectionSet)
+			checkIfDirectivesInSelectionSetAreDefined(schema, exeDef.GetSelectionSet())
 		}
 	}
-
-	// If we arrived this line, it means we did not return false for any directive,
-	// so we return true.
-	return true
 }
 
 // http://spec.graphql.org/draft/#sec-Directives-Are-In-Valid-Locations
@@ -674,4 +628,55 @@ func isOutputType(schema document, variableType _type) bool {
 	}
 
 	return false
+}
+
+func checkIfDirectivesInSelectionSetAreDefined(schema document, selectionSet selectionSet) {
+	// For each selection, look for directives.
+	for _, selection := range selectionSet {
+		// And the field contains directives
+		if selection.GetDirectives() != nil {
+			// For each directive, decide whether it is defined or not.
+			for _, directive := range *selection.GetDirectives() {
+				// If the directive is not defined (which means the directive is not a built in
+				// directive and we could not find a proper directive definition in
+				// the schema), return false.
+				isDirectiveDefined(schema, directive)
+			}
+		}
+
+		// If the field contains a selection set, check it's directives too.
+		if selection.GetSelections() != nil {
+			checkIfDirectivesInSelectionSetAreDefined(schema, *selection.GetSelections())
+		}
+	}
+}
+
+func isDirectiveDefined(schema document, directive directive) {
+	// A map that contains all graphql's built in directives for quick access.
+	builtInDirectiveNames := map[string]struct{}{
+		"skip":       struct{}{},
+		"include":    struct{}{},
+		"deprecated": struct{}{},
+	}
+
+	// Check if the directive is a build in directive. If it is, turn on the
+	// flag. Else, Search the directive in the schema.
+	if _, isBuiltInDirective := builtInDirectiveNames[directive.Name.Value]; isBuiltInDirective {
+		return
+	} else {
+		// For each definition in the schema, if it is a directive definition,
+		// compare its name to the current directive from the document.
+		for _, def := range schema.Definitions {
+			if directiveDef, isDirectiveDef := def.(*directiveDefinition); isDirectiveDef {
+				// If the name are equal, turn on the flag.
+				if directiveDef.Name.Value == directive.Name.Value {
+					return
+				}
+			}
+		}
+	}
+
+	panic(errors.New("GraphQL servers define what directives they " +
+		"support. For each usage of a directive, the directive must be " +
+		"available on that server"))
 }

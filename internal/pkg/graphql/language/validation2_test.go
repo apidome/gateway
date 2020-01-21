@@ -62,12 +62,18 @@ extend type Query {
 
 	query := `
 query ($foo: Boolean = true, $bar: Boolean = false) {
-  field @skip(if: $foo) {
-    subfieldA
-  }
-  field @skipp(if: $bar) {
-    subfieldB
-  }
+	field @skip(if: $foo) {
+		subfieldA
+	}
+	field @skip(if: $bar) {
+		subfieldB
+	}
+	...bark
+}
+
+fragment bark on Dog {
+	volume @skipp(if: $foo)
+	count
 }
 `
 
