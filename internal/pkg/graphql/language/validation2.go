@@ -82,7 +82,59 @@ func validateInputObjectFieldNames(doc document) {
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Uniqueness
 func validateInputObjectFieldUniqueness(doc document) {
+	for _, def := range doc.Definitions {
+		if exeDef, isOpDef := def.(executableDefinition); isOpDef {
+			inputObjects := collectInputObjects(exeDef.GetSelectionSet())
+			fields := make(map[string]struct{})
 
+			for _, inputObject := range inputObjects {
+				for _, inputField := range inputObject.Values {
+					if _, isFieldAlreadyExists := fields[inputField.Name.Value]; isFieldAlreadyExists {
+						panic(errors.New("Input objects must not contain" +
+							" more than one field of the same name, otherwise an" +
+							" ambiguity would exist which includes an ignored" +
+							" portion of syntax"))
+					}
+
+					fields[inputField.Name.Value] = struct{}{}
+				}
+			}
+		}
+	}
+}
+
+func collectInputObjects(selectionSet selectionSet) []*objectValue {
+	inputObjects := make([]*objectValue, 0)
+
+	for _, selection := range selectionSet {
+		if field, isField := selection.(*field); isField {
+			if field.Arguments != nil {
+				for _, arg := range *field.Arguments {
+					if object, isObject := arg.Value.(*objectValue); isObject {
+						inputObjects = append(inputObjects, object)
+					}
+				}
+			}
+		}
+
+		if selection.GetDirectives() != nil {
+			for _, directive := range *selection.GetDirectives() {
+				if directive.Arguments != nil {
+					for _, arg := range *directive.Arguments {
+						if object, isObject := arg.Value.(*objectValue); isObject {
+							inputObjects = append(inputObjects, object)
+						}
+					}
+				}
+			}
+		}
+
+		if selection.GetSelections() != nil {
+			inputObjects = append(inputObjects, collectInputObjects(*selection.GetSelections())...)
+		}
+	}
+
+	return inputObjects
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Required-Fields
@@ -92,16 +144,23 @@ func validateInputObjectRequiredFields(doc document) {
 
 // http://spec.graphql.org/draft/#sec-Directives-Are-Defined
 func validateDirectivesAreDefined(schema, doc document) {
+	// For each definition in the document,
 	for _, def := range doc.Definitions {
 		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
 			if exeDef.GetDirectives() != nil {
+				// For each directive in the executable definition, check if
+				// it is defined.
 				for _, directive := range *exeDef.GetDirectives() {
 					isDirectiveDefined(schema, directive)
 				}
 			}
 
+			// If the definition is an operation definition, it is possible to
+			// use directives in the context of the operation's variables.
 			if opDef, isOpDef := exeDef.(*operationDefinition); isOpDef {
 				if opDef.VariableDefinitions != nil {
+					// For each variable definition, check if its directives
+					// are defined.
 					for _, varDef := range *opDef.VariableDefinitions {
 						if varDef.Directives != nil {
 							for _, directive := range *varDef.Directives {
@@ -112,6 +171,7 @@ func validateDirectivesAreDefined(schema, doc document) {
 				}
 			}
 
+			// Check (recursively) the directives in the operation's selection set.
 			checkIfDirectivesInSelectionSetAreDefined(schema, exeDef.GetSelectionSet())
 		}
 	}

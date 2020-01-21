@@ -61,19 +61,15 @@ extend type Query {
 `
 
 	query := `
-query ($foo: Boolean = true, $bar: Boolean = false) {
-	field @skip(if: $foo) {
-		subfieldA
-	}
-	field @skip(if: $bar) {
-		subfieldB
-	}
-	...bark
+query {
+	field(arg: { field: true, field1: false })
+	field2 @skip(if: {f: true, f1: false})
 }
 
-fragment bark on Dog {
-	volume @skipp(if: $foo)
-	count
+fragment a on Dog{
+	a @skip(if: {f: true, f2: false})
+	b
+	c
 }
 `
 
@@ -87,7 +83,7 @@ fragment bark on Dog {
 		t.Fatal(err)
 	}
 
-	validateDirectivesAreDefined(*schemaAST, *queryAST)
+	validateInputObjectFieldUniqueness(*queryAST)
 
 	t.Log("Validation Succeeded")
 }
