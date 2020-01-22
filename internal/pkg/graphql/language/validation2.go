@@ -268,9 +268,13 @@ func isVariableUsageAllowed(schema document,
 		hasLocationDefaultValue        bool
 	)
 
+	// Get the argument definition from the schema according to the variable
+	// usage.
+	argDef := getArgumentDefinition(schema, variableUsage)
+
 	// Let locationType be the expected type of the Argument, ObjectField, or ListValue
 	// entry where variableUsage is located.
-	locationType := getLocationType(schema, variableUsage)
+	locationType := argDef.Type
 
 	// Let variableType be the expected type of variableDefinition
 	variableType := varDef.Type
@@ -290,9 +294,9 @@ func isVariableUsageAllowed(schema document,
 
 		// Let hasLocationDefaultValue be true if a default value exists for the Argument
 		// or ObjectField where variableUsage is located.
-		//if locationType.DefaultValue {
-		//	hasLocationDefaultValue = true
-		//}
+		if argDef.DefaultValue != nil {
+			hasLocationDefaultValue = true
+		}
 
 		// If hasNonNullVariableDefaultValue is NOT true AND hasLocationDefaultValue is
 		// NOT true, return false.
@@ -311,22 +315,27 @@ func isVariableUsageAllowed(schema document,
 	return areTypesCompatible(variableType, locationType)
 }
 
-func getLocationType(schema document, usage *variableUsage) _type {
+func getArgumentDefinition(schema document, usage *variableUsage) *inputValueDefinition {
+	if usage.directive != nil {
+		return getDirectiveArgumentDefinition(schema, &usage.argument)
+	} else {
+		return getFieldArgumentDefinition(schema, usage.field, &usage.argument)
+	}
+}
+
+func getFieldArgumentDefinition(schema document, selectionSet selectionSet, argument *argument) *inputValueDefinition {
+	return nil
+}
+
+func getDirectiveArgumentDefinition(schema document, argument *argument) *inputValueDefinition {
 	for _, def := range schema.Definitions {
-		if usage.directive != nil {
-			if directiveDef, isDirectiveDef := def.(*directiveDefinition); isDirectiveDef {
-				if directiveDef.ArgumentsDefinition != nil {
-					for _, argDef := range *directiveDef.ArgumentsDefinition {
-						if argDef.Name.Value == usage.argument.Name.Value {
-							return argDef.Type
-						}
+		if directiveDef, isDirectiveDef := def.(*directiveDefinition); isDirectiveDef {
+			if directiveDef.ArgumentsDefinition != nil {
+				for _, argDef := range *directiveDef.ArgumentsDefinition {
+					if argDef.Name.Value == argument.Name.Value {
+						return &argDef
 					}
 				}
-			}
-		} else {
-			if inputObjectTypeDef, isInputObjectTypeDef := def.(*inputObjectTypeDefinition);
-				isInputObjectTypeDef {
-				if inputObjectTypeDef.Name.Value == usage.
 			}
 		}
 	}
