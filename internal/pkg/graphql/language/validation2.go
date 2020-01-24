@@ -150,12 +150,18 @@ func validateDirectivesAreDefined(schema, doc document) {
 
 // http://spec.graphql.org/draft/#sec-Directives-Are-In-Valid-Locations
 func validateDirectivesAreInValidLocations(schema document, doc document) {
+	// For each definition in the document:
 	for _, def := range doc.Definitions {
+		// Create a list of directive usages
 		directiveUsages := make([]*directiveUsage, 0)
 
+		// If the definition is an executable definition:
 		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
 			var dirLocation executableDirectiveLocation
 
+			// If the executable definition is an operation definition,
+			// set dirLocation to be the type of the operation.
+			// Else, set dirLocation to be fragment definition.
 			if opDef, isOpDef := exeDef.(*operationDefinition); isOpDef {
 				switch opDef.OperationType {
 				case operationQuery:
@@ -172,10 +178,16 @@ func validateDirectivesAreInValidLocations(schema document, doc document) {
 					}
 				}
 
+				// If the operation definition has variable definitions:
 				if opDef.VariableDefinitions != nil {
+					// For each variable definition:
 					for _, varDef := range *opDef.VariableDefinitions {
+						// If the variable definition has directives:
 						if varDef.Directives != nil {
+							// For each directive:
 							for _, dir := range *varDef.Directives {
+								// If the directive used in a location that it is not
+								// defined to be used, panic.
 								if !checkDirectiveLocation(schema,
 									&directiveUsage{&dir, edlVariableDefinition}) {
 									panic(errors.New("GraphQL servers define what directives " +
@@ -191,8 +203,12 @@ func validateDirectivesAreInValidLocations(schema document, doc document) {
 				dirLocation = edlFragmentDefinition
 			}
 
+			// If the definition has directives:
 			if exeDef.GetDirectives() != nil {
+				// For each directive:
 				for _, dir := range *exeDef.GetDirectives() {
+					// If the directive used in a location that it is not
+					// defined to be used, panic.
 					if !checkDirectiveLocation(schema, &directiveUsage{&dir, dirLocation}) {
 						panic(errors.New("GraphQL servers define what directives " +
 							"they support and where they support them. For each usage of a " +
@@ -202,10 +218,14 @@ func validateDirectivesAreInValidLocations(schema document, doc document) {
 				}
 			}
 
+			// Get a list of all directive usages in the executable definition's selection set.
 			directiveUsages = append(directiveUsages,
 				extractDirectivesWithLocationsFromSelectionSet(exeDef.GetSelectionSet())...)
 
+			// For each directive usage:
 			for _, usage := range directiveUsages {
+				// If the directive used in a location that it is not
+				// defined to be used, panic.
 				if !checkDirectiveLocation(schema, usage) {
 					panic(errors.New("GraphQL servers define what directives " +
 						"they support and where they support them. For each usage of a " +
@@ -894,6 +914,8 @@ func collectInputObjects(selectionSet selectionSet) []*objectValue {
 }
 
 func checkDirectiveLocation(schema document, usage *directiveUsage) bool {
+	// If the directive is one of the built in directives, and it has been used
+	// on a field, fragment spread or an inline fragment return true.
 	if usage.directive.Name.Value == "skip" ||
 		usage.directive.Name.Value == "include" {
 		if usage.location == edlField || usage.location == edlFragmentSpread ||
@@ -902,9 +924,15 @@ func checkDirectiveLocation(schema document, usage *directiveUsage) bool {
 		}
 	}
 
+	//For each definition in the schema:
 	for _, def := range schema.Definitions {
+		// If the definition is a directive definition:
 		if dirDef, isDirDef := def.(*directiveDefinition); isDirDef {
+			// If the name of the directive definition equals to the name of the
+			// given directive:
 			if usage.directive.Name.Value == dirDef.Name.Value {
+				// For each location in the directive definition, compare it with the
+				// given location. If they are equal return true.
 				for _, location := range dirDef.DirectiveLocations {
 					// TODO: change directiveLocation type from string to
 					// TODO: executableDirectiveLocation in order to remove the
@@ -913,18 +941,28 @@ func checkDirectiveLocation(schema document, usage *directiveUsage) bool {
 						return true
 					}
 				}
+
+				// If we finished the directive locations loop and we did not
+				// return true, it is useless to keep searching for another
+				// directive definitions because directive names are unique.
+				break
 			}
 		}
 	}
 
+	// If we arrived here it means that we could not find any directive location
+	// that is equal to the given usage location.
 	return false
 }
 
 func extractDirectivesWithLocationsFromSelectionSet(selectionSet selectionSet) []*directiveUsage {
 	usages := make([]*directiveUsage, 0)
 
+	// For each selection in the selection set:
 	for _, selection := range selectionSet {
+		// If the selection has directives:
 		if selection.GetDirectives() != nil {
+			// For each directive, set the location to be the kind of the selection.
 			for _, dir := range *selection.GetDirectives() {
 				var location executableDirectiveLocation
 
@@ -943,14 +981,17 @@ func extractDirectivesWithLocationsFromSelectionSet(selectionSet selectionSet) [
 					}
 				}
 
+				// Append the directive usage to the usages list.
 				usages = append(usages, &directiveUsage{&dir, location})
 			}
 		}
 
+		// If the selection has a selection set, get a list of all of its directive usages.
 		if selection.GetSelections() != nil {
 			usages = append(usages, extractDirectivesWithLocationsFromSelectionSet(*selection.GetSelections())...)
 		}
 	}
 
+	// Return the usages list.
 	return usages
 }
