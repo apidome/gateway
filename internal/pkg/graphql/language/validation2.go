@@ -72,17 +72,17 @@ func validateFragmentSpreadsMustNotFormCycles(doc document) {
 
 // http://spec.graphql.org/draft/#sec-Fragment-spread-is-possible
 func validateFragmentSpreadIsPossible(doc document) {
-
+	// TODO: Implement
 }
 
 // http://spec.graphql.org/draft/#sec-Values
 func validateValuesOfCorrectType(doc document) {
-
+	// TODO: Implement
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Names
 func validateInputObjectFieldNames(doc document) {
-
+	// TODO: Implement
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Uniqueness
@@ -110,7 +110,7 @@ func validateInputObjectFieldUniqueness(doc document) {
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Required-Fields
 func validateInputObjectRequiredFields(doc document) {
-
+	// TODO: Implement
 }
 
 // http://spec.graphql.org/draft/#sec-Directives-Are-Defined
@@ -239,7 +239,48 @@ func validateDirectivesAreInValidLocations(schema document, doc document) {
 
 // http://spec.graphql.org/draft/#sec-Directives-Are-Unique-Per-Location
 func validateDirectivesAreUniquePerLocation(doc document) {
+	errMsg := "Directives are used to describe" +
+		" some metadata or behavioral change on the definition" +
+		" they apply to. When more than one directive of the same" +
+		" name is used, the expected metadata or behavior becomes" +
+		" ambiguous, therefore only one of each directive is " +
+		"allowed per location."
 
+	// For each definition in the document:
+	for _, def := range doc.Definitions {
+		// If the definition is an executable definition:
+		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
+
+			// If the executable definition is an operation definition,
+			// set dirLocation to be the type of the operation.
+			// Else, set dirLocation to be fragment definition.
+			if opDef, isOpDef := exeDef.(*operationDefinition); isOpDef {
+				// If the operation definition has variable definitions:
+				if opDef.VariableDefinitions != nil {
+					// For each variable definition:
+					for _, varDef := range *opDef.VariableDefinitions {
+						// If the variable definition has directives:
+						if varDef.Directives != nil {
+							if !checkDirectivesUniqueness(*varDef.Directives) {
+								panic(errors.New(errMsg))
+							}
+						}
+					}
+				}
+			}
+
+			// If the definition has directives:
+			if exeDef.GetDirectives() != nil {
+				if !checkDirectivesUniqueness(*exeDef.GetDirectives()) {
+					panic(errors.New(errMsg))
+				}
+			}
+
+			if !checkDirectivesUniquenessInSelectionSet(exeDef.GetSelectionSet()) {
+				panic(errors.New(errMsg))
+			}
+		}
+	}
 }
 
 // http://spec.graphql.org/draft/#sec-Variable-Uniqueness
@@ -994,4 +1035,41 @@ func extractDirectivesWithLocationsFromSelectionSet(selectionSet selectionSet) [
 
 	// Return the usages list.
 	return usages
+}
+
+func checkDirectivesUniqueness(directives directives) bool {
+	directivesSet := make(map[string]struct{})
+
+	// For each directive in directives.
+	for _, dir := range directives {
+		// If the directive name already exists in the unique set, return false.
+		if _, isDirNameAlreadyExists := directivesSet[dir.Name.Value]; isDirNameAlreadyExists {
+			return false
+		}
+
+		// Insert the directive name to the unique set.
+		directivesSet[dir.Name.Value] = struct{}{}
+	}
+
+	return true
+}
+
+func checkDirectivesUniquenessInSelectionSet(selectionSet selectionSet) bool {
+	// For each selection in the selection set:
+	for _, selection := range selectionSet {
+		// If the selection has directives, check their uniqueness.
+		if selection.GetDirectives() != nil {
+			if !checkDirectivesUniqueness(*selection.GetDirectives()) {
+				return false
+			}
+		}
+
+		if selection.GetSelections() != nil {
+			if !checkDirectivesUniquenessInSelectionSet(*selection.GetSelections()) {
+				return false
+			}
+		}
+	}
+
+	return true
 }

@@ -80,7 +80,7 @@ query booleanArgQuery($booleanArg: Boolean @itay(if: false)) {
 		t.Fatal(err)
 	}
 
-	validateDirectivesAreInValidLocations(*schemaAST, *queryAST)
+	validateDirectivesAreUniquePerLocation(*queryAST)
 
 	t.Log("Validation Succeeded")
 }
