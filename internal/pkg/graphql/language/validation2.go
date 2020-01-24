@@ -4,6 +4,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+type directiveUsage struct {
+	directive *directive
+	location  executableDirectiveLocation
+}
+
 // http://spec.graphql.org/draft/#sec-Fragments-Must-Be-Used
 func validateFragmentsMustBeUsed(doc document) {
 	fragmentSpreadTargets := make(map[string]struct{}, 0)
@@ -144,8 +149,72 @@ func validateDirectivesAreDefined(schema, doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Directives-Are-In-Valid-Locations
-func validateDirectivesAreInValidLocations(doc document) {
+func validateDirectivesAreInValidLocations(schema document, doc document) {
+	for _, def := range doc.Definitions {
+		directiveUsages := make([]*directiveUsage, 0)
 
+		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
+			var dirLocation executableDirectiveLocation
+
+			if opDef, isOpDef := exeDef.(*operationDefinition); isOpDef {
+				switch opDef.OperationType {
+				case operationQuery:
+					{
+						dirLocation = edlQuery
+					}
+				case operationMutation:
+					{
+						dirLocation = edlMutation
+					}
+				case operationSubscription:
+					{
+						dirLocation = edlSubscription
+					}
+				}
+
+				if opDef.VariableDefinitions != nil {
+					for _, varDef := range *opDef.VariableDefinitions {
+						if varDef.Directives != nil {
+							for _, dir := range *varDef.Directives {
+								if !checkDirectiveLocation(schema,
+									&directiveUsage{&dir, edlVariableDefinition}) {
+									panic(errors.New("GraphQL servers define what directives " +
+										"they support and where they support them. For each usage of a " +
+										"directive, the directive must be used in a location that the " +
+										"server has declared support for."))
+								}
+							}
+						}
+					}
+				}
+			} else if _, isFragDef := exeDef.(*fragmentDefinition); isFragDef {
+				dirLocation = edlFragmentDefinition
+			}
+
+			if exeDef.GetDirectives() != nil {
+				for _, dir := range *exeDef.GetDirectives() {
+					if !checkDirectiveLocation(schema, &directiveUsage{&dir, dirLocation}) {
+						panic(errors.New("GraphQL servers define what directives " +
+							"they support and where they support them. For each usage of a " +
+							"directive, the directive must be used in a location that the " +
+							"server has declared support for."))
+					}
+				}
+			}
+
+			directiveUsages = append(directiveUsages,
+				extractDirectivesWithLocationsFromSelectionSet(exeDef.GetSelectionSet())...)
+
+			for _, usage := range directiveUsages {
+				if !checkDirectiveLocation(schema, usage) {
+					panic(errors.New("GraphQL servers define what directives " +
+						"they support and where they support them. For each usage of a " +
+						"directive, the directive must be used in a location that the " +
+						"server has declared support for."))
+				}
+			}
+		}
+	}
 }
 
 // http://spec.graphql.org/draft/#sec-Directives-Are-Unique-Per-Location
@@ -822,4 +891,66 @@ func collectInputObjects(selectionSet selectionSet) []*objectValue {
 	}
 
 	return inputObjects
+}
+
+func checkDirectiveLocation(schema document, usage *directiveUsage) bool {
+	if usage.directive.Name.Value == "skip" ||
+		usage.directive.Name.Value == "include" {
+		if usage.location == edlField || usage.location == edlFragmentSpread ||
+			usage.location == edlInlineFragment {
+			return true
+		}
+	}
+
+	for _, def := range schema.Definitions {
+		if dirDef, isDirDef := def.(*directiveDefinition); isDirDef {
+			if usage.directive.Name.Value == dirDef.Name.Value {
+				for _, location := range dirDef.DirectiveLocations {
+					// TODO: change directiveLocation type from string to
+					// TODO: executableDirectiveLocation in order to remove the
+					// TODO: conversion to string.
+					if string(usage.location) == string(location) {
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+func extractDirectivesWithLocationsFromSelectionSet(selectionSet selectionSet) []*directiveUsage {
+	usages := make([]*directiveUsage, 0)
+
+	for _, selection := range selectionSet {
+		if selection.GetDirectives() != nil {
+			for _, dir := range *selection.GetDirectives() {
+				var location executableDirectiveLocation
+
+				switch selection.(type) {
+				case *field:
+					{
+						location = edlField
+					}
+				case *fragmentSpread:
+					{
+						location = edlFragmentSpread
+					}
+				case *inlineFragment:
+					{
+						location = edlInlineFragment
+					}
+				}
+
+				usages = append(usages, &directiveUsage{&dir, location})
+			}
+		}
+
+		if selection.GetSelections() != nil {
+			usages = append(usages, extractDirectivesWithLocationsFromSelectionSet(*selection.GetSelections())...)
+		}
+	}
+
+	return usages
 }

@@ -58,12 +58,14 @@ extend type Query {
   findDog(complex: ComplexInput): Dog
   booleanList(booleanListArg: [Boolean!]): Boolean
 }
+
+directive @itay(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT | VARIABLE_DEFINITION
 `
 
 	query := `
-query booleanArgQuery($booleanArg: Boolean) {
+query booleanArgQuery($booleanArg: Boolean @itay(if: false)) {
   arguments {
-    nonNullBooleanArgField(nonNullBooleanArg: $booleanArg)
+    nonNullBooleanArgField @skip(if: true)
   }
 }
 `
@@ -78,7 +80,7 @@ query booleanArgQuery($booleanArg: Boolean) {
 		t.Fatal(err)
 	}
 
-	validateAllVariableUsagesAreAllowed(*schemaAST, *queryAST)
+	validateDirectivesAreInValidLocations(*schemaAST, *queryAST)
 
 	t.Log("Validation Succeeded")
 }
