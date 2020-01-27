@@ -469,6 +469,8 @@ func getDirectiveArgumentDefinition(schema document, argument *argument) *inputV
 			}
 		}
 	}
+
+	panic(errors.New("could not find argument in any directive definition"))
 }
 
 func areTypesCompatible(variableType, locationType _type) bool {
@@ -519,6 +521,11 @@ func areTypesCompatible(variableType, locationType _type) bool {
 
 		// Return the result of areTypesCompatible with the unwrapped types.
 		return areTypesCompatible(itemVariableType, itemLocationType)
+	}
+
+	// Otherwise, if variableType is a list type, return false.
+	if isVariableTypeAListType {
+		return false
 	}
 
 	// Return true if variableType and locationType are identical, otherwise false.
@@ -1072,4 +1079,28 @@ func checkDirectivesUniquenessInSelectionSet(selectionSet selectionSet) bool {
 	}
 
 	return true
+}
+
+func getRootQueryTypeDefinition(schema document) *objectTypeDefinition {
+	rootQueryTypeName := "Query"
+
+	for _, def := range schema.Definitions {
+		if schemaDef, isSchemaDef := def.(*schemaDefinition); isSchemaDef {
+			for _, rootOperationType := range schemaDef.RootOperationTypeDefinitions {
+				if rootOperationType.OperationType == operationQuery {
+					rootQueryTypeName = rootOperationType.NamedType.Value
+				}
+			}
+		}
+	}
+
+	for _, def := range schema.Definitions {
+		if objectTypeDef, isObjectTypeDef := def.(*objectTypeDefinition); isObjectTypeDef {
+			if objectTypeDef.Name.Value == rootQueryTypeName {
+				return objectTypeDef
+			}
+		}
+	}
+
+	panic(errors.New("could not find root query type"))
 }
