@@ -453,8 +453,10 @@ func getArgumentDefinition(schema document, usage *variableUsage) *inputValueDef
 	}
 }
 
-func getFieldArgumentDefinition(schema document, selectionSet selectionSet, argument *argument) *inputValueDefinition {
-	return nil
+func getFieldArgumentDefinition(schema document, field field, selectionSet selectionSet, argument *argument) *inputValueDefinition {
+	rootQueryType := getRootQueryTypeDefinition(schema)
+	selectionType := getSelectionType(rootQueryType, &field, selectionSet, schema, nil)
+
 }
 
 func getDirectiveArgumentDefinition(schema document, argument *argument) *inputValueDefinition {
@@ -1103,4 +1105,81 @@ func getRootQueryTypeDefinition(schema document) *objectTypeDefinition {
 	}
 
 	panic(errors.New("could not find root query type"))
+}
+
+func getSelectionType(parentType typeDefinition,
+	targetSelection selection,
+	selectionSet selectionSet,
+	schema document,
+	fragmentsPool map[string]*fragmentDefinition) _type {
+	var tachlessFieldDefinition fieldDefinition
+
+	for _, selection := range selectionSet {
+		switch s := selection.(type) {
+		case *field:
+			switch t := parentType.(type) {
+			case *objectTypeDefinition:
+				if t.FieldsDefinition != nil {
+					for _, fieldDef := range *t.FieldsDefinition {
+						if fieldDef.Name.Value == s.Name.Value {
+							tachlessFieldDefinition = fieldDef
+						}
+					}
+				}
+			case *interfaceTypeDefinition:
+				if t.FieldsDefinition != nil {
+					for _, fieldDef := range *t.FieldsDefinition {
+						if fieldDef.Name.Value == s.Name.Value {
+							tachlessFieldDefinition = fieldDef
+						}
+					}
+				}
+			case *unionTypeDefinition:
+				if t.UnionMemberTypes != nil {
+					for _, unionMember := range *t.UnionMemberTypes {
+						return getSelectionType(getTypeDefinitionByType(schema, &unionMember),
+							targetSelection,
+							selectionSet,
+							schema,
+							fragmentsPool)
+					}
+				}
+			}
+
+			if selection == targetSelection {
+				return tachlessFieldDefinition.Type
+			} else {
+				return getSelectionType(getTypeDefinitionByType(schema, tachlessFieldDefinition.Type),
+					targetSelection,
+					selectionSet,
+					schema,
+					fragmentsPool)
+			}
+		case *inlineFragment:
+			return getSelectionType(getTypeDefinitionByType(schema, &s.TypeCondition.NamedType),
+				targetSelection,
+				*s.GetSelections(),
+				schema,
+				fragmentsPool)
+		case *fragmentSpread:
+			return getSelectionType(getTypeDefinitionByType(schema, &fragmentsPool[s.FragmentName.Value].TypeCondition.NamedType),
+				targetSelection,
+				*s.GetSelections(),
+				schema, fragmentsPool)
+		}
+	}
+
+	panic(errors.New("empty selection cannot query for selection type"))
+}
+
+func getTypeDefinitionByType(schema document, t _type) typeDefinition {
+	for _, def := range schema.Definitions {
+		if typeDef, isTypeDef := def.(typeDefinition); isTypeDef {
+			if typeDef.GetName().Value == t.GetTypeName() {
+				return typeDef
+			}
+		}
+	}
+
+	panic(errors.New("could not find a type definition named: " + t.GetTypeName()))
 }
