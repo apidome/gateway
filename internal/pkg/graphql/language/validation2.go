@@ -1,6 +1,7 @@
 package language
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 )
 
@@ -374,12 +375,12 @@ func validateAllVariableUsagesAreAllowed(schema, doc document) {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
 			variableUsages := make(map[interface{}]*variableUsage)
 			fragmentsPool := getFragmentsPool(doc)
-			collectVariableUsages(opDef.SelectionSet, nil, variableUsages, fragmentsPool)
+			collectVariableUsages(opDef.SelectionSet, variableUsages, fragmentsPool)
 
 			for _, varUsage := range variableUsages {
 				for _, varDef := range *opDef.VariableDefinitions {
 					if varUsage.variable.Name.Value == varDef.Variable.Name.Value {
-						if !isVariableUsageAllowed(schema, &varDef, varUsage) {
+						if !isVariableUsageAllowed(schema, &varDef, varUsage, opDef.SelectionSet, fragmentsPool) {
 							panic(errors.New("Variable usages must be compatible" +
 								" with the arguments they are passed to"))
 						}
@@ -390,9 +391,13 @@ func validateAllVariableUsagesAreAllowed(schema, doc document) {
 	}
 }
 
-func isVariableUsageAllowed(schema document,
+func isVariableUsageAllowed(
+	schema document,
 	varDef *variableDefinition,
-	variableUsage *variableUsage) bool {
+	variableUsage *variableUsage,
+	rootSelectionSet selectionSet,
+	fragmentsPool map[string]*fragmentDefinition,
+) bool {
 	var (
 		hasNonNullVariableDefaultValue bool
 		hasLocationDefaultValue        bool
@@ -400,7 +405,7 @@ func isVariableUsageAllowed(schema document,
 
 	// Get the argument definition from the schema according to the variable
 	// usage.
-	argDef := getArgumentDefinition(schema, variableUsage)
+	argDef := getArgumentDefinition(schema, variableUsage, rootSelectionSet, fragmentsPool)
 
 	// Let locationType be the expected type of the Argument, ObjectField, or ListValue
 	// entry where variableUsage is located.
@@ -445,34 +450,50 @@ func isVariableUsageAllowed(schema document,
 	return areTypesCompatible(variableType, locationType)
 }
 
-func getArgumentDefinition(schema document, usage *variableUsage) *inputValueDefinition {
+func getArgumentDefinition(
+	schema document,
+	usage *variableUsage,
+	rootSelectionSet selectionSet,
+	fragmentsPool map[string]*fragmentDefinition,
+) *inputValueDefinition {
 	if usage.directive != nil {
-		return getDirectiveArgumentDefinition(schema, &usage.argument)
-	} else {
-		return getFieldArgumentDefinition(schema, usage.field, &usage.argument)
-	}
-}
-
-func getFieldArgumentDefinition(schema document, field field, selectionSet selectionSet, argument *argument) *inputValueDefinition {
-	rootQueryType := getRootQueryTypeDefinition(schema)
-	selectionType := getSelectionType(rootQueryType, &field, selectionSet, schema, nil)
-
-}
-
-func getDirectiveArgumentDefinition(schema document, argument *argument) *inputValueDefinition {
-	for _, def := range schema.Definitions {
-		if directiveDef, isDirectiveDef := def.(*directiveDefinition); isDirectiveDef {
-			if directiveDef.ArgumentsDefinition != nil {
-				for _, argDef := range *directiveDef.ArgumentsDefinition {
-					if argDef.Name.Value == argument.Name.Value {
-						return &argDef
+		for _, def := range schema.Definitions {
+			if directiveDef, isDirectiveDef := def.(*directiveDefinition); isDirectiveDef {
+				if directiveDef.ArgumentsDefinition != nil {
+					for _, argDef := range *directiveDef.ArgumentsDefinition {
+						if argDef.Name.Value == usage.argument.Name.Value {
+							return &argDef
+						}
 					}
 				}
 			}
 		}
-	}
 
-	panic(errors.New("could not find argument in any directive definition"))
+		panic(errors.New("could not find argument in any directive definition"))
+	} else {
+		selectionFieldDef := getFieldDefinitionByFieldSelection(
+			getRootQueryTypeDefinition(schema),
+			usage.field,
+			rootSelectionSet,
+			schema,
+			fragmentsPool,
+		)
+
+		if selectionFieldDef.ArgumentsDefinition != nil {
+			for _, arg := range *selectionFieldDef.ArgumentsDefinition {
+				if arg.Name.Value == usage.argument.Name.Value {
+					return &arg
+				}
+			}
+
+			panic(errors.New(fmt.Sprintf("could not find argument %s in field definition named %s",
+				usage.argument.Name.Value,
+				selectionFieldDef.Name.Value)))
+		} else {
+			panic(errors.New("cannot find an argument definition in a field definition that " +
+				"does not contain argument definitions"))
+		}
+	}
 }
 
 func areTypesCompatible(variableType, locationType _type) bool {
@@ -535,18 +556,20 @@ func areTypesCompatible(variableType, locationType _type) bool {
 }
 
 type variableUsage struct {
-	field       *field
-	directive   *directive
-	argument    argument
-	objectField *objectField
-	listValue   *listValue
-	variable    variable
+	selectionSet selectionSet
+	field        *field
+	directive    *directive
+	argument     argument
+	objectField  *objectField
+	listValue    *listValue
+	variable     variable
 }
 
-func collectVariableUsages(selectionSet selectionSet,
-	prevSelection selection,
+func collectVariableUsages(
+	selectionSet selectionSet,
 	usages map[interface{}]*variableUsage,
-	fragmentsPool map[string]*fragmentDefinition) {
+	fragmentsPool map[string]*fragmentDefinition,
+) {
 	// Loop over the selection in the selection set.
 	for _, selection := range selectionSet {
 		// If the selection has directives, check their arguments too.
@@ -647,13 +670,12 @@ func collectVariableUsages(selectionSet selectionSet,
 
 			// If the field has a selection set, extract its variables too.
 			if field.SelectionSet != nil {
-				collectVariableUsages(*field.SelectionSet, selection, usages, fragmentsPool)
+				collectVariableUsages(*field.SelectionSet, usages, fragmentsPool)
 			}
 		} else if inlineFrag, isInlineFrag := selection.(*inlineFragment); isInlineFrag {
-			collectVariableUsages(*inlineFrag.GetSelections(), selection, usages, fragmentsPool)
+			collectVariableUsages(*inlineFrag.GetSelections(), usages, fragmentsPool)
 		} else if fragSpread, isFragSpread := selection.(*fragmentSpread); isFragSpread {
 			collectVariableUsages(fragmentsPool[fragSpread.FragmentName.Value].SelectionSet,
-				selection,
 				usages,
 				fragmentsPool)
 		}
@@ -759,9 +781,11 @@ func getFragmentsPool(doc document) map[string]*fragmentDefinition {
 	return fragmentsPool
 }
 
-func detectFragmentCycles(fragDef fragmentDefinition,
+func detectFragmentCycles(
+	fragDef fragmentDefinition,
 	visited map[string]struct{},
-	fragmentsPool map[string]*fragmentDefinition) {
+	fragmentsPool map[string]*fragmentDefinition,
+) {
 	// spreads is a set that contains all fragment spreads descendants of fragDef.
 	spreads := make(map[string]struct{}, 0)
 
@@ -1107,12 +1131,14 @@ func getRootQueryTypeDefinition(schema document) *objectTypeDefinition {
 	panic(errors.New("could not find root query type"))
 }
 
-func getSelectionType(parentType typeDefinition,
+func getFieldDefinitionByFieldSelection(
+	parentType typeDefinition,
 	targetSelection selection,
 	selectionSet selectionSet,
 	schema document,
-	fragmentsPool map[string]*fragmentDefinition) _type {
-	var tachlessFieldDefinition fieldDefinition
+	fragmentsPool map[string]*fragmentDefinition,
+) *fieldDefinition {
+	var tachlessFieldDefinition *fieldDefinition
 
 	for _, selection := range selectionSet {
 		switch s := selection.(type) {
@@ -1122,7 +1148,8 @@ func getSelectionType(parentType typeDefinition,
 				if t.FieldsDefinition != nil {
 					for _, fieldDef := range *t.FieldsDefinition {
 						if fieldDef.Name.Value == s.Name.Value {
-							tachlessFieldDefinition = fieldDef
+							tachlessFieldDefinition = &fieldDef
+							break
 						}
 					}
 				}
@@ -1130,14 +1157,16 @@ func getSelectionType(parentType typeDefinition,
 				if t.FieldsDefinition != nil {
 					for _, fieldDef := range *t.FieldsDefinition {
 						if fieldDef.Name.Value == s.Name.Value {
-							tachlessFieldDefinition = fieldDef
+							tachlessFieldDefinition = &fieldDef
+							break
 						}
 					}
 				}
 			case *unionTypeDefinition:
 				if t.UnionMemberTypes != nil {
 					for _, unionMember := range *t.UnionMemberTypes {
-						return getSelectionType(getTypeDefinitionByType(schema, &unionMember),
+						return getFieldDefinitionByFieldSelection(
+							getTypeDefinitionByType(schema, &unionMember),
 							targetSelection,
 							selectionSet,
 							schema,
@@ -1146,26 +1175,39 @@ func getSelectionType(parentType typeDefinition,
 				}
 			}
 
+			if tachlessFieldDefinition == nil {
+				panic(errors.New("could not find a field definition named " + s.Name.Value))
+			}
+
 			if selection == targetSelection {
-				return tachlessFieldDefinition.Type
+				return tachlessFieldDefinition
 			} else {
-				return getSelectionType(getTypeDefinitionByType(schema, tachlessFieldDefinition.Type),
+				return getFieldDefinitionByFieldSelection(
+					getTypeDefinitionByType(schema, tachlessFieldDefinition.Type),
 					targetSelection,
-					selectionSet,
+					*s.GetSelections(),
 					schema,
-					fragmentsPool)
+					fragmentsPool,
+				)
 			}
 		case *inlineFragment:
-			return getSelectionType(getTypeDefinitionByType(schema, &s.TypeCondition.NamedType),
+			return getFieldDefinitionByFieldSelection(
+				getTypeDefinitionByType(schema, &s.TypeCondition.NamedType),
 				targetSelection,
 				*s.GetSelections(),
 				schema,
-				fragmentsPool)
+				fragmentsPool,
+			)
 		case *fragmentSpread:
-			return getSelectionType(getTypeDefinitionByType(schema, &fragmentsPool[s.FragmentName.Value].TypeCondition.NamedType),
+			return getFieldDefinitionByFieldSelection(
+				getTypeDefinitionByType(
+					schema,
+					&fragmentsPool[s.FragmentName.Value].TypeCondition.NamedType,
+				),
 				targetSelection,
 				*s.GetSelections(),
-				schema, fragmentsPool)
+				schema, fragmentsPool,
+			)
 		}
 	}
 

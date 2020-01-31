@@ -12,15 +12,6 @@ type Query {
 
 enum DogCommand { SIT, DOWN, HEEL }
 
-type Dog implements Pet {
-  name: String!
-  nickname: String
-  barkVolume: Int
-  doesKnowCommand(dogCommand: DogCommand!): Boolean!
-  isHousetrained(atOtherHomes: Boolean): Boolean!
-  owner: Human
-}
-
 interface Sentient {
   name: String!
 }
@@ -59,28 +50,35 @@ extend type Query {
   booleanList(booleanListArg: [Boolean!]): Boolean
 }
 
-directive @itay(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT | VARIABLE_DEFINITION
+type Dog implements Pet {
+  name: String!
+  nickname: String
+  barkVolume: Int
+  doesKnowCommand(dogCommand: DogCommand!): Boolean!
+  isHousetrained(atOtherHomes: Boolean): Boolean!
+  owner: Human
+}
 `
 
 	query := `
-query booleanArgQuery($booleanArg: Boolean @itay(if: false)) {
-  arguments {
-    nonNullBooleanArgField @skip(if: true)
-  }
+query getDog($arg: Boolean) {
+  	dog {
+		isHousetrained(atOtherHomes: $arg)
+	}
 }
 `
 
 	schemaAST, err := ParseSchema(rawSchema)
 	if err != nil {
-		t.Error(err)
+		t.Error("schema parse failed: ", err)
 	}
 
 	queryAST, err := Parse(schemaAST, query)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal("query parse failed: ", err)
 	}
 
-	validateDirectivesAreUniquePerLocation(*queryAST)
+	validateAllVariableUsagesAreAllowed(*schemaAST, *queryAST)
 
 	t.Log("Validation Succeeded")
 }
