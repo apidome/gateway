@@ -8,20 +8,12 @@ import (
 
 func main() {
 	query := `
-	  type Query {
+	type Query {
 		dog: Dog
+		cat: Cat
 	  }
 	  
 	  enum DogCommand { SIT, DOWN, HEEL }
-	  
-	  type Dog implements Pet {
-		name: String!
-		nickname: String
-		barkVolume: Int
-		doesKnowCommand(dogCommand: DogCommand!): Boolean!
-		isHousetrained(atOtherHomes: Boolean): Boolean!
-		owner: Human
-	  }
 	  
 	  interface Sentient {
 		name: String!
@@ -60,7 +52,16 @@ func main() {
 		findDog(complex: ComplexInput): Dog
 		booleanList(booleanListArg: [Boolean!]): Boolean
 	  }
-	`
+	  
+	  type Dog implements Pet {
+		name: String!
+		nickname: String
+		barkVolume: Int
+		doesKnowCommand(dogCommand: DogCommand!): Boolean!
+		isHousetrained(atOtherHomes: [Boolean]!): Boolean!
+		owner: Human
+	  }
+`
 
 	_, err := language.Parse(nil, query)
 
