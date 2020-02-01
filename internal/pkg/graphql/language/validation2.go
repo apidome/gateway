@@ -97,8 +97,53 @@ func validateValuesOfCorrectType(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Names
-func validateInputObjectFieldNames(doc document) {
-	// TODO: Implement
+func validateInputObjectFieldNames(schema document, doc document) {
+	fragmentsPool := getFragmentsPool(doc)
+
+	for _, def := range doc.Definitions {
+		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
+			objectValueUsages := collectObjectValueUsages(
+				schema,
+				exeDef.GetSelectionSet(),
+				exeDef.GetSelectionSet(),
+				fragmentsPool,
+			)
+
+			for _, usage := range objectValueUsages {
+				typeDef := getTypeDefinitionByType(schema, usage.locationType)
+
+				inputObjectTypeDef, isInputObjectTypeDef := typeDef.(*inputObjectTypeDefinition)
+
+				if isInputObjectTypeDef {
+					if inputObjectTypeDef.InputFieldsDefinition != nil {
+						for _, inputField := range usage.object.Values {
+							if !isInputFieldDefined(
+								inputField,
+								*inputObjectTypeDef.InputFieldsDefinition,
+							) {
+								panic(errors.New("Every input field provided in an input" +
+									" object value must be defined in the set of possible fields of" +
+									" that input object’s expected type."))
+							}
+						}
+					} else {
+						panic(errors.New("Cannot find input field definition in empty input" +
+							" object type definition"))
+					}
+				}
+			}
+		}
+	}
+}
+
+func isInputFieldDefined(field objectField, fieldsDefinition inputFieldsDefinition) bool {
+	for _, fieldDef := range fieldsDefinition {
+		if fieldDef.Name.Value == field.Name.Value {
+			return true
+		}
+	}
+
+	return false
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Uniqueness

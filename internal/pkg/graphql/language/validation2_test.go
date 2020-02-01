@@ -76,7 +76,7 @@ type Dog implements Pet {
 		t.Fatal("query parse failed: ", err)
 	}
 
-	validateInputObjectRequiredFields(*schemaAST, *queryAST)
+	validateInputObjectFieldNames(*schemaAST, *queryAST)
 
 	t.Log("Validation Succeeded")
 }
