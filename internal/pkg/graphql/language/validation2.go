@@ -10,6 +10,21 @@ type directiveUsage struct {
 	location  executableDirectiveLocation
 }
 
+type variableUsage struct {
+	selectionSet selectionSet
+	field        *field
+	directive    *directive
+	argument     argument
+	objectField  *objectField
+	listValue    *listValue
+	variable     variable
+}
+
+type objectValueUsage struct {
+	locationType _type
+	object       objectValue
+}
+
 // http://spec.graphql.org/draft/#sec-Fragments-Must-Be-Used
 func validateFragmentsMustBeUsed(doc document) {
 	fragmentSpreadTargets := make(map[string]struct{}, 0)
@@ -89,11 +104,12 @@ func validateInputObjectFieldNames(doc document) {
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Uniqueness
 func validateInputObjectFieldUniqueness(doc document) {
 	for _, def := range doc.Definitions {
-		if exeDef, isOpDef := def.(executableDefinition); isOpDef {
+		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
 			inputObjects := collectInputObjects(exeDef.GetSelectionSet())
-			fields := make(map[string]struct{})
 
 			for _, inputObject := range inputObjects {
+				fields := make(map[string]struct{})
+
 				for _, inputField := range inputObject.Values {
 					if _, isFieldAlreadyExists := fields[inputField.Name.Value]; isFieldAlreadyExists {
 						panic(errors.New("Input objects must not contain" +
@@ -110,8 +126,69 @@ func validateInputObjectFieldUniqueness(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Required-Fields
-func validateInputObjectRequiredFields(doc document) {
-	// TODO: Implement
+func validateInputObjectRequiredFields(schema document, doc document) {
+	fragmentsPool := getFragmentsPool(doc)
+
+	// For each definition in the document:
+	for _, def := range doc.Definitions {
+		// If it is an executable definition:
+		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
+			// Collect input object values from the executable definition.
+			inputObjectUsages := collectObjectValueUsages(
+				schema,
+				exeDef.GetSelectionSet(),
+				exeDef.GetSelectionSet(),
+				fragmentsPool,
+			)
+
+			// For each input object usage:
+			for _, inputObjectUsage := range inputObjectUsages {
+				// Get the type definition that defines the input object.
+				typeDef := getTypeDefinitionByType(schema, inputObjectUsage.locationType)
+
+				// If the type definition is an input object type definition:
+				if inputObjectTypeDef, isInputObjectTypeDef := typeDef.(*inputObjectTypeDefinition); isInputObjectTypeDef {
+					// If the input object type definition has input fields definition:
+					if inputObjectTypeDef.InputFieldsDefinition != nil {
+						// For each field definition:
+						for _, fieldDef := range *inputObjectTypeDef.InputFieldsDefinition {
+							_, isNonNull := fieldDef.Type.(*nonNullType)
+
+							// If the field's expected type is a non null type and it does not
+							// have a default value, the field must exist in the object usage:
+							if isNonNull && fieldDef.DefaultValue == nil {
+								// Set a flag that indicates if the required field has been found
+								// in the object usage
+								requiredFieldExists := false
+
+								// For each field in the object usage:
+								for _, inputField := range inputObjectUsage.object.Values {
+									// If the field's name equals to the field definition's name:
+									if inputField.Name.Value == fieldDef.Name.Value {
+										requiredFieldExists = true
+
+										_, isNull := inputField.Value.(*nullValue)
+
+										// If the value is null, panic
+										if isNull {
+											panic(errors.New("An input field is required " +
+												"if it has a non‐null type and does not have a default" +
+												" value."))
+										}
+									}
+								}
+
+								// If the required field does not exist in the object usage, panic.
+								if !requiredFieldExists {
+									panic(errors.New("All required fields in input object must exist"))
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 // http://spec.graphql.org/draft/#sec-Directives-Are-Defined
@@ -403,9 +480,21 @@ func isVariableUsageAllowed(
 		hasLocationDefaultValue        bool
 	)
 
+	var argDef *inputValueDefinition
+
 	// Get the argument definition from the schema according to the variable
 	// usage.
-	argDef := getArgumentDefinition(schema, variableUsage, rootSelectionSet, fragmentsPool)
+	if variableUsage.directive != nil {
+		argDef = getDirectiveArgumentDefinition(schema, *variableUsage.directive, variableUsage.argument)
+	} else {
+		argDef = getFieldArgumentDefinition(
+			schema,
+			rootSelectionSet,
+			*variableUsage.field,
+			variableUsage.argument,
+			fragmentsPool,
+		)
+	}
 
 	// Let locationType be the expected type of the Argument, ObjectField, or ListValue
 	// entry where variableUsage is located.
@@ -450,49 +539,50 @@ func isVariableUsageAllowed(
 	return areTypesCompatible(variableType, locationType)
 }
 
-func getArgumentDefinition(
-	schema document,
-	usage *variableUsage,
-	rootSelectionSet selectionSet,
-	fragmentsPool map[string]*fragmentDefinition,
-) *inputValueDefinition {
-	if usage.directive != nil {
-		for _, def := range schema.Definitions {
-			if directiveDef, isDirectiveDef := def.(*directiveDefinition); isDirectiveDef {
-				if directiveDef.ArgumentsDefinition != nil {
-					for _, argDef := range *directiveDef.ArgumentsDefinition {
-						if argDef.Name.Value == usage.argument.Name.Value {
-							return &argDef
-						}
+func getDirectiveArgumentDefinition(schema document, directive directive, argument argument) *inputValueDefinition {
+	for _, def := range schema.Definitions {
+		if directiveDef, isDirectiveDef := def.(*directiveDefinition); isDirectiveDef {
+			if directiveDef.ArgumentsDefinition != nil {
+				for _, argDef := range *directiveDef.ArgumentsDefinition {
+					if argDef.Name.Value == argument.Name.Value {
+						return &argDef
 					}
 				}
 			}
 		}
+	}
 
-		panic(errors.New("could not find argument in any directive definition"))
-	} else {
-		selectionFieldDef := getFieldDefinitionByFieldSelection(
-			getRootQueryTypeDefinition(schema),
-			usage.field,
-			rootSelectionSet,
-			schema,
-			fragmentsPool,
-		)
+	panic(errors.New("could not find argument in any directive definition"))
+}
 
-		if selectionFieldDef.ArgumentsDefinition != nil {
-			for _, arg := range *selectionFieldDef.ArgumentsDefinition {
-				if arg.Name.Value == usage.argument.Name.Value {
-					return &arg
-				}
+func getFieldArgumentDefinition(
+	schema document,
+	rootSelectionSet selectionSet,
+	field field,
+	argument argument,
+	fragmentsPool map[string]*fragmentDefinition,
+) *inputValueDefinition {
+	selectionFieldDef := getFieldDefinitionByFieldSelection(
+		getRootQueryTypeDefinition(schema),
+		&field,
+		rootSelectionSet,
+		schema,
+		fragmentsPool,
+	)
+
+	if selectionFieldDef.ArgumentsDefinition != nil {
+		for _, arg := range *selectionFieldDef.ArgumentsDefinition {
+			if arg.Name.Value == argument.Name.Value {
+				return &arg
 			}
-
-			panic(errors.New(fmt.Sprintf("could not find argument %s in field definition named %s",
-				usage.argument.Name.Value,
-				selectionFieldDef.Name.Value)))
-		} else {
-			panic(errors.New("cannot find an argument definition in a field definition that " +
-				"does not contain argument definitions"))
 		}
+
+		panic(errors.New(fmt.Sprintf("could not find argument %s in field definition named %s",
+			argument.Name.Value,
+			selectionFieldDef.Name.Value)))
+	} else {
+		panic(errors.New("cannot find an argument definition in a field definition that " +
+			"does not contain argument definitions"))
 	}
 }
 
@@ -555,14 +645,95 @@ func areTypesCompatible(variableType, locationType _type) bool {
 	return variableType.GetTypeName() == locationType.GetTypeName()
 }
 
-type variableUsage struct {
-	selectionSet selectionSet
-	field        *field
-	directive    *directive
-	argument     argument
-	objectField  *objectField
-	listValue    *listValue
-	variable     variable
+func collectObjectValueUsages(
+	schema document,
+	rootSelectionSet selectionSet,
+	selectionSet selectionSet,
+	fragmentsPool map[string]*fragmentDefinition,
+) []objectValueUsage {
+	usages := make([]objectValueUsage, 0)
+
+	// Loop over the selection in the selection set.
+	for _, selection := range selectionSet {
+		// If the selection has directives, check their arguments too.
+		if selection.GetDirectives() != nil {
+			for _, directive := range *selection.GetDirectives() {
+				if directive.Arguments != nil {
+					// For each argument, if it is a variable, add it to the variables set.
+					// If it is a list, check each item in the list.
+					// If it is an object, check each value in the object.
+					for _, arg := range *directive.Arguments {
+						if object, isObject := arg.Value.(*objectValue); isObject {
+							inputValueDef := getDirectiveArgumentDefinition(schema, directive, arg)
+
+							usages = append(usages, objectValueUsage{
+								locationType: inputValueDef.Type,
+								object:       *object,
+							})
+						}
+					}
+				}
+			}
+		}
+
+		// If the selection is a field, extract its variable usages
+		// (the field's arguments, and the field's directive's arguments).
+		if field, isField := selection.(*field); isField {
+			if field.Arguments != nil {
+				// For each argument, if it is a variable, add it to the variables set.
+				// If it is a list, check each item in the list.
+				// If it is an object, check each value in the object.
+				for _, arg := range *field.Arguments {
+					if object, isObject := arg.Value.(*objectValue); isObject {
+						inputValueDef := getFieldArgumentDefinition(
+							schema,
+							rootSelectionSet,
+							*field,
+							arg,
+							fragmentsPool,
+						)
+
+						usages = append(usages, objectValueUsage{
+							locationType: inputValueDef.Type,
+							object:       *object,
+						})
+					}
+				}
+			}
+
+			// If the field has a selection set, extract its variables too.
+			if field.SelectionSet != nil {
+				selectionSetObjectUsages := collectObjectValueUsages(
+					schema,
+					rootSelectionSet,
+					*field.SelectionSet,
+					fragmentsPool,
+				)
+
+				usages = append(usages, selectionSetObjectUsages...)
+			}
+		} else if inlineFrag, isInlineFrag := selection.(*inlineFragment); isInlineFrag {
+			inlineFragObjectUsages := collectObjectValueUsages(
+				schema,
+				rootSelectionSet,
+				inlineFrag.SelectionSet,
+				fragmentsPool,
+			)
+
+			usages = append(usages, inlineFragObjectUsages...)
+		} else if fragSpread, isFragSpread := selection.(*fragmentSpread); isFragSpread {
+			inlineFragObjectUsages := collectObjectValueUsages(
+				schema,
+				rootSelectionSet,
+				fragmentsPool[fragSpread.FragmentName.Value].SelectionSet,
+				fragmentsPool,
+			)
+
+			usages = append(usages, inlineFragObjectUsages...)
+		}
+	}
+
+	return usages
 }
 
 func collectVariableUsages(
@@ -605,7 +776,7 @@ func collectVariableUsages(
 						} else if object, isObject := arg.Value.(*objectValue); isObject {
 							for _, field := range object.Values {
 								if _var, isVariable := field.Value.(*variable); isVariable {
-									usages[&list] = &variableUsage{
+									usages[&object] = &variableUsage{
 										field:       nil,
 										directive:   &directive,
 										argument:    arg,
@@ -654,7 +825,7 @@ func collectVariableUsages(
 					} else if object, isObject := arg.Value.(*objectValue); isObject {
 						for _, objectField := range object.Values {
 							if _var, isVariable := objectField.Value.(*variable); isVariable {
-								usages[&list] = &variableUsage{
+								usages[&object] = &variableUsage{
 									field:       field,
 									directive:   nil,
 									argument:    arg,

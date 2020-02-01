@@ -8,6 +8,7 @@ func TestExtractUsedFragmentsNames(t *testing.T) {
 	rawSchema := `
 type Query {
   dog: Dog
+  findDog(complex: ComplexInput): Dog
 }
 
 enum DogCommand { SIT, DOWN, HEEL }
@@ -46,7 +47,6 @@ union HumanOrAlien = Human | Alien
 input ComplexInput { name: String, owner: String }
 
 extend type Query {
-  findDog(complex: ComplexInput): Dog
   booleanList(booleanListArg: [Boolean!]): Boolean
 }
 
@@ -61,10 +61,8 @@ type Dog implements Pet {
 `
 
 	query := `
-query getDog($arg: Boolean) {
-  	dog {
-		isHousetrained(atOtherHomes: $arg)
-	}
+{
+  	findDog(complex: {name: "bunny", owner: "Shlomo"})
 }
 `
 
@@ -78,7 +76,7 @@ query getDog($arg: Boolean) {
 		t.Fatal("query parse failed: ", err)
 	}
 
-	validateAllVariableUsagesAreAllowed(*schemaAST, *queryAST)
+	validateInputObjectRequiredFields(*schemaAST, *queryAST)
 
 	t.Log("Validation Succeeded")
 }
