@@ -111,12 +111,78 @@ func checkSpreadsPossibilityInSelectionSet(
 	parentType typeDefinition,
 	fragmentsPool map[string]*fragmentDefinition,
 ) {
-	// TODO: implement
+	for _, selection := range selectionSet {
+		var fragmentType _type
+		switch s := selection.(type) {
+		case *field:
+			if s.SelectionSet != nil {
+				fieldDef := getFieldDefinitionByFieldSelection(
+					parentType,
+					s,
+					rootSelectionSet,
+					schema,
+					fragmentsPool,
+				)
+
+				checkSpreadsPossibilityInSelectionSet(
+					schema,
+					rootSelectionSet,
+					*s.SelectionSet,
+					getTypeDefinitionByType(schema, fieldDef.Type),
+					fragmentsPool,
+				)
+			}
+		case *inlineFragment:
+			fragmentType = &s.TypeCondition.NamedType
+			checkSpreadsPossibilityInSelectionSet(
+				schema,
+				rootSelectionSet,
+				s.SelectionSet,
+				getTypeDefinitionByType(schema, &s.TypeCondition.NamedType),
+				fragmentsPool,
+			)
+		case *fragmentSpread:
+			fragment := fragmentsPool[s.FragmentName.Value]
+			fragmentType = &fragment.TypeCondition.NamedType
+			checkSpreadsPossibilityInSelectionSet(
+				schema,
+				rootSelectionSet,
+				fragment.SelectionSet,
+				getTypeDefinitionByType(schema, &fragment.TypeCondition.NamedType),
+				fragmentsPool,
+			)
+		}
+
+		if fragmentType != nil {
+			parentPossibleTypes := getPossibleTypes(schema, parentType)
+			fragmentPossibleTypes := getPossibleTypes(
+				schema,
+				getTypeDefinitionByType(schema, fragmentType),
+			)
+			intersectingTypes := make(map[string]struct{})
+
+			for t := range fragmentPossibleTypes {
+				if _, ok := intersectingTypes[t]; !ok {
+					intersectingTypes[t] = struct{}{}
+				}
+			}
+
+			for t := range parentPossibleTypes {
+				if _, ok := intersectingTypes[t]; !ok {
+					intersectingTypes[t] = struct{}{}
+				}
+			}
+
+			if len(intersectingTypes) < 1 {
+				panic(errors.New("A fragment spread is only valid if its type" +
+					" condition could ever apply within the parent type."))
+			}
+		}
+	}
 }
 
-func getPossibleTypes(schema document, t _type) map[string]struct{} {
+func getPossibleTypes(schema document, typeDef typeDefinition) map[string]struct{} {
 	typesSet := make(map[string]struct{})
-	typeDef := getTypeDefinitionByType(schema, t)
 
 	switch v := typeDef.(type) {
 	case *objectTypeDefinition:

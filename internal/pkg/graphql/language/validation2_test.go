@@ -61,8 +61,10 @@ type Dog implements Pet {
 `
 
 	query := `
-{
-  	findDog(complex: {name: "bunny", owner: "Shlomo"})
+fragment catInDogFragmentInvalid on Dog {
+  ... on Cat {
+    meowVolume
+  }
 }
 `
 
@@ -76,7 +78,7 @@ type Dog implements Pet {
 		t.Fatal("query parse failed: ", err)
 	}
 
-	validateInputObjectFieldNames(*schemaAST, *queryAST)
+	validateFragmentSpreadIsPossible(*schemaAST, *queryAST)
 
 	t.Log("Validation Succeeded")
 }
