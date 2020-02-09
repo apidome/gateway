@@ -1206,19 +1206,21 @@ func parseVariableDefinition(l *lexer) *variableDefinition {
 
 // https://graphql.github.io/graphql-spec/draft/#Type
 func parseType(l *lexer) _type {
-	if nonNullTypeExists(l) {
-		return parseNonNullType(l)
+	var retType _type
+
+	if listTypeExists(l) {
+		retType = parseListType(l)
 	}
 
 	if namedTypeExists(l) {
-		return parseNamedType(l)
+		retType = parseNamedType(l)
 	}
 
-	if listTypeExists(l) {
-		return parseListType(l)
+	if nonNullTypeExists(l) {
+		retType = parseNonNullType(l, retType)
 	}
 
-	panic(errors.New("Expecting a type"))
+	return retType
 }
 
 // https://graphql.github.io/graphql-spec/draft/#ListType
@@ -1247,28 +1249,13 @@ func parseListType(l *lexer) *listType {
 }
 
 // https://graphql.github.io/graphql-spec/draft/#NonNullType
-func parseNonNullType(l *lexer) *nonNullType {
+func parseNonNullType(l *lexer, t _type) *nonNullType {
 	nnt := &nonNullType{}
 
-	locStart := l.location().Start
-
-	if namedTypeExists(l) {
-		nnt.OfType = parseNamedType(l)
-	} else if listTypeExists(l) {
-		nnt.OfType = parseListType(l)
-	}
-
-	if nnt.OfType == nil {
-		panic(errors.New("Expecting a type for a non null value"))
-	}
-
-	if !l.tokenEquals(tokBang.string()) {
-		panic(errors.New("Expecting '!' at the end of a non null type"))
-	}
+	nnt.OfType = t
+	nnt.Loc = location{t.Location().Start, l.location().End, l.source}
 
 	l.get()
-
-	nnt.Loc = location{locStart, l.prevLocation().End, l.source}
 
 	return nnt
 }
@@ -1988,7 +1975,8 @@ func listTypeExists(l *lexer) bool {
 
 // https://graphql.github.io/graphql-spec/draft/#NonNullType
 func nonNullTypeExists(l *lexer) bool {
-	return (namedTypeExists(l) || listTypeExists(l)) && l.tokens[l.currentTokenIndex+1].value == tokBang.string()
+	return l.tokenEquals(tokBang.string())
+	//return (namedTypeExists(l) || listTypeExists(l)) && l.tokens[l.currentTokenIndex+1].value == tokBang.string()
 }
 
 // https://graphql.github.io/graphql-spec/draft/#Name

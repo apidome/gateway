@@ -1,22 +1,24 @@
 package language
 
-func collectFields(objectType interface{}, selectionSet *selectionSet, variableValues map[string]interface{}, visitedFragments *[]fragmentSpread) map[string][]interface{} {
+func collectFields(objectType interface{}, selectionSet *selectionSet, variableValues map[string]interface{}, visitedFragments *[]name) map[string][]selection {
 	if visitedFragments == nil {
-		vf := make([]fragmentSpread, 0)
+		vf := make([]name, 0)
 
 		visitedFragments = &vf
 	}
 
-	groupedFields := make(map[string][]interface{})
+	groupedFields := make(map[string][]selection)
 
-	for _, selection := range *selectionSet {
-		if dirExists, index := execDirectiveExists(*selection.GetDirectives(), "skip"); dirExists {
-			skipDirective := (*selection.GetDirectives())[index]
+	for _, _selection := range *selectionSet {
+		// Check @skip directive
+		if dirExists, index := execDirectiveExists(*_selection.GetDirectives(), "skip"); dirExists {
+			skipDirective := (*_selection.GetDirectives())[index]
 
 			if skipDirective.Arguments != nil {
 				if argExists, index := execArgumentExists(*skipDirective.Arguments, "if"); argExists {
 					ifArg := (*skipDirective.Arguments)[index]
 
+					// This case should handle variable values as well
 					if val, ok := ifArg.Value.GetValue().(bool); ok {
 						if val {
 							continue
@@ -24,6 +26,57 @@ func collectFields(objectType interface{}, selectionSet *selectionSet, variableV
 					}
 				}
 			}
+		}
+
+		// Check @include directive
+		if dirExists, index := execDirectiveExists(*_selection.GetDirectives(), "include"); dirExists {
+			includeDirective := (*_selection.GetDirectives())[index]
+
+			if includeDirective.Arguments != nil {
+				if argExists, index := execArgumentExists(*includeDirective.Arguments, "if"); argExists {
+					ifArg := (*includeDirective.Arguments)[index]
+
+					// This case should handle variable values as well
+					if val, ok := ifArg.Value.GetValue().(bool); ok {
+						if !val {
+							continue
+						}
+					}
+				}
+			}
+		}
+
+		// If `selection` is a field
+		if field, isField := _selection.(*field); isField {
+			var responseKey string
+
+			if field.Alias != nil {
+				responseKey = field.Alias.Value
+			} else {
+				responseKey = field.Name.Value
+			}
+
+			_, exists := groupedFields[responseKey]
+
+			if !exists {
+				groupedFields[responseKey] = make([]selection, 0)
+			}
+
+			groupedFields[responseKey] = append(groupedFields[responseKey], _selection)
+
+			continue
+		}
+
+		// If `selection` is a fragment spread
+		if fs, isFs := _selection.(*fragmentSpread); isFs {
+			fragmentSpreadName := fs.FragmentName.Value
+
+			if visitedFragmentsContainFragmentName(*visitedFragments, fragmentSpreadName) {
+				continue
+			}
+
+			*visitedFragments = append(*visitedFragments, fs.FragmentName)
+
 		}
 	}
 
@@ -49,4 +102,14 @@ func execArgumentExists(args arguments, argName string) (bool, int) {
 	}
 
 	return false, -1
+}
+
+func visitedFragmentsContainFragmentName(visitedFragments []name, fragName string) bool {
+	for _, fs := range visitedFragments {
+		if fs.Value == fragName {
+			return true
+		}
+	}
+
+	return false
 }

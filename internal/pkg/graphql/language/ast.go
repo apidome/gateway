@@ -973,6 +973,7 @@ func (d *variable) value() value {
 	return d
 }
 
+// TODO fetch variable value from variable map
 func (v variable) GetValue() interface{} {
 	return v.Name
 }

@@ -87,8 +87,64 @@ func validateFragmentSpreadsMustNotFormCycles(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Fragment-spread-is-possible
-func validateFragmentSpreadIsPossible(doc document) {
-	// TODO: Implement
+func validateFragmentSpreadIsPossible(schema, doc document) {
+	fragmentsPool := getFragmentsPool(doc)
+	rootQueryTypeDef := getRootQueryTypeDefinition(schema)
+
+	for _, def := range doc.Definitions {
+		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
+			checkSpreadsPossibilityInSelectionSet(
+				schema,
+				exeDef.GetSelectionSet(),
+				exeDef.GetSelectionSet(),
+				rootQueryTypeDef,
+				fragmentsPool,
+			)
+		}
+	}
+}
+
+func checkSpreadsPossibilityInSelectionSet(
+	schema document,
+	rootSelectionSet selectionSet,
+	selectionSet selectionSet,
+	parentType typeDefinition,
+	fragmentsPool map[string]*fragmentDefinition,
+) {
+	// TODO: implement
+}
+
+func getPossibleTypes(schema document, t _type) map[string]struct{} {
+	typesSet := make(map[string]struct{})
+	typeDef := getTypeDefinitionByType(schema, t)
+
+	switch v := typeDef.(type) {
+	case *objectTypeDefinition:
+		typesSet[v.Name.Value] = struct{}{}
+	case *interfaceTypeDefinition:
+		for _, def := range schema.Definitions {
+			if objectTypeDef, isObjectTypeDef := def.(*objectTypeDefinition); isObjectTypeDef {
+				if objectTypeDef.ImplementsInterfaces != nil {
+					for _, iface := range *objectTypeDef.ImplementsInterfaces {
+						if iface.GetTypeName() == v.Name.Value {
+							typesSet[v.Name.Value] = struct{}{}
+						}
+					}
+				}
+			}
+		}
+	case *unionTypeDefinition:
+		if v.UnionMemberTypes != nil {
+			for _, unionMember := range *v.UnionMemberTypes {
+				typesSet[unionMember.GetTypeName()] = struct{}{}
+			}
+		}
+	default:
+		panic(errors.New("Cannot get possible types of a type which is not " +
+			"an object, interface or union type definition"))
+	}
+
+	return typesSet
 }
 
 // http://spec.graphql.org/draft/#sec-Values
@@ -1347,6 +1403,35 @@ func getRootQueryTypeDefinition(schema document) *objectTypeDefinition {
 	panic(errors.New("could not find root query type"))
 }
 
+func getSelectionSetType(
+	parentType typeDefinition,
+	target *selectionSet,
+	current *selectionSet,
+	schema document,
+	fragmentsPool map[string]*fragmentDefinition,
+) typeDefinition {
+	if current == target {
+
+	}
+
+
+	for _, selection := range current {
+
+		if selection.GetSelections() == target {
+
+		}
+
+		switch s := selection.(type) {
+		case *field:
+		case *inlineFragment:
+		case *fragmentSpread:
+			frag := fragmentsPool[s.FragmentName.Value]
+
+			if frag.
+		}
+	}
+}
+
 func getFieldDefinitionByFieldSelection(
 	parentType typeDefinition,
 	targetSelection selection,
@@ -1381,13 +1466,19 @@ func getFieldDefinitionByFieldSelection(
 			case *unionTypeDefinition:
 				if t.UnionMemberTypes != nil {
 					for _, unionMember := range *t.UnionMemberTypes {
-						return getFieldDefinitionByFieldSelection(
+						fieldDef := getFieldDefinitionByFieldSelection(
 							getTypeDefinitionByType(schema, &unionMember),
 							targetSelection,
 							selectionSet,
 							schema,
 							fragmentsPool)
+
+						if fieldDef != nil {
+							return fieldDef
+						}
 					}
+
+					return nil
 				}
 			}
 
@@ -1397,7 +1488,7 @@ func getFieldDefinitionByFieldSelection(
 
 			if selection == targetSelection {
 				return tachlessFieldDefinition
-			} else {
+			} else if s.GetSelections() != nil {
 				return getFieldDefinitionByFieldSelection(
 					getTypeDefinitionByType(schema, tachlessFieldDefinition.Type),
 					targetSelection,
@@ -1405,6 +1496,8 @@ func getFieldDefinitionByFieldSelection(
 					schema,
 					fragmentsPool,
 				)
+			} else {
+				return nil
 			}
 		case *inlineFragment:
 			return getFieldDefinitionByFieldSelection(
