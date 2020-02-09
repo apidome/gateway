@@ -1406,29 +1406,115 @@ func getRootQueryTypeDefinition(schema document) *objectTypeDefinition {
 func getSelectionSetType(
 	parentType typeDefinition,
 	target *selectionSet,
-	current *selectionSet,
+	current selectionSet,
 	schema document,
 	fragmentsPool map[string]*fragmentDefinition,
-) typeDefinition {
-	if current == target {
-
-	}
-
-
+) _type {
+	var typeToReturn _type
 	for _, selection := range current {
-
-		if selection.GetSelections() == target {
-
-		}
-
 		switch s := selection.(type) {
 		case *field:
+			if s.SelectionSet != nil {
+				var fieldType _type
+				switch t := parentType.(type) {
+				case *objectTypeDefinition:
+					if t.FieldsDefinition != nil {
+						for _, fieldDef := range *t.FieldsDefinition {
+							if fieldDef.Name.Value == s.Name.Value {
+								fieldType = fieldDef.Type
+								break
+							}
+						}
+					}
+				case *interfaceTypeDefinition:
+					if t.FieldsDefinition != nil {
+						for _, fieldDef := range *t.FieldsDefinition {
+							if fieldDef.Name.Value == s.Name.Value {
+								fieldType = fieldDef.Type
+								break
+							}
+						}
+					}
+				case *unionTypeDefinition:
+					if t.UnionMemberTypes != nil {
+						for _, unionMember := range *t.UnionMemberTypes {
+							fieldType = getSelectionSetType(
+								getTypeDefinitionByType(schema, &unionMember),
+								target,
+								*s.SelectionSet,
+								schema,
+								fragmentsPool)
+
+							if fieldType != nil {
+								break
+							}
+						}
+					}
+				}
+
+				if s.SelectionSet == target {
+					return fieldType
+				} else {
+					fieldSelectionSetType := getSelectionSetType(
+						getTypeDefinitionByType(schema, fieldType),
+						target,
+						*s.SelectionSet,
+						schema,
+						fragmentsPool,
+					)
+
+					if fieldSelectionSetType != nil {
+						typeToReturn = fieldSelectionSetType
+					}
+				}
+			} else {
+				return nil
+			}
 		case *inlineFragment:
+			if s.SelectionSet != nil {
+				if &s.SelectionSet == target {
+					return &s.TypeCondition.NamedType
+				} else {
+					inlineFragSelectionSetType := getSelectionSetType(
+						getTypeDefinitionByType(schema, &s.TypeCondition.NamedType),
+						target,
+						s.SelectionSet,
+						schema,
+						fragmentsPool,
+					)
+
+					if inlineFragSelectionSetType != nil {
+						typeToReturn = inlineFragSelectionSetType
+					}
+				}
+			}
 		case *fragmentSpread:
 			frag := fragmentsPool[s.FragmentName.Value]
 
-			if frag.
+			if frag.SelectionSet != nil {
+				if &frag.SelectionSet == target {
+					return &frag.TypeCondition.NamedType
+				} else {
+					fragSelectionSetType := getSelectionSetType(
+						getTypeDefinitionByType(schema, &frag.TypeCondition.NamedType),
+						target,
+						frag.SelectionSet,
+						schema,
+						fragmentsPool,
+					)
+
+					if fragSelectionSetType != nil {
+						typeToReturn = fragSelectionSetType
+					}
+				}
+			}
 		}
+	}
+
+	if typeToReturn != nil {
+		return typeToReturn
+	} else {
+		panic(errors.New("could not find the requested selection set type."))
 	}
 }
 
