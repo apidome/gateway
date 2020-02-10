@@ -219,8 +219,87 @@ func checkSpreadsPossibilityInSelectionSet(
 }
 
 // http://spec.graphql.org/draft/#sec-Values
-func validateValuesOfCorrectType(doc document) {
-	// TODO: Implement
+func validateValuesOfCorrectType(schema, doc document) {
+	fragmentsPool := getFragmentsPool(doc)
+
+	for _, def := range doc.Definitions {
+		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
+			checkValuesOfCorrectTypeInOperation(
+				schema,
+				opDef.SelectionSet,
+				opDef.SelectionSet,
+				fragmentsPool,
+			)
+		}
+	}
+}
+
+func checkValuesOfCorrectTypeInOperation(
+	schema document,
+	root selectionSet,
+	set selectionSet,
+	fragmentsPool map[string]*fragmentDefinition,
+) {
+	for _, selection := range set {
+		if selection.GetDirectives() != nil {
+			for _, dir := range *selection.GetDirectives() {
+				if dir.Arguments != nil {
+					for _, arg := range *dir.Arguments {
+						argDef := getDirectiveArgumentDefinition(schema, dir, arg)
+						if !assertValueType(arg.Value, argDef.Type) {
+							panic(errors.New("Literal values must be compatible" +
+								" with the type expected in the position they are found" +
+								" as per the coercion rules."))
+						}
+					}
+				}
+			}
+		}
+
+		switch s := selection.(type) {
+		case *field:
+			if s.Arguments != nil {
+				for _, arg := range *s.Arguments {
+					argDef := getFieldArgumentDefinition(schema, root, *s, arg, fragmentsPool)
+					if !assertValueType(arg.Value, argDef.Type) {
+						panic(errors.New("Literal values must be compatible" +
+							" with the type expected in the position they are found" +
+							" as per the coercion rules."))
+					}
+				}
+			}
+		case *inlineFragment:
+			checkValuesOfCorrectTypeInOperation(
+				schema,
+				root,
+				s.SelectionSet,
+				fragmentsPool,
+			)
+		case *fragmentSpread:
+			checkValuesOfCorrectTypeInOperation(
+				schema,
+				root,
+				fragmentsPool[s.FragmentName.Value].SelectionSet,
+				fragmentsPool,
+			)
+		}
+	}
+}
+
+func assertValueType(v value, t _type) bool {
+	// TODO: implement
+	switch v.(type) {
+	case *intValue:
+	case *floatValue:
+	case *booleanValue:
+	case *stringValue:
+	case *nullValue:
+	case *enumValue:
+	case *listValue:
+	case *objectValue:
+	}
+
+	return false
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Names

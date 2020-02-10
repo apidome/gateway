@@ -61,18 +61,17 @@ type Dog implements Pet {
 `
 
 	query := `
-query getDog {
-	dog {
-		... nonIntersectingInterfaces
-	}
+fragment goodBooleanArg on Arguments {
+  booleanArgField(booleanArg: true)
 }
 
-fragment nonIntersectingInterfaces on Pet {
-  ...sentientFragment
+fragment coercedIntIntoFloatArg on Arguments {
+  # Note: The input coercion rules for Float allow Int literals.
+  floatArgField(floatArg: 123)
 }
 
-fragment sentientFragment on Sentient {
-  name
+query goodComplexDefaultValue($search: ComplexInput = { name: "Fido" }) {
+  findDog(complex: $search)
 }
 `
 
@@ -86,7 +85,7 @@ fragment sentientFragment on Sentient {
 		t.Fatal("query parse failed: ", err)
 	}
 
-	validateFragmentSpreadIsPossible(*schemaAST, *queryAST)
+	validateValuesOfCorrectType(*schemaAST, *queryAST)
 
 	t.Log("Validation Succeeded")
 }
