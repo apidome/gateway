@@ -88,15 +88,19 @@ func validateFragmentSpreadsMustNotFormCycles(doc document) {
 
 // http://spec.graphql.org/draft/#sec-Fragment-spread-is-possible
 func validateFragmentSpreadIsPossible(schema, doc document) {
+	// Get the fragments pool for quick access.
 	fragmentsPool := getFragmentsPool(doc)
+
+	// Get the root query type from the schema.
 	rootQueryTypeDef := getRootQueryTypeDefinition(schema)
 
+	// For each operation in the document, check its spreads' possibility.
 	for _, def := range doc.Definitions {
-		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
+		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
 			checkSpreadsPossibilityInSelectionSet(
 				schema,
-				exeDef.GetSelectionSet(),
-				exeDef.GetSelectionSet(),
+				opDef.GetSelectionSet(),
+				opDef.GetSelectionSet(),
 				rootQueryTypeDef,
 				fragmentsPool,
 			)
@@ -111,10 +115,16 @@ func checkSpreadsPossibilityInSelectionSet(
 	parentType typeDefinition,
 	fragmentsPool map[string]*fragmentDefinition,
 ) {
+	// For each selection in the seleciton set:
 	for _, selection := range selectionSet {
 		var fragmentType _type
+
+		// Check the selection's type:
 		switch s := selection.(type) {
+		// If the selection is a field:
 		case *field:
+			// If the field contains selection set of its own, check its
+			// spreads' possibility.
 			if s.SelectionSet != nil {
 				fieldDef := getFieldDefinitionByFieldSelection(
 					parentType,
@@ -132,18 +142,28 @@ func checkSpreadsPossibilityInSelectionSet(
 					fragmentsPool,
 				)
 			}
+		// If the selection is an inline fragment:
 		case *inlineFragment:
+			// Save the fragment's type for later use.
 			fragmentType = &s.TypeCondition.NamedType
+
+			// Check the fragment's selection set spreads' possibility.
 			checkSpreadsPossibilityInSelectionSet(
 				schema,
 				rootSelectionSet,
 				s.SelectionSet,
-				getTypeDefinitionByType(schema, &s.TypeCondition.NamedType),
+				getTypeDefinitionByType(schema, fragmentType),
 				fragmentsPool,
 			)
+		// If the selection is a fragment spread:
 		case *fragmentSpread:
+			// Get the fragment definition that the spread points to.
 			fragment := fragmentsPool[s.FragmentName.Value]
+
+			// Save the fragment's type for later use.
 			fragmentType = &fragment.TypeCondition.NamedType
+
+			// Check the fragment's selection set spreads' possibility.
 			checkSpreadsPossibilityInSelectionSet(
 				schema,
 				rootSelectionSet,
@@ -153,64 +173,49 @@ func checkSpreadsPossibilityInSelectionSet(
 			)
 		}
 
+		// If fragmentType is not nil, it means that the current selection is either
+		// an inline fragment or a fragment spread, so we need to check the spread's
+		// possibility.
 		if fragmentType != nil {
+			// Get the possible types of the parent type.
 			parentPossibleTypes := getPossibleTypes(schema, parentType)
+
+			// Get the possible types of the fragment type.
 			fragmentPossibleTypes := getPossibleTypes(
 				schema,
 				getTypeDefinitionByType(schema, fragmentType),
 			)
+
+			// Create a dictionary that will hold the intersection of the two types
+			// dictionaries.
 			intersectingTypes := make(map[string]struct{})
 
+			// For each type in the fragment possible types:
 			for t := range fragmentPossibleTypes {
-				if _, ok := intersectingTypes[t]; !ok {
+				// If it also exists in the parent possible types, insert it to the
+				// intersecting types dictionary.
+				if _, ok := parentPossibleTypes[t]; ok {
 					intersectingTypes[t] = struct{}{}
 				}
 			}
 
+			// For each type in the parent possible types:
 			for t := range parentPossibleTypes {
-				if _, ok := intersectingTypes[t]; !ok {
+				// If it also exists in the fragment possible types, insert it to the
+				// intersecting types dictionary.
+				if _, ok := fragmentPossibleTypes[t]; ok {
 					intersectingTypes[t] = struct{}{}
 				}
 			}
 
+			// If intersectingTypes does not contain any types, the fragment spread
+			// is not valid, panic.
 			if len(intersectingTypes) < 1 {
 				panic(errors.New("A fragment spread is only valid if its type" +
 					" condition could ever apply within the parent type."))
 			}
 		}
 	}
-}
-
-func getPossibleTypes(schema document, typeDef typeDefinition) map[string]struct{} {
-	typesSet := make(map[string]struct{})
-
-	switch v := typeDef.(type) {
-	case *objectTypeDefinition:
-		typesSet[v.Name.Value] = struct{}{}
-	case *interfaceTypeDefinition:
-		for _, def := range schema.Definitions {
-			if objectTypeDef, isObjectTypeDef := def.(*objectTypeDefinition); isObjectTypeDef {
-				if objectTypeDef.ImplementsInterfaces != nil {
-					for _, iface := range *objectTypeDef.ImplementsInterfaces {
-						if iface.GetTypeName() == v.Name.Value {
-							typesSet[v.Name.Value] = struct{}{}
-						}
-					}
-				}
-			}
-		}
-	case *unionTypeDefinition:
-		if v.UnionMemberTypes != nil {
-			for _, unionMember := range *v.UnionMemberTypes {
-				typesSet[unionMember.GetTypeName()] = struct{}{}
-			}
-		}
-	default:
-		panic(errors.New("Cannot get possible types of a type which is not " +
-			"an object, interface or union type definition"))
-	}
-
-	return typesSet
 }
 
 // http://spec.graphql.org/draft/#sec-Values
@@ -1685,4 +1690,37 @@ func getTypeDefinitionByType(schema document, t _type) typeDefinition {
 	}
 
 	panic(errors.New("could not find a type definition named: " + t.GetTypeName()))
+}
+
+// http://spec.graphql.org/draft/#GetPossibleTypes()
+func getPossibleTypes(schema document, typeDef typeDefinition) map[string]struct{} {
+	typesSet := make(map[string]struct{})
+
+	switch v := typeDef.(type) {
+	case *objectTypeDefinition:
+		typesSet[v.Name.Value] = struct{}{}
+	case *interfaceTypeDefinition:
+		for _, def := range schema.Definitions {
+			if objectTypeDef, isObjectTypeDef := def.(*objectTypeDefinition); isObjectTypeDef {
+				if objectTypeDef.ImplementsInterfaces != nil {
+					for _, iface := range *objectTypeDef.ImplementsInterfaces {
+						if iface.GetTypeName() == v.Name.Value {
+							typesSet[objectTypeDef.Name.Value] = struct{}{}
+						}
+					}
+				}
+			}
+		}
+	case *unionTypeDefinition:
+		if v.UnionMemberTypes != nil {
+			for _, unionMember := range *v.UnionMemberTypes {
+				typesSet[unionMember.GetTypeName()] = struct{}{}
+			}
+		}
+	default:
+		panic(errors.New("Cannot get possible types of a type which is not " +
+			"an object, interface or union type definition"))
+	}
+
+	return typesSet
 }

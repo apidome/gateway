@@ -61,10 +61,18 @@ type Dog implements Pet {
 `
 
 	query := `
-fragment catInDogFragmentInvalid on Dog {
-  ... on Cat {
-    meowVolume
-  }
+query getDog {
+	dog {
+		... nonIntersectingInterfaces
+	}
+}
+
+fragment nonIntersectingInterfaces on Pet {
+  ...sentientFragment
+}
+
+fragment sentientFragment on Sentient {
+  name
 }
 `
 
