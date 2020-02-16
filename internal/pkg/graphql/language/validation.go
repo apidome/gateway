@@ -7,7 +7,7 @@ func validateDocument(schema *document, docRoot *document) {
 
 // spec.graphql.org/draft/#sec-Executable-Definitions
 func validateExecutableDefinitions(doc document) {
-	for _, def := range doc.Definitions {
+	for _, def := range doc.Definitions() {
 		_, isExecDef := def.(executableDefinition)
 
 		if !isExecDef {
@@ -20,17 +20,17 @@ func validateExecutableDefinitions(doc document) {
 func validateOperationNameUniqueness(doc document) {
 	names := make(map[string]struct{})
 
-	for _, op := range doc.Definitions {
+	for _, op := range doc.Definitions() {
 		opDef, isOpDef := op.(*operationDefinition)
 
 		if isOpDef {
-			_, nameExists := names[opDef.Name.Value]
+			_, nameExists := names[opDef.Name().Value()]
 
 			if nameExists {
 				panic("Operation name must be unique")
 			}
 
-			names[opDef.Name.Value] = struct{}{}
+			names[opDef.Name().Value()] = struct{}{}
 		}
 	}
 }
@@ -50,7 +50,19 @@ func validateLoneAnonymousOperation(doc *document) {
 
 //! http://spec.graphql.org/draft/#sec-Single-root-field
 func validateSingleRootField(doc *document, schema *schemaDefinition) {
-	//TODO When the relevant execution function is done, come back here
+	subscriptionOperations := getSubscriptionOperations(doc)
+
+	for _, sub := range subscriptionOperations {
+		subscriptionType := getRootSubscriptionType(schema)
+		selectionSet := sub.SelectionSet()
+
+		variableValues := make([]value, 0)
+		groupedFieldSet := collectFields(subscriptionType, selectionSet, variableValues)
+
+		if len(groupedFieldSet) != 1 {
+			panic("validateSingleRootField")
+		}
+	}
 }
 
 //! http://spec.graphql.org/draft/#sec-Field-Selections-on-Objects-Interfaces-and-Unions-Types
@@ -98,7 +110,7 @@ func validateFragmentsOnCompositeTypes(doc document) {
 func getOperationDefinitions(doc *document) []operationDefinition {
 	operationDefinitions := make([]operationDefinition, 0)
 
-	for _, def := range doc.Definitions {
+	for _, def := range doc.Definitions() {
 		opDef, isOpDef := def.(*operationDefinition)
 
 		if isOpDef {
@@ -112,7 +124,7 @@ func getOperationDefinitions(doc *document) []operationDefinition {
 func getExecutableDefinitions(doc *document) []executableDefinition {
 	executableDefinitions := make([]executableDefinition, 0)
 
-	for _, def := range doc.Definitions {
+	for _, def := range doc.Definitions() {
 		execDef, isExecDef := def.(executableDefinition)
 
 		if isExecDef {
@@ -126,7 +138,7 @@ func getExecutableDefinitions(doc *document) []executableDefinition {
 func getAnonymousOperationDefinitions(doc *document) []operationDefinition {
 	anons := make([]operationDefinition, 0)
 
-	for _, def := range doc.Definitions {
+	for _, def := range doc.Definitions() {
 		opDef, isOpDef := def.(*operationDefinition)
 
 		if isOpDef {
@@ -142,11 +154,11 @@ func getAnonymousOperationDefinitions(doc *document) []operationDefinition {
 func getSubscriptionOperations(doc *document) []operationDefinition {
 	subscriptions := make([]operationDefinition, 0)
 
-	for _, def := range doc.Definitions {
+	for _, def := range doc.Definitions() {
 		opDef, isOpDef := def.(*operationDefinition)
 
 		if isOpDef {
-			if opDef.OperationType == operationSubscription {
+			if opDef.OperationType() == operationSubscription {
 				subscriptions = append(subscriptions, *opDef)
 			}
 		}
@@ -156,9 +168,10 @@ func getSubscriptionOperations(doc *document) []operationDefinition {
 }
 
 func getRootSubscriptionType(schema *schemaDefinition) *rootOperationTypeDefinition {
-	for i, _ := range schema.RootOperationTypeDefinitions {
-		if schema.RootOperationTypeDefinitions[i].OperationType == operationSubscription {
-			return &schema.RootOperationTypeDefinitions[i]
+	rootOperationTypeDefinitions := schema.RootOperationTypeDefinitions()
+	for i, _ := range rootOperationTypeDefinitions {
+		if rootOperationTypeDefinitions[i].OperationType() == operationSubscription {
+			return rootOperationTypeDefinitions[i]
 		}
 	}
 

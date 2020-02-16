@@ -1,5 +1,7 @@
 package language
 
+import "encoding/json"
+
 const (
 	// Executable Directive Locations
 	edlQuery              executableDirectiveLocation = "QUERY"
@@ -65,31 +67,107 @@ type typeSystemDirectiveLocation directiveLocation
 type description stringValue
 
 type location struct {
-	Start  int
-	End    int
-	Source string
+	start  int
+	end    int
+	source string
+}
+
+func (l *location) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Start  int    `json:"start"`
+		End    int    `json:"end"`
+		Source string `json:"source"`
+	}{
+		Start:  l.start,
+		End:    l.end,
+		Source: l.source,
+	})
+}
+
+func (loc *location) Start() int {
+	return loc.start
+}
+
+func (loc *location) End() int {
+	return loc.end
+}
+
+func (loc *location) Source() string {
+	return loc.source
 }
 
 type document struct {
-	Definitions []definition
+	definitions []definition
 }
 
-type arguments []argument
+func (d *document) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Definitions []definition `json:"definitions"`
+	}{
+		Definitions: d.definitions,
+	})
+}
+
+func (doc *document) Definitions() []definition {
+	return doc.definitions
+}
+
+type arguments []*argument
 
 type argument struct {
-	Name  name
-	Value value
+	name  name
+	value value
 	locator
+}
+
+func (a *argument) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Name    name    `json:"name"`
+		Value   value   `json:"value"`
+		Locator locator `json:"location"`
+	}{
+		Name:    a.name,
+		Value:   a.value,
+		Locator: a.locator,
+	})
+}
+
+func (arg *argument) Name() name {
+	return arg.name
+}
+
+func (arg *argument) Value() value {
+	return arg.value
 }
 
 type directiveLocations []directiveLocation
 
-type directives []directive
+type directives []*directive
 
 type directive struct {
-	Name      name
-	Arguments *arguments
+	name      name
+	arguments *arguments
 	locator
+}
+
+func (d *directive) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Name      name       `json:"name"`
+		Arguments *arguments `json:"arguments,omitempty"`
+		Locator   locator    `json:"location"`
+	}{
+		Name:      d.name,
+		Arguments: d.arguments,
+		Locator:   d.locator,
+	})
+}
+
+func (dir *directive) Name() name {
+	return dir.name
+}
+
+func (dir *directive) Arguments() *arguments {
+	return dir.arguments
 }
 
 type operationType string
@@ -99,11 +177,19 @@ type locatorInterface interface {
 }
 
 type locator struct {
-	Loc location
+	loc location
+}
+
+func (l *locator) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Location location `json:"location"`
+	}{
+		Location: l.loc,
+	})
 }
 
 func (l *locator) Location() *location {
-	return &l.Loc
+	return &l.loc
 }
 
 type definition interface {
@@ -123,21 +209,39 @@ var _ definition = (typeSystemExtension)(nil)
 type executableDefinition interface {
 	definition
 	executableDefinition() executableDefinition
-	GetName() *name
-	GetDirectives() *directives
-	GetSelectionSet() selectionSet
+	Name() *name
+	Directives() *directives
+	SelectionSet() selectionSet
 }
 
 var _ executableDefinition = (*operationDefinition)(nil)
 var _ executableDefinition = (*fragmentDefinition)(nil)
 
 type operationDefinition struct {
-	OperationType       operationType
-	Name                *name
-	VariableDefinitions *variableDefinitions
-	SelectionSet        selectionSet
-	Directives          *directives
+	operationType       operationType
+	name                *name
+	variableDefinitions *variableDefinitions
+	selectionSet        selectionSet
+	directives          *directives
 	locator
+}
+
+func (o *operationDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		OperationType       operationType        `json:"operationType"`
+		Name                *name                `json:"name,omitempty"`
+		VariableDefinitions *variableDefinitions `json:"variableDefinitions,omitempty"`
+		SelectionSet        selectionSet         `json:"selectionSet"`
+		Directives          *directives          `json:"directives,omitempty"`
+		Locator             locator              `json:"location"`
+	}{
+		OperationType:       o.operationType,
+		Name:                o.name,
+		VariableDefinitions: o.variableDefinitions,
+		SelectionSet:        o.selectionSet,
+		Directives:          o.directives,
+		Locator:             o.locator,
+	})
 }
 
 func (o *operationDefinition) definition() definition {
@@ -148,24 +252,48 @@ func (o *operationDefinition) executableDefinition() executableDefinition {
 	return o
 }
 
-func (o *operationDefinition) GetName() *name {
-	return o.Name
+func (o *operationDefinition) Name() *name {
+	return o.name
 }
 
-func (o *operationDefinition) GetDirectives() *directives {
-	return o.Directives
+func (o *operationDefinition) Directives() *directives {
+	return o.directives
 }
 
-func (o *operationDefinition) GetSelectionSet() selectionSet {
-	return o.SelectionSet
+func (o *operationDefinition) SelectionSet() selectionSet {
+	return o.selectionSet
+}
+
+func (o *operationDefinition) OperationType() operationType {
+	return o.operationType
+}
+
+func (o *operationDefinition) VariableDefinitions() *variableDefinitions {
+	return o.variableDefinitions
 }
 
 type fragmentDefinition struct {
-	FragmentName  name
-	TypeCondition typeCondition
-	SelectionSet  selectionSet
-	Directives    *directives
+	fragmentName  name
+	typeCondition typeCondition
+	selectionSet  selectionSet
+	directives    *directives
 	locator
+}
+
+func (f *fragmentDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		FragmentName  name          `json:"name"`
+		TypeCondition typeCondition `json:"typeCondition"`
+		SelectionSet  selectionSet  `json:"selectionSet"`
+		Directives    *directives   `json:"directives,omitempty"`
+		Locator       locator       `json:"location"`
+	}{
+		FragmentName:  f.fragmentName,
+		TypeCondition: f.typeCondition,
+		SelectionSet:  f.selectionSet,
+		Directives:    f.directives,
+		Locator:       f.locator,
+	})
 }
 
 func (f *fragmentDefinition) definition() definition {
@@ -176,16 +304,20 @@ func (f *fragmentDefinition) executableDefinition() executableDefinition {
 	return f
 }
 
-func (f *fragmentDefinition) GetName() *name {
-	return &f.FragmentName
+func (f *fragmentDefinition) Name() *name {
+	return &f.fragmentName
 }
 
-func (f *fragmentDefinition) GetDirectives() *directives {
-	return f.Directives
+func (f *fragmentDefinition) Directives() *directives {
+	return f.directives
 }
 
-func (f *fragmentDefinition) GetSelectionSet() selectionSet {
-	return f.SelectionSet
+func (f *fragmentDefinition) SelectionSet() selectionSet {
+	return f.selectionSet
+}
+
+func (f *fragmentDefinition) TypeCondition() typeCondition {
+	return f.typeCondition
 }
 
 /*
@@ -202,9 +334,24 @@ var _ typeSystemDefinition = (*schemaDefinition)(nil)
 var _ typeSystemDefinition = (*directiveDefinition)(nil)
 
 type schemaDefinition struct {
-	Directives                   *directives
-	RootOperationTypeDefinitions []rootOperationTypeDefinition
+	description                  *description
+	directives                   *directives
+	rootOperationTypeDefinitions rootOperationTypeDefinitions
 	locator
+}
+
+func (s *schemaDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Description                  *description                 `json:"description,omitmepty"`
+		Directives                   *directives                  `json:"directives,omitempty"`
+		RootOperationTypeDefinitions rootOperationTypeDefinitions `json:"rootOperationTypeDefinitions"`
+		Locator                      locator                      `json:"location"`
+	}{
+		Description:                  s.description,
+		Directives:                   s.directives,
+		RootOperationTypeDefinitions: s.rootOperationTypeDefinitions,
+		Locator:                      s.locator,
+	})
 }
 
 func (s *schemaDefinition) definition() definition {
@@ -215,20 +362,68 @@ func (s *schemaDefinition) typeSystemDefinition() typeSystemDefinition {
 	return s
 }
 
+func (s *schemaDefinition) Directives() *directives {
+	return s.directives
+}
+
+func (s *schemaDefinition) Description() *description {
+	return s.description
+}
+
+func (s *schemaDefinition) RootOperationTypeDefinitions() rootOperationTypeDefinitions {
+	return s.rootOperationTypeDefinitions
+}
+
 type rootOperationTypeDefinition struct {
-	OperationType operationType
-	NamedType     namedType
+	operationType operationType
+	namedType     namedType
 	locator
 }
 
-type rootOperationTypeDefinitions []rootOperationTypeDefinition
+func (r *rootOperationTypeDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		OperationType operationType `json:"operationType"`
+		NamedType     namedType     `json:"namedType"`
+		Locator       locator       `json:"location"`
+	}{
+		OperationType: r.operationType,
+		NamedType:     r.namedType,
+		Locator:       r.locator,
+	})
+}
+
+func (rotd *rootOperationTypeDefinition) OperationType() operationType {
+	return rotd.operationType
+}
+
+func (rotd *rootOperationTypeDefinition) NamedType() namedType {
+	return rotd.namedType
+}
+
+type rootOperationTypeDefinitions []*rootOperationTypeDefinition
 
 type directiveDefinition struct {
-	Description         *description
-	Name                name
-	ArgumentsDefinition *argumentsDefinition
-	DirectiveLocations  directiveLocations
+	description         *description
+	name                name
+	argumentsDefinition *argumentsDefinition
+	directiveLocations  directiveLocations
 	locator
+}
+
+func (d *directiveDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Description         *description         `json:"description"`
+		Name                name                 `json:"name"`
+		ArgumentsDefinition *argumentsDefinition `json:"argumentsDefinition,omitempty"`
+		DirectiveLocations  directiveLocations   `json:"directiveLocations"`
+		Locator             locator              `json:"location"`
+	}{
+		Description:         d.description,
+		Name:                d.name,
+		ArgumentsDefinition: d.argumentsDefinition,
+		DirectiveLocations:  d.directiveLocations,
+		Locator:             d.locator,
+	})
 }
 
 func (d *directiveDefinition) definition() definition {
@@ -239,23 +434,77 @@ func (d *directiveDefinition) typeSystemDefinition() typeSystemDefinition {
 	return d
 }
 
+func (dd *directiveDefinition) Description() *description {
+	return dd.description
+}
+
+func (dd *directiveDefinition) Name() name {
+	return dd.name
+}
+
+func (dd *directiveDefinition) ArgumentsDefinition() *argumentsDefinition {
+	return dd.argumentsDefinition
+}
+
+func (dd *directiveDefinition) DirectiveLocation() directiveLocations {
+	return dd.directiveLocations
+}
+
 type inputValueDefinition struct {
-	Description  *description
-	Name         name
-	Type         _type
-	DefaultValue *defaultValue
-	Directives   *directives
+	description  *description
+	name         name
+	_type        _type
+	defaultValue *defaultValue
+	directives   *directives
 	locator
 }
 
-type argumentsDefinition []inputValueDefinition
+func (i *inputValueDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Description  *description  `json:"description,omitempty"`
+		Name         name          `json:"name"`
+		Type         _type         `json:"type"`
+		DefaultValue *defaultValue `json:"defaultValue,omitempty"`
+		Directives   *directives   `json:"directives,omitempty"`
+		Locator      locator       `json:"location"`
+	}{
+		Description:  i.description,
+		Name:         i.name,
+		Type:         i._type,
+		DefaultValue: i.defaultValue,
+		Directives:   i.directives,
+		Locator:      i.locator,
+	})
+}
+
+func (ivd *inputValueDefinition) Description() *description {
+	return ivd.description
+}
+
+func (ivd *inputValueDefinition) Name() name {
+	return ivd.name
+}
+
+func (ivd *inputValueDefinition) Type() _type {
+	return ivd._type
+}
+
+func (ivd *inputValueDefinition) DefaultValue() *defaultValue {
+	return ivd.defaultValue
+}
+
+func (ivd *inputValueDefinition) Directives() *directives {
+	return ivd.directives
+}
+
+type argumentsDefinition []*inputValueDefinition
 
 type typeDefinition interface {
 	typeSystemDefinition
 	typeDefinition() typeDefinition
-	GetDescription() *description
-	GetName() name
-	GetDirectives() *directives
+	Description() *description
+	Name() name
+	Directives() *directives
 }
 
 var _ typeDefinition = (*scalarTypeDefinition)(nil)
@@ -266,10 +515,24 @@ var _ typeDefinition = (*enumTypeDefinition)(nil)
 var _ typeDefinition = (*inputObjectTypeDefinition)(nil)
 
 type scalarTypeDefinition struct {
-	Description *description
-	Name        name
-	Directives  *directives
+	description *description
+	name        name
+	directives  *directives
 	locator
+}
+
+func (s *scalarTypeDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Description *description `json:"description,omitempty"`
+		Name        name         `json:"name"`
+		Directives  *directives  `json:"directives,omitempty"`
+		Locator     locator      `json:"location"`
+	}{
+		Description: s.description,
+		Name:        s.name,
+		Directives:  s.directives,
+		Locator:     s.locator,
+	})
 }
 
 func (s *scalarTypeDefinition) definition() definition {
@@ -284,25 +547,43 @@ func (s *scalarTypeDefinition) typeDefinition() typeDefinition {
 	return s
 }
 
-func (s *scalarTypeDefinition) GetDescription() *description {
-	return s.Description
+func (s *scalarTypeDefinition) Description() *description {
+	return s.description
 }
 
-func (s *scalarTypeDefinition) GetName() name {
-	return s.Name
+func (s *scalarTypeDefinition) Name() name {
+	return s.name
 }
 
-func (s *scalarTypeDefinition) GetDirectives() *directives {
-	return s.Directives
+func (s *scalarTypeDefinition) Directives() *directives {
+	return s.directives
 }
 
 type objectTypeDefinition struct {
-	Description          *description
-	Name                 name
-	ImplementsInterfaces *implementsInterfaces
-	Directives           *directives
-	FieldsDefinition     *fieldsDefinition
+	description          *description
+	name                 name
+	implementsInterfaces *implementsInterfaces
+	directives           *directives
+	fieldsDefinition     *fieldsDefinition
 	locator
+}
+
+func (o *objectTypeDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Description          *description          `json:"description,omitempty"`
+		Name                 name                  `json:"name"`
+		ImplementsInterfaces *implementsInterfaces `json:"implementsInterfaces,omitempty"`
+		Directives           *directives           `json:"directives,omitempty"`
+		FieldsDefinition     *fieldsDefinition     `json:"fieldsDefinition,omitempty"`
+		Locator              locator               `json:"location"`
+	}{
+		Description:          o.description,
+		Name:                 o.name,
+		ImplementsInterfaces: o.implementsInterfaces,
+		Directives:           o.directives,
+		FieldsDefinition:     o.fieldsDefinition,
+		Locator:              o.locator,
+	})
 }
 
 func (s *objectTypeDefinition) definition() definition {
@@ -317,24 +598,48 @@ func (s *objectTypeDefinition) typeDefinition() typeDefinition {
 	return s
 }
 
-func (o *objectTypeDefinition) GetDescription() *description {
-	return o.Description
+func (o *objectTypeDefinition) Description() *description {
+	return o.description
 }
 
-func (o *objectTypeDefinition) GetName() name {
-	return o.Name
+func (o *objectTypeDefinition) Name() name {
+	return o.name
 }
 
-func (o *objectTypeDefinition) GetDirectives() *directives {
-	return o.Directives
+func (o *objectTypeDefinition) Directives() *directives {
+	return o.directives
+}
+
+func (o *objectTypeDefinition) ImplementsInterfaces() *implementsInterfaces {
+	return o.implementsInterfaces
+}
+
+func (o *objectTypeDefinition) FieldsDefinition() *fieldsDefinition {
+	return o.fieldsDefinition
 }
 
 type interfaceTypeDefinition struct {
-	Description      *description
-	Name             name
-	Directives       *directives
-	FieldsDefinition *fieldsDefinition
+	description      *description
+	name             name
+	directives       *directives
+	fieldsDefinition *fieldsDefinition
 	locator
+}
+
+func (i *interfaceTypeDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Description      *description      `json:"description,omitempty"`
+		Name             name              `json:"name"`
+		Directives       *directives       `json:"directives,omitempty"`
+		FieldsDefinition *fieldsDefinition `json:"fieldsDefinition,omitempty"`
+		Locator          locator           `json:"location"`
+	}{
+		Description:      i.description,
+		Name:             i.name,
+		Directives:       i.directives,
+		FieldsDefinition: i.fieldsDefinition,
+		Locator:          i.locator,
+	})
 }
 
 func (s *interfaceTypeDefinition) definition() definition {
@@ -349,24 +654,44 @@ func (s *interfaceTypeDefinition) typeDefinition() typeDefinition {
 	return s
 }
 
-func (i *interfaceTypeDefinition) GetDescription() *description {
-	return i.Description
+func (i *interfaceTypeDefinition) Description() *description {
+	return i.description
 }
 
-func (i *interfaceTypeDefinition) GetName() name {
-	return i.Name
+func (i *interfaceTypeDefinition) Name() name {
+	return i.name
 }
 
-func (i *interfaceTypeDefinition) GetDirectives() *directives {
-	return i.Directives
+func (i *interfaceTypeDefinition) Directives() *directives {
+	return i.directives
+}
+
+func (i *interfaceTypeDefinition) FieldsDefinition() *fieldsDefinition {
+	return i.fieldsDefinition
 }
 
 type unionTypeDefinition struct {
-	Description      *description
-	Name             name
-	Directives       *directives
-	UnionMemberTypes *unionMemberTypes
+	description      *description
+	name             name
+	directives       *directives
+	unionMemberTypes *unionMemberTypes
 	locator
+}
+
+func (u *unionTypeDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Description      *description      `json:"description,omitempty"`
+		Name             name              `json:"name"`
+		Directives       *directives       `json:"directives,omitempty"`
+		UnionMemberTypes *unionMemberTypes `json:"unionMemberTypes,omitempty"`
+		Location         locator           `json:"location"`
+	}{
+		Description:      u.description,
+		Name:             u.name,
+		Directives:       u.directives,
+		UnionMemberTypes: u.unionMemberTypes,
+		Location:         u.locator,
+	})
 }
 
 func (s *unionTypeDefinition) definition() definition {
@@ -381,24 +706,44 @@ func (s *unionTypeDefinition) typeDefinition() typeDefinition {
 	return s
 }
 
-func (u *unionTypeDefinition) GetDescription() *description {
-	return u.Description
+func (u *unionTypeDefinition) Description() *description {
+	return u.description
 }
 
-func (u *unionTypeDefinition) GetName() name {
-	return u.Name
+func (u *unionTypeDefinition) Name() name {
+	return u.name
 }
 
-func (u *unionTypeDefinition) GetDirectives() *directives {
-	return u.Directives
+func (u *unionTypeDefinition) Directives() *directives {
+	return u.directives
+}
+
+func (u *unionTypeDefinition) UnionMemberTypes() *unionMemberTypes {
+	return u.unionMemberTypes
 }
 
 type enumTypeDefinition struct {
-	Description          *description
-	Name                 name
-	Directives           *directives
-	EnumValuesDefinition *enumValuesDefinition
+	description          *description
+	name                 name
+	directives           *directives
+	enumValuesDefinition *enumValuesDefinition
 	locator
+}
+
+func (e *enumTypeDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Description          *description          `json:"description,omitmepty"`
+		Name                 name                  `json:"name"`
+		Directives           *directives           `json:"directives,omitempty"`
+		EnumValuesDefinition *enumValuesDefinition `json:"enumValuesDefinition,omitempty"`
+		Locator              locator               `json:"location"`
+	}{
+		Description:          e.description,
+		Name:                 e.name,
+		Directives:           e.directives,
+		EnumValuesDefinition: e.enumValuesDefinition,
+		Locator:              e.locator,
+	})
 }
 
 func (s *enumTypeDefinition) definition() definition {
@@ -413,33 +758,79 @@ func (s *enumTypeDefinition) typeDefinition() typeDefinition {
 	return s
 }
 
-func (e *enumTypeDefinition) GetDescription() *description {
-	return e.Description
+func (e *enumTypeDefinition) Description() *description {
+	return e.description
 }
 
-func (e *enumTypeDefinition) GetName() name {
-	return e.Name
+func (e *enumTypeDefinition) Name() name {
+	return e.name
 }
 
-func (e *enumTypeDefinition) GetDirectives() *directives {
-	return e.Directives
+func (e *enumTypeDefinition) Directives() *directives {
+	return e.directives
+}
+
+func (e *enumTypeDefinition) EnumValuesDefinition() *enumValuesDefinition {
+	return e.enumValuesDefinition
 }
 
 type enumValueDefinition struct {
-	Description *description
-	EnumValue   enumValue
-	Directives  *directives
+	description *description
+	enumValue   enumValue
+	directives  *directives
 	locator
 }
 
-type enumValuesDefinition []enumValueDefinition
+func (e *enumValueDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Description *description `json:"description,omitempty"`
+		EnumValue   enumValue    `json:"enumValue"`
+		Directives  *directives  `json:"directives,omitempty"`
+		Locator     locator      `json:"location"`
+	}{
+		Description: e.description,
+		EnumValue:   e.enumValue,
+		Directives:  e.directives,
+		Locator:     e.locator,
+	})
+}
+
+func (e *enumValueDefinition) Description() *description {
+	return e.description
+}
+
+func (e *enumValueDefinition) EnumValue() enumValue {
+	return e.enumValue
+}
+
+func (e *enumValueDefinition) Directives() *directives {
+	return e.directives
+}
+
+type enumValuesDefinition []*enumValueDefinition
 
 type inputObjectTypeDefinition struct {
-	Description           *description
-	Name                  name
-	Directives            *directives
-	InputFieldsDefinition *inputFieldsDefinition
+	description           *description
+	name                  name
+	directives            *directives
+	inputFieldsDefinition *inputFieldsDefinition
 	locator
+}
+
+func (i *inputObjectTypeDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Description           *description           `json:"description,omitempty"`
+		Name                  name                   `json:"name"`
+		Directives            *directives            `json:"directives,omitempty"`
+		InputFieldsDefinition *inputFieldsDefinition `json:"inputFieldsDefinition,omitempty"`
+		Locator               locator                `json:"location"`
+	}{
+		Description:           i.description,
+		Name:                  i.name,
+		Directives:            i.directives,
+		InputFieldsDefinition: i.inputFieldsDefinition,
+		Locator:               i.locator,
+	})
 }
 
 func (s *inputObjectTypeDefinition) definition() definition {
@@ -454,40 +845,114 @@ func (s *inputObjectTypeDefinition) typeDefinition() typeDefinition {
 	return s
 }
 
-func (i *inputObjectTypeDefinition) GetDescription() *description {
-	return i.Description
+func (i *inputObjectTypeDefinition) Description() *description {
+	return i.description
 }
 
-func (i *inputObjectTypeDefinition) GetName() name {
-	return i.Name
+func (i *inputObjectTypeDefinition) Name() name {
+	return i.name
 }
 
-func (i *inputObjectTypeDefinition) GetDirectives() *directives {
-	return i.Directives
+func (i *inputObjectTypeDefinition) Directives() *directives {
+	return i.directives
 }
 
-type inputFieldsDefinition []inputValueDefinition
+func (i *inputObjectTypeDefinition) InputFieldsDefinition() *inputFieldsDefinition {
+	return i.inputFieldsDefinition
+}
+
+type inputFieldsDefinition []*inputValueDefinition
 
 type variableDefinition struct {
-	Variable     variable
-	Type         _type
-	DefaultValue *defaultValue
-	Directives   *directives
+	variable     variable
+	_type        _type
+	defaultValue *defaultValue
+	directives   *directives
 	locator
 }
 
-type variableDefinitions []variableDefinition
+func (v *variableDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Variable     variable      `json:"variable"`
+		Type         _type         `json:"type"`
+		DefaultValue *defaultValue `json:"defaultValue,omitempty"`
+		Directives   *directives   `json:"directives,omitempty"`
+		Locator      locator       `json:"location"`
+	}{
+		Variable:     v.variable,
+		Type:         v._type,
+		DefaultValue: v.defaultValue,
+		Directives:   v.directives,
+		Locator:      v.locator,
+	})
+}
+
+func (v *variableDefinition) Variable() variable {
+	return v.variable
+}
+
+func (v *variableDefinition) Type() _type {
+	return v._type
+}
+
+func (v *variableDefinition) DefaultValue() *defaultValue {
+	return v.defaultValue
+}
+
+func (v *variableDefinition) Directives() *directives {
+	return v.directives
+}
+
+type variableDefinitions []*variableDefinition
 
 type fieldDefinition struct {
-	Description         *description
-	Name                name
-	ArgumentsDefinition *argumentsDefinition
-	Type                _type
-	Directives          *directives
+	description         *description
+	name                name
+	argumentsDefinition *argumentsDefinition
+	_type               _type
+	directives          *directives
 	locator
 }
 
-type fieldsDefinition []fieldDefinition
+func (f *fieldDefinition) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Description         *description         `json:"description,omitempty"`
+		Name                name                 `json:"name"`
+		ArgumentsDefinition *argumentsDefinition `json:"argumentsDefinition,omitempty"`
+		Type                _type                `json:"type"`
+		Directives          *directives          `json:"directives,omitempty"`
+		Locator             locator              `json:"location"`
+	}{
+		Description:         f.description,
+		Name:                f.name,
+		ArgumentsDefinition: f.argumentsDefinition,
+		Type:                f._type,
+		Directives:          f.directives,
+		Locator:             f.locator,
+	})
+}
+
+func (f *fieldDefinition) Description() *description {
+	return f.description
+}
+
+func (f *fieldDefinition) Name() name {
+	return f.name
+}
+
+func (f *fieldDefinition) ArgumentsDefinition() *argumentsDefinition {
+	return f.argumentsDefinition
+}
+
+func (f *fieldDefinition) Type() _type {
+	return f._type
+}
+
+func (f *fieldDefinition) Directives() *directives {
+	return f.directives
+}
+
+type fieldsDefinition []*fieldDefinition
 
 /*
 	Type System Extensions
@@ -496,16 +961,28 @@ type fieldsDefinition []fieldDefinition
 type typeSystemExtension interface {
 	definition
 	typeSystemExtension() typeSystemExtension
-	GetDirectives() *directives
+	Directives() *directives
 }
 
 var _ typeSystemExtension = (*schemaExtension)(nil)
 var _ typeSystemExtension = (typeExtension)(nil)
 
 type schemaExtension struct {
-	Directives                   *directives
-	RootOperationTypeDefinitions *rootOperationTypeDefinitions
+	directives                   *directives
+	rootOperationTypeDefinitions *rootOperationTypeDefinitions
 	locator
+}
+
+func (s *schemaExtension) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Directives                   *directives                   `json:"directives,omitempty"`
+		RootOperationTypeDefinitions *rootOperationTypeDefinitions `json:"rootOperationTypeDefinitions,omitempty"`
+		Locator                      locator                       `json:"location"`
+	}{
+		Directives:                   s.directives,
+		RootOperationTypeDefinitions: s.rootOperationTypeDefinitions,
+		Locator:                      s.locator,
+	})
 }
 
 func (s *schemaExtension) definition() definition {
@@ -516,14 +993,18 @@ func (s *schemaExtension) typeSystemExtension() typeSystemExtension {
 	return s
 }
 
-func (s *schemaExtension) GetDirectives() *directives {
-	return s.Directives
+func (s *schemaExtension) Directives() *directives {
+	return s.directives
+}
+
+func (s *schemaExtension) RootOperationTypeDefinitions() *rootOperationTypeDefinitions {
+	return s.rootOperationTypeDefinitions
 }
 
 type typeExtension interface {
 	typeSystemExtension
 	typeExtension() typeExtension
-	GetName() name
+	Name() name
 }
 
 var _ typeExtension = (*scalarTypeExtension)(nil)
@@ -534,9 +1015,21 @@ var _ typeExtension = (*enumTypeExtension)(nil)
 var _ typeExtension = (*inputObjectTypeExtension)(nil)
 
 type scalarTypeExtension struct {
-	Name       name
-	Directives directives
+	name       name
+	directives directives
 	locator
+}
+
+func (s *scalarTypeExtension) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Name       name       `json:"name"`
+		Directives directives `json:"directives"`
+		Locator    locator    `json:"location"`
+	}{
+		Name:       s.name,
+		Directives: s.directives,
+		Locator:    s.locator,
+	})
 }
 
 func (s *scalarTypeExtension) definition() definition {
@@ -551,20 +1044,36 @@ func (s *scalarTypeExtension) typeExtension() typeExtension {
 	return s
 }
 
-func (s *scalarTypeExtension) GetName() name {
-	return s.Name
+func (s *scalarTypeExtension) Name() name {
+	return s.name
 }
 
-func (s *scalarTypeExtension) GetDirectives() *directives {
-	return &s.Directives
+func (s *scalarTypeExtension) Directives() *directives {
+	return &s.directives
 }
 
 type objectTypeExtension struct {
-	Name                 name
-	ImplementsInterfaces *implementsInterfaces
-	Directives           *directives
-	FieldsDefinition     *fieldsDefinition
+	name                 name
+	implementsInterfaces *implementsInterfaces
+	directives           *directives
+	fieldsDefinition     *fieldsDefinition
 	locator
+}
+
+func (o *objectTypeExtension) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Name                 name                  `json:"name"`
+		ImplementsInterfaces *implementsInterfaces `json:"implementsInterfaces,omitempty"`
+		Directives           *directives           `json:"directives,omitempty"`
+		FieldsDefinition     *fieldsDefinition     `json:"fieldsDefinition,omitempty"`
+		Locator              locator               `json:"location"`
+	}{
+		Name:                 o.name,
+		ImplementsInterfaces: o.implementsInterfaces,
+		Directives:           o.directives,
+		FieldsDefinition:     o.fieldsDefinition,
+		Locator:              o.locator,
+	})
 }
 
 func (s *objectTypeExtension) definition() definition {
@@ -579,45 +1088,57 @@ func (s *objectTypeExtension) typeExtension() typeExtension {
 	return s
 }
 
-func (o *objectTypeExtension) GetName() name {
-	return o.Name
+func (o *objectTypeExtension) Name() name {
+	return o.name
 }
 
-func (o *objectTypeExtension) GetDirectives() *directives {
-	return o.Directives
+func (o *objectTypeExtension) Directives() *directives {
+	return o.directives
+}
+
+func (o *objectTypeExtension) ImplementsInterfaces() *implementsInterfaces {
+	return o.implementsInterfaces
+}
+
+func (o *objectTypeExtension) FieldsDefinition() *fieldsDefinition {
+	return o.fieldsDefinition
 }
 
 type interfaceTypeExtension struct {
-	Name             name
-	Directives       *directives
-	FieldsDefinition *fieldsDefinition
+	name             name
+	directives       *directives
+	fieldsDefinition *fieldsDefinition
 	locator
 }
 
-func (s *interfaceTypeExtension) definition() definition {
-	return s
+func (i *interfaceTypeExtension) definition() definition {
+	return i
 }
 
-func (s *interfaceTypeExtension) typeSystemExtension() typeSystemExtension {
-	return s
+func (i *interfaceTypeExtension) typeSystemExtension() typeSystemExtension {
+	return i
 }
 
-func (s *interfaceTypeExtension) typeExtension() typeExtension {
-	return s
+func (i *interfaceTypeExtension) typeExtension() typeExtension {
+	return i
 }
 
-func (i *interfaceTypeExtension) GetName() name {
-	return i.Name
+func (i *interfaceTypeExtension) Name() name {
+	return i.name
 }
 
-func (i *interfaceTypeExtension) GetDirectives() *directives {
-	return i.Directives
+func (i *interfaceTypeExtension) Directives() *directives {
+	return i.directives
+}
+
+func (i *interfaceTypeExtension) FieldsDefinition() *fieldsDefinition {
+	return i.fieldsDefinition
 }
 
 type unionTypeExtension struct {
-	Name             name
-	Directives       *directives
-	UnionMemberTypes *unionMemberTypes
+	name             name
+	directives       *directives
+	unionMemberTypes *unionMemberTypes
 	locator
 }
 
@@ -633,18 +1154,22 @@ func (s *unionTypeExtension) typeExtension() typeExtension {
 	return s
 }
 
-func (u *unionTypeExtension) GetName() name {
-	return u.Name
+func (u *unionTypeExtension) Name() name {
+	return u.name
 }
 
-func (u *unionTypeExtension) GetDirectives() *directives {
-	return u.Directives
+func (u *unionTypeExtension) Directives() *directives {
+	return u.directives
+}
+
+func (u *unionTypeExtension) UnionMemberTypes() *unionMemberTypes {
+	return u.unionMemberTypes
 }
 
 type enumTypeExtension struct {
-	Name                 name
-	Directives           *directives
-	EnumValuesDefinition *enumValuesDefinition
+	name                 name
+	directives           *directives
+	enumValuesDefinition *enumValuesDefinition
 	locator
 }
 
@@ -660,18 +1185,22 @@ func (s *enumTypeExtension) typeExtension() typeExtension {
 	return s
 }
 
-func (e *enumTypeExtension) GetName() name {
-	return e.Name
+func (e *enumTypeExtension) Name() name {
+	return e.name
 }
 
-func (e *enumTypeExtension) GetDirectives() *directives {
-	return e.Directives
+func (e *enumTypeExtension) Directives() *directives {
+	return e.directives
+}
+
+func (e *enumTypeExtension) EnumValuesDefinition() *enumValuesDefinition {
+	return e.enumValuesDefinition
 }
 
 type inputObjectTypeExtension struct {
-	Name                  name
-	Directives            *directives
-	InputFieldsDefinition *inputFieldsDefinition
+	name                  name
+	directives            *directives
+	inputFieldsDefinition *inputFieldsDefinition
 	locator
 }
 
@@ -687,19 +1216,23 @@ func (s *inputObjectTypeExtension) typeExtension() typeExtension {
 	return s
 }
 
-func (i *inputObjectTypeExtension) GetName() name {
-	return i.Name
+func (i *inputObjectTypeExtension) Name() name {
+	return i.name
 }
 
-func (i *inputObjectTypeExtension) GetDirectives() *directives {
-	return i.Directives
+func (i *inputObjectTypeExtension) Directives() *directives {
+	return i.directives
+}
+
+func (i *inputObjectTypeExtension) InputFieldsDefinition() *inputFieldsDefinition {
+	return i.inputFieldsDefinition
 }
 
 type selection interface {
 	locatorInterface
 	selection() selection
-	GetSelections() *selectionSet
-	GetDirectives() *directives
+	SelectionSet() *selectionSet
+	Directives() *directives
 }
 
 var _ selection = (*field)(nil)
@@ -709,11 +1242,11 @@ var _ selection = (*inlineFragment)(nil)
 type selectionSet []selection
 
 type field struct {
-	Alias        *alias
-	Name         name
-	Arguments    *arguments
-	Directives   *directives
-	SelectionSet *selectionSet
+	alias        *alias
+	name         name
+	arguments    *arguments
+	directives   *directives
+	selectionSet *selectionSet
 	locator
 }
 
@@ -721,17 +1254,29 @@ func (f *field) selection() selection {
 	return f
 }
 
-func (f *field) GetSelections() *selectionSet {
-	return f.SelectionSet
+func (f *field) SelectionSet() *selectionSet {
+	return f.selectionSet
 }
 
-func (f *field) GetDirectives() *directives {
-	return f.Directives
+func (f *field) Directives() *directives {
+	return f.directives
+}
+
+func (f *field) Alias() *alias {
+	return f.alias
+}
+
+func (f *field) Name() name {
+	return f.name
+}
+
+func (f *field) Arguments() *arguments {
+	return f.arguments
 }
 
 type fragmentSpread struct {
-	FragmentName name
-	Directives   *directives
+	fragmentName name
+	directives   *directives
 	locator
 }
 
@@ -740,18 +1285,23 @@ func (f *fragmentSpread) selection() selection {
 }
 
 // TODO Find the fragment definition by its name and return its selection set
-func (f *fragmentSpread) GetSelections() *selectionSet {
+func (f *fragmentSpread) SelectionSet() *selectionSet {
+	panic("not implemented")
 	return &selectionSet{}
 }
 
-func (f *fragmentSpread) GetDirectives() *directives {
-	return f.Directives
+func (f *fragmentSpread) Directives() *directives {
+	return f.directives
+}
+
+func (f *fragmentSpread) FragmentName() name {
+	return f.fragmentName
 }
 
 type inlineFragment struct {
-	TypeCondition *typeCondition
-	Directives    *directives
-	SelectionSet  selectionSet
+	typeCondition *typeCondition
+	directives    *directives
+	selectionSet  selectionSet
 	locator
 }
 
@@ -759,17 +1309,21 @@ func (i *inlineFragment) selection() selection {
 	return i
 }
 
-func (i *inlineFragment) GetSelections() *selectionSet {
-	return &i.SelectionSet
+func (i *inlineFragment) SelectionSet() *selectionSet {
+	return &i.selectionSet
 }
 
-func (i *inlineFragment) GetDirectives() *directives {
-	return i.Directives
+func (i *inlineFragment) Directives() *directives {
+	return i.directives
+}
+
+func (i *inlineFragment) TypeCondition() *typeCondition {
+	return i.typeCondition
 }
 
 type _type interface {
 	_type() _type
-	GetTypeName() string
+	TypeName() string
 	locatorInterface
 }
 
@@ -777,18 +1331,20 @@ var _ _type = (*namedType)(nil)
 var _ _type = (*listType)(nil)
 var _ _type = (*nonNullType)(nil)
 
-type namedType name
+type namedType struct {
+	name
+}
 
 func (n *namedType) _type() _type {
 	return n
 }
 
-func (n *namedType) GetTypeName() string {
-	return n.Value
+func (n *namedType) TypeName() string {
+	return n.value
 }
 
 type listType struct {
-	Kind   string
+	kind   string
 	OfType _type
 	locator
 }
@@ -797,13 +1353,17 @@ func (n *listType) _type() _type {
 	return n
 }
 
-func (n *listType) GetTypeName() string {
-	return n.OfType.GetTypeName()
+func (n *listType) TypeName() string {
+	return n.OfType.TypeName()
+}
+
+func (l *listType) Kind() string {
+	return l.kind
 }
 
 type nonNullType struct {
-	Kind   string
-	OfType _type
+	kind   string
+	ofType _type
 	locator
 }
 
@@ -811,30 +1371,44 @@ func (n *nonNullType) _type() _type {
 	return n
 }
 
-func (n *nonNullType) GetTypeName() string {
-	return n.OfType.GetTypeName()
+func (n *nonNullType) TypeName() string {
+	return n.ofType.TypeName()
+}
+
+func (n *nonNullType) Kind() string {
+	return n.kind
 }
 
 type typeCondition struct {
-	NamedType namedType
+	namedType namedType
 	locator
 }
 
-type unionMemberTypes []namedType
+func (t *typeCondition) NamedType() namedType {
+	return t.namedType
+}
 
-type implementsInterfaces []namedType
+type unionMemberTypes []*namedType
+
+type implementsInterfaces []*namedType
 
 type name struct {
-	Value string
+	value string
 	locator
 }
 
-type alias name
+func (n *name) Value() string {
+	return n.value
+}
+
+type alias struct {
+	name
+}
 
 type value interface {
 	locatorInterface
 	value() value
-	GetValue() interface{}
+	Value() interface{}
 }
 
 var _ value = (*objectField)(nil)
@@ -848,8 +1422,8 @@ var _ value = (*enumValue)(nil)
 var _ value = (*variable)(nil)
 
 type objectField struct {
-	Name  name
-	Value value
+	name   name
+	_value value
 	locator
 }
 
@@ -857,12 +1431,16 @@ func (d *objectField) value() value {
 	return d
 }
 
-func (of objectField) GetValue() interface{} {
-	return of.Value.GetValue()
+func (of *objectField) Value() interface{} {
+	return of._value.Value()
+}
+
+func (of *objectField) Name() name {
+	return of.name
 }
 
 type objectValue struct {
-	Values []objectField
+	values []objectField
 	locator
 }
 
@@ -870,12 +1448,16 @@ func (d *objectValue) value() value {
 	return d
 }
 
-func (ov objectValue) GetValue() interface{} {
+func (o *objectValue) Values() []objectField {
+	return o.values
+}
+
+func (ov objectValue) Value() interface{} {
 	return ov
 }
 
 type listValue struct {
-	Values []value
+	values []value
 	locator
 }
 
@@ -883,12 +1465,16 @@ func (d *listValue) value() value {
 	return d
 }
 
-func (lv listValue) GetValue() interface{} {
+func (lv listValue) Value() interface{} {
 	return lv
 }
 
+func (l *listValue) Values() []value {
+	return l.values
+}
+
 type intValue struct {
-	Value int64
+	_value int64
 	locator
 }
 
@@ -896,12 +1482,12 @@ func (d *intValue) value() value {
 	return d
 }
 
-func (iv intValue) GetValue() interface{} {
-	return iv
+func (iv *intValue) Value() interface{} {
+	return iv._value
 }
 
 type floatValue struct {
-	Value float64
+	_value float64
 	locator
 }
 
@@ -909,12 +1495,12 @@ func (d *floatValue) value() value {
 	return d
 }
 
-func (fv floatValue) GetValue() interface{} {
-	return fv
+func (fv *floatValue) Value() interface{} {
+	return fv._value
 }
 
 type stringValue struct {
-	Value string
+	_value string
 	locator
 }
 
@@ -922,12 +1508,12 @@ func (d *stringValue) value() value {
 	return d
 }
 
-func (sv stringValue) GetValue() interface{} {
-	return sv
+func (sv *stringValue) Value() interface{} {
+	return sv._value
 }
 
 type booleanValue struct {
-	Value bool
+	_value bool
 	locator
 }
 
@@ -935,12 +1521,12 @@ func (d *booleanValue) value() value {
 	return d
 }
 
-func (bv booleanValue) GetValue() interface{} {
-	return bv
+func (bv *booleanValue) Value() interface{} {
+	return bv._value
 }
 
 type enumValue struct {
-	Name name
+	name name
 	locator
 }
 
@@ -948,8 +1534,8 @@ func (d *enumValue) value() value {
 	return d
 }
 
-func (ev enumValue) GetValue() interface{} {
-	return ev
+func (ev *enumValue) Value() interface{} {
+	return ev.name
 }
 
 type nullValue struct {
@@ -960,12 +1546,12 @@ func (d *nullValue) value() value {
 	return d
 }
 
-func (nv nullValue) GetValue() interface{} {
-	return nv
+func (nv *nullValue) Value() interface{} {
+	return nil
 }
 
 type variable struct {
-	Name name
+	name name
 	locator
 }
 
@@ -974,15 +1560,20 @@ func (d *variable) value() value {
 }
 
 // TODO fetch variable value from variable map
-func (v variable) GetValue() interface{} {
-	return v.Name
+func (v *variable) Value() interface{} {
+	panic("not implemented")
+	return nil
+}
+
+func (v *variable) Name() name {
+	return v.name
 }
 
 type defaultValue struct {
-	Value value
+	value value
 	locator
 }
 
-func (dv defaultValue) GetValue() interface{} {
-	return dv.Value.GetValue()
+func (dv defaultValue) Value() interface{} {
+	return dv.value.Value()
 }

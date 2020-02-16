@@ -51,7 +51,7 @@ func parseDocument(l *lexer) *document {
 
 	def := parseDefinitions(l)
 
-	doc.Definitions = *def
+	doc.definitions = *def
 
 	return doc
 }
@@ -133,7 +133,7 @@ func parseSchemaDefinition(l *lexer) *schemaDefinition {
 	l.get()
 
 	if directivesExist(l) {
-		schDef.Directives = parseDirectives(l)
+		schDef.directives = parseDirectives(l)
 	}
 
 	if !l.tokenEquals(tokBraceL.string()) {
@@ -142,7 +142,7 @@ func parseSchemaDefinition(l *lexer) *schemaDefinition {
 
 	l.get()
 
-	schDef.RootOperationTypeDefinitions = *parseRootOperationTypeDefinitions(l)
+	schDef.rootOperationTypeDefinitions = *parseRootOperationTypeDefinitions(l)
 
 	if !l.tokenEquals(tokBraceR.string()) {
 		panic(errors.New("Missing '}' for schema definition"))
@@ -150,7 +150,7 @@ func parseSchemaDefinition(l *lexer) *schemaDefinition {
 
 	locEnd := l.get().end
 
-	schDef.Loc = location{locStart, locEnd, l.source}
+	schDef.loc = location{locStart, locEnd, l.source}
 
 	return schDef
 }
@@ -162,7 +162,7 @@ func parseRootOperationTypeDefinitions(l *lexer) *rootOperationTypeDefinitions {
 	for !l.tokenEquals(tokBraceR.string()) {
 		rotd := parseRootOperationTypeDefinition(l)
 
-		*rotds = append(*rotds, *rotd)
+		*rotds = append(*rotds, rotd)
 	}
 
 	l.get()
@@ -180,7 +180,7 @@ func parseRootOperationTypeDefinition(l *lexer) *rootOperationTypeDefinition {
 
 	locStart := l.current().start
 
-	rotd.OperationType = *parseOperationType(l)
+	rotd.operationType = *parseOperationType(l)
 
 	if !l.tokenEquals(tokColon.string()) {
 		panic(errors.New("Expecting ':' after operation type"))
@@ -188,9 +188,9 @@ func parseRootOperationTypeDefinition(l *lexer) *rootOperationTypeDefinition {
 
 	l.get()
 
-	rotd.NamedType = *parseNamedType(l)
+	rotd.namedType = *parseNamedType(l)
 
-	rotd.Loc = location{locStart, rotd.NamedType.Location().End, l.source}
+	rotd.loc = location{locStart, rotd.namedType.Location().End(), l.source}
 
 	return rotd
 }
@@ -246,7 +246,7 @@ func parseScalarTypeDefinition(l *lexer) *scalarTypeDefinition {
 	stp := &scalarTypeDefinition{}
 
 	if descriptionExists(l) {
-		stp.Description = parseDescription(l)
+		stp.description = parseDescription(l)
 	}
 
 	if !l.tokenEquals(tsdlScalar) {
@@ -255,13 +255,13 @@ func parseScalarTypeDefinition(l *lexer) *scalarTypeDefinition {
 
 	tok := l.get()
 
-	stp.Name = *parseName(l)
+	stp.name = *parseName(l)
 
 	if directivesExist(l) {
-		stp.Directives = parseDirectives(l)
+		stp.directives = parseDirectives(l)
 	}
 
-	stp.Loc = location{tok.start, l.prevLocation().End, l.source}
+	stp.loc = location{tok.start, l.prevLocation().End(), l.source}
 
 	return stp
 }
@@ -277,10 +277,10 @@ func parseDescription(l *lexer) *description {
 func parseObjectTypeDefinition(l *lexer) *objectTypeDefinition {
 	otd := &objectTypeDefinition{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if descriptionExists(l) {
-		otd.Description = parseDescription(l)
+		otd.description = parseDescription(l)
 	}
 
 	if !l.tokenEquals(kwType) {
@@ -289,21 +289,21 @@ func parseObjectTypeDefinition(l *lexer) *objectTypeDefinition {
 
 	l.get()
 
-	otd.Name = *parseName(l)
+	otd.name = *parseName(l)
 
 	if implementsInterfacesExists(l) {
-		otd.ImplementsInterfaces = parseImplementsInterfaces(l)
+		otd.implementsInterfaces = parseImplementsInterfaces(l)
 	}
 
 	if directivesExist(l) {
-		otd.Directives = parseDirectives(l)
+		otd.directives = parseDirectives(l)
 	}
 
 	if fieldsDefinitionExists(l) {
-		otd.FieldsDefinition = parseFieldsDefinition(l)
+		otd.fieldsDefinition = parseFieldsDefinition(l)
 	}
 
-	otd.Loc = location{locStart, l.prevLocation().End, l.source}
+	otd.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return otd
 }
@@ -322,12 +322,12 @@ func parseImplementsInterfaces(l *lexer) *implementsInterfaces {
 		l.get()
 	}
 
-	*ii = append(*ii, *parseNamedType(l))
+	*ii = append(*ii, parseNamedType(l))
 
 	for l.tokenEquals(tokAmp.string()) {
 		l.get()
 
-		(*ii) = append(*ii, *parseNamedType(l))
+		(*ii) = append(*ii, parseNamedType(l))
 	}
 
 	return ii
@@ -344,7 +344,7 @@ func parseFieldsDefinition(l *lexer) *fieldsDefinition {
 	l.get()
 
 	for !l.tokenEquals(tokBraceR.string()) {
-		(*fds) = append(*fds, *parseFieldDefinition(l))
+		(*fds) = append(*fds, parseFieldDefinition(l))
 	}
 
 	l.get()
@@ -360,16 +360,16 @@ func parseFieldsDefinition(l *lexer) *fieldsDefinition {
 func parseFieldDefinition(l *lexer) *fieldDefinition {
 	fd := &fieldDefinition{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if descriptionExists(l) {
-		fd.Description = parseDescription(l)
+		fd.description = parseDescription(l)
 	}
 
-	fd.Name = *parseName(l)
+	fd.name = *parseName(l)
 
 	if argumentsDefinitionExist(l) {
-		fd.ArgumentsDefinition = parseArgumentsDefinition(l)
+		fd.argumentsDefinition = parseArgumentsDefinition(l)
 	}
 
 	if !l.tokenEquals(tokColon.string()) {
@@ -378,13 +378,13 @@ func parseFieldDefinition(l *lexer) *fieldDefinition {
 
 	l.get()
 
-	fd.Type = parseType(l)
+	fd._type = parseType(l)
 
 	if directivesExist(l) {
-		fd.Directives = parseDirectives(l)
+		fd.directives = parseDirectives(l)
 	}
 
-	fd.Loc = location{locStart, l.prevLocation().End, l.source}
+	fd.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return fd
 }
@@ -400,7 +400,7 @@ func parseArgumentsDefinition(l *lexer) *argumentsDefinition {
 	l.get()
 
 	for !l.tokenEquals(tokParenR.string()) {
-		*argsDef = append(*argsDef, *parseInputValueDefinition(l))
+		*argsDef = append(*argsDef, parseInputValueDefinition(l))
 	}
 
 	l.get()
@@ -416,13 +416,13 @@ func parseArgumentsDefinition(l *lexer) *argumentsDefinition {
 func parseInputValueDefinition(l *lexer) *inputValueDefinition {
 	ivd := &inputValueDefinition{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if descriptionExists(l) {
-		ivd.Description = parseDescription(l)
+		ivd.description = parseDescription(l)
 	}
 
-	ivd.Name = *parseName(l)
+	ivd.name = *parseName(l)
 
 	if !l.tokenEquals(tokColon.string()) {
 		panic(errors.New("Expecting ':' for input value definition"))
@@ -430,17 +430,17 @@ func parseInputValueDefinition(l *lexer) *inputValueDefinition {
 
 	l.get()
 
-	ivd.Type = parseType(l)
+	ivd._type = parseType(l)
 
 	if defaultValueExists(l) {
-		ivd.DefaultValue = parseDefaultValue(l)
+		ivd.defaultValue = parseDefaultValue(l)
 	}
 
 	if directivesExist(l) {
-		ivd.Directives = parseDirectives(l)
+		ivd.directives = parseDirectives(l)
 	}
 
-	ivd.Loc = location{locStart, l.prevLocation().End, l.source}
+	ivd.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return ivd
 }
@@ -449,10 +449,10 @@ func parseInputValueDefinition(l *lexer) *inputValueDefinition {
 func parseInterfaceTypeDefinition(l *lexer) *interfaceTypeDefinition {
 	itd := &interfaceTypeDefinition{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if descriptionExists(l) {
-		itd.Description = parseDescription(l)
+		itd.description = parseDescription(l)
 	}
 
 	if !l.tokenEquals(kwInterface) {
@@ -461,17 +461,17 @@ func parseInterfaceTypeDefinition(l *lexer) *interfaceTypeDefinition {
 
 	l.get()
 
-	itd.Name = *parseName(l)
+	itd.name = *parseName(l)
 
 	if directivesExist(l) {
-		itd.Directives = parseDirectives(l)
+		itd.directives = parseDirectives(l)
 	}
 
 	if fieldsDefinitionExists(l) {
-		itd.FieldsDefinition = parseFieldsDefinition(l)
+		itd.fieldsDefinition = parseFieldsDefinition(l)
 	}
 
-	itd.Loc = location{locStart, l.prevLocation().End, l.source}
+	itd.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return itd
 }
@@ -480,10 +480,10 @@ func parseInterfaceTypeDefinition(l *lexer) *interfaceTypeDefinition {
 func parseUnionTypeDefinition(l *lexer) *unionTypeDefinition {
 	utd := &unionTypeDefinition{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if descriptionExists(l) {
-		utd.Description = parseDescription(l)
+		utd.description = parseDescription(l)
 	}
 
 	if !l.tokenEquals(kwUnion) {
@@ -492,17 +492,17 @@ func parseUnionTypeDefinition(l *lexer) *unionTypeDefinition {
 
 	l.get()
 
-	utd.Name = *parseName(l)
+	utd.name = *parseName(l)
 
 	if directivesExist(l) {
-		utd.Directives = parseDirectives(l)
+		utd.directives = parseDirectives(l)
 	}
 
 	if unionMemberTypesExist(l) {
-		utd.UnionMemberTypes = parseUnionMemberTypes(l)
+		utd.unionMemberTypes = parseUnionMemberTypes(l)
 	}
 
-	utd.Loc = location{locStart, l.prevLocation().End, l.source}
+	utd.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return utd
 }
@@ -521,12 +521,12 @@ func parseUnionMemberTypes(l *lexer) *unionMemberTypes {
 		l.get()
 	}
 
-	*umt = append(*umt, *parseNamedType(l))
+	*umt = append(*umt, parseNamedType(l))
 
 	for l.tokenEquals(tokPipe.string()) {
 		l.get()
 
-		*umt = append(*umt, *parseNamedType(l))
+		*umt = append(*umt, parseNamedType(l))
 	}
 
 	if len(*umt) == 0 {
@@ -540,10 +540,10 @@ func parseUnionMemberTypes(l *lexer) *unionMemberTypes {
 func parseEnumTypeDefinition(l *lexer) *enumTypeDefinition {
 	etd := &enumTypeDefinition{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if descriptionExists(l) {
-		etd.Description = parseDescription(l)
+		etd.description = parseDescription(l)
 	}
 
 	if !l.tokenEquals(kwEnum) {
@@ -552,17 +552,17 @@ func parseEnumTypeDefinition(l *lexer) *enumTypeDefinition {
 
 	l.get()
 
-	etd.Name = *parseName(l)
+	etd.name = *parseName(l)
 
 	if directivesExist(l) {
-		etd.Directives = parseDirectives(l)
+		etd.directives = parseDirectives(l)
 	}
 
 	if enumValuesDefinitionExist(l) {
-		etd.EnumValuesDefinition = parseEnumValuesDefinition(l)
+		etd.enumValuesDefinition = parseEnumValuesDefinition(l)
 	}
 
-	etd.Loc = location{locStart, l.prevLocation().End, l.source}
+	etd.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return etd
 }
@@ -578,7 +578,7 @@ func parseEnumValuesDefinition(l *lexer) *enumValuesDefinition {
 	l.get()
 
 	for !l.tokenEquals(tokBraceR.string()) {
-		*evd = append(*evd, *parseEnumValueDefinition(l))
+		*evd = append(*evd, parseEnumValueDefinition(l))
 	}
 
 	l.get()
@@ -594,19 +594,19 @@ func parseEnumValuesDefinition(l *lexer) *enumValuesDefinition {
 func parseEnumValueDefinition(l *lexer) *enumValueDefinition {
 	evd := &enumValueDefinition{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if descriptionExists(l) {
-		evd.Description = parseDescription(l)
+		evd.description = parseDescription(l)
 	}
 
-	evd.EnumValue = *parseEnumValue(l)
+	evd.enumValue = *parseEnumValue(l)
 
 	if directivesExist(l) {
-		evd.Directives = parseDirectives(l)
+		evd.directives = parseDirectives(l)
 	}
 
-	evd.Loc = location{locStart, l.prevLocation().End, l.source}
+	evd.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return evd
 }
@@ -615,10 +615,10 @@ func parseEnumValueDefinition(l *lexer) *enumValueDefinition {
 func parseInputObjectTypeDefinition(l *lexer) *inputObjectTypeDefinition {
 	iotd := &inputObjectTypeDefinition{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if descriptionExists(l) {
-		iotd.Description = parseDescription(l)
+		iotd.description = parseDescription(l)
 	}
 
 	if !l.tokenEquals(kwInput) {
@@ -627,17 +627,17 @@ func parseInputObjectTypeDefinition(l *lexer) *inputObjectTypeDefinition {
 
 	l.get()
 
-	iotd.Name = *parseName(l)
+	iotd.name = *parseName(l)
 
 	if directivesExist(l) {
-		iotd.Directives = parseDirectives(l)
+		iotd.directives = parseDirectives(l)
 	}
 
 	if inputFieldsDefinitionExists(l) {
-		iotd.InputFieldsDefinition = parseInputFieldsDefinition(l)
+		iotd.inputFieldsDefinition = parseInputFieldsDefinition(l)
 	}
 
-	iotd.Loc = location{locStart, l.prevLocation().End, l.source}
+	iotd.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return iotd
 }
@@ -653,7 +653,7 @@ func parseInputFieldsDefinition(l *lexer) *inputFieldsDefinition {
 	l.get()
 
 	for !l.tokenEquals(tokBraceR.string()) {
-		*ifd = append(*ifd, *parseInputValueDefinition(l))
+		*ifd = append(*ifd, parseInputValueDefinition(l))
 	}
 
 	l.get()
@@ -669,10 +669,10 @@ func parseInputFieldsDefinition(l *lexer) *inputFieldsDefinition {
 func parseDirectiveDefinition(l *lexer) *directiveDefinition {
 	dd := &directiveDefinition{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if descriptionExists(l) {
-		dd.Description = parseDescription(l)
+		dd.description = parseDescription(l)
 	}
 
 	if !l.tokenEquals(kwDirective) {
@@ -687,10 +687,10 @@ func parseDirectiveDefinition(l *lexer) *directiveDefinition {
 
 	l.get()
 
-	dd.Name = *parseName(l)
+	dd.name = *parseName(l)
 
 	if argumentsDefinitionExist(l) {
-		dd.ArgumentsDefinition = parseArgumentsDefinition(l)
+		dd.argumentsDefinition = parseArgumentsDefinition(l)
 	}
 
 	if l.tokenEquals(kwRepeatable) {
@@ -703,9 +703,9 @@ func parseDirectiveDefinition(l *lexer) *directiveDefinition {
 
 	l.get()
 
-	dd.DirectiveLocations = *parseDirectiveLocations(l)
+	dd.directiveLocations = *parseDirectiveLocations(l)
 
-	dd.Loc = location{locStart, l.prevLocation().End, l.source}
+	dd.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return dd
 }
@@ -768,7 +768,7 @@ func parseTypeExtension(l *lexer) typeExtension {
 func parseScalarTypeExtension(l *lexer) *scalarTypeExtension {
 	ste := &scalarTypeExtension{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(kwScalar) {
 		panic(errors.New("Expecting 'extend scalar' keywords for scalar type extension"))
@@ -776,9 +776,9 @@ func parseScalarTypeExtension(l *lexer) *scalarTypeExtension {
 
 	l.get()
 
-	ste.Name = *parseName(l)
-	ste.Directives = *parseDirectives(l)
-	ste.Loc = location{locStart, l.prevLocation().End, l.source}
+	ste.name = *parseName(l)
+	ste.directives = *parseDirectives(l)
+	ste.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return ste
 }
@@ -787,7 +787,7 @@ func parseScalarTypeExtension(l *lexer) *scalarTypeExtension {
 func parseObjectTypeExtension(l *lexer) *objectTypeExtension {
 	ote := &objectTypeExtension{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(kwType) {
 		panic(errors.New("Expecting 'extend type' keywords for object type extension"))
@@ -795,18 +795,18 @@ func parseObjectTypeExtension(l *lexer) *objectTypeExtension {
 
 	l.get()
 
-	ote.Name = *parseName(l)
+	ote.name = *parseName(l)
 
 	if implementsInterfacesExists(l) {
-		ote.ImplementsInterfaces = parseImplementsInterfaces(l)
+		ote.implementsInterfaces = parseImplementsInterfaces(l)
 	}
 
 	if directivesExist(l) {
-		ote.Directives = parseDirectives(l)
+		ote.directives = parseDirectives(l)
 	}
 
 	if fieldsDefinitionExists(l) {
-		ote.FieldsDefinition = parseFieldsDefinition(l)
+		ote.fieldsDefinition = parseFieldsDefinition(l)
 	}
 
 	if ote.ImplementsInterfaces == nil &&
@@ -815,7 +815,7 @@ func parseObjectTypeExtension(l *lexer) *objectTypeExtension {
 		panic(errors.New("Expecting at least one of 'implements interface', 'directives', 'fields definition' for object type extension"))
 	}
 
-	ote.Loc = location{locStart, l.prevLocation().End, l.source}
+	ote.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return ote
 }
@@ -824,7 +824,7 @@ func parseObjectTypeExtension(l *lexer) *objectTypeExtension {
 func parseInterfaceTypeExtension(l *lexer) *interfaceTypeExtension {
 	ite := &interfaceTypeExtension{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(kwInterface) {
 		panic(errors.New("Expecting 'extend interface' keywords for interface type extension"))
@@ -832,21 +832,21 @@ func parseInterfaceTypeExtension(l *lexer) *interfaceTypeExtension {
 
 	l.get()
 
-	ite.Name = *parseName(l)
+	ite.name = *parseName(l)
 
 	if directivesExist(l) {
-		ite.Directives = parseDirectives(l)
+		ite.directives = parseDirectives(l)
 	}
 
 	if fieldsDefinitionExists(l) {
-		ite.FieldsDefinition = parseFieldsDefinition(l)
+		ite.fieldsDefinition = parseFieldsDefinition(l)
 	}
 
 	if ite.Directives == nil && ite.FieldsDefinition == nil {
 		panic(errors.New("Expecting at least one of 'directives', 'fields definition' for interface type extension"))
 	}
 
-	ite.Loc = location{locStart, l.prevLocation().End, l.source}
+	ite.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return ite
 }
@@ -855,7 +855,7 @@ func parseInterfaceTypeExtension(l *lexer) *interfaceTypeExtension {
 func parseUnionTypeExtension(l *lexer) *unionTypeExtension {
 	ute := &unionTypeExtension{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(tsdlUnion) {
 		panic(errors.New("Expecting 'extend union' keywords for union type extension"))
@@ -863,21 +863,21 @@ func parseUnionTypeExtension(l *lexer) *unionTypeExtension {
 
 	l.get()
 
-	ute.Name = *parseName(l)
+	ute.name = *parseName(l)
 
 	if directivesExist(l) {
-		ute.Directives = parseDirectives(l)
+		ute.directives = parseDirectives(l)
 	}
 
 	if unionMemberTypesExist(l) {
-		ute.UnionMemberTypes = parseUnionMemberTypes(l)
+		ute.unionMemberTypes = parseUnionMemberTypes(l)
 	}
 
 	if ute.Directives == nil && ute.UnionMemberTypes == nil {
 		panic(errors.New("Expecting at  least one of 'directives', 'union member types' for union type extension"))
 	}
 
-	ute.Loc = location{locStart, l.prevLocation().End, l.source}
+	ute.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return ute
 }
@@ -886,7 +886,7 @@ func parseUnionTypeExtension(l *lexer) *unionTypeExtension {
 func parseEnumTypeExtension(l *lexer) *enumTypeExtension {
 	ete := &enumTypeExtension{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(tsdlEnum) {
 		panic(errors.New("Expecting 'extend enum' keywords for enum type extension"))
@@ -894,21 +894,21 @@ func parseEnumTypeExtension(l *lexer) *enumTypeExtension {
 
 	l.get()
 
-	ete.Name = *parseName(l)
+	ete.name = *parseName(l)
 
 	if directivesExist(l) {
-		ete.Directives = parseDirectives(l)
+		ete.directives = parseDirectives(l)
 	}
 
 	if enumValuesDefinitionExist(l) {
-		ete.EnumValuesDefinition = parseEnumValuesDefinition(l)
+		ete.enumValuesDefinition = parseEnumValuesDefinition(l)
 	}
 
 	if ete.Directives == nil && ete.EnumValuesDefinition == nil {
 		panic(errors.New("Expecting at least one of 'directives', 'enum values definition' for enum type extension"))
 	}
 
-	ete.Loc = location{locStart, l.prevLocation().End, l.source}
+	ete.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return ete
 }
@@ -973,7 +973,7 @@ func parseTypeSystemExtension(l *lexer) typeSystemExtension {
 func parseSchemaExtension(l *lexer) *schemaExtension {
 	se := &schemaExtension{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(kwExtend, kwSchema) {
 		panic(errors.New("Expecting 'extend schema' keywords for schema extension"))
@@ -983,7 +983,7 @@ func parseSchemaExtension(l *lexer) *schemaExtension {
 	l.get()
 
 	if directivesExist(l) {
-		se.Directives = parseDirectives(l)
+		se.directives = parseDirectives(l)
 	}
 
 	if !l.tokenEquals(tokBraceL.string()) {
@@ -993,7 +993,7 @@ func parseSchemaExtension(l *lexer) *schemaExtension {
 	l.get()
 
 	if rootOperationTypeDefinitionsExist(l) {
-		se.RootOperationTypeDefinitions = parseRootOperationTypeDefinitions(l)
+		se.rootOperationTypeDefinitions = parseRootOperationTypeDefinitions(l)
 	}
 
 	l.get()
@@ -1002,7 +1002,7 @@ func parseSchemaExtension(l *lexer) *schemaExtension {
 		panic(errors.New("Expecting directives or root operation type definitions for schema extension"))
 	}
 
-	se.Loc = location{locStart, l.prevLocation().End, l.source}
+	se.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return se
 }
@@ -1011,7 +1011,7 @@ func parseSchemaExtension(l *lexer) *schemaExtension {
 func parseInputObjectTypeExtension(l *lexer) *inputObjectTypeExtension {
 	iote := &inputObjectTypeExtension{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(kwInput) {
 		panic(errors.New("Expecting 'extend' keyword for input object type extension"))
@@ -1019,21 +1019,21 @@ func parseInputObjectTypeExtension(l *lexer) *inputObjectTypeExtension {
 
 	l.get()
 
-	iote.Name = *parseName(l)
+	iote.name = *parseName(l)
 
 	if directivesExist(l) {
-		iote.Directives = parseDirectives(l)
+		iote.directives = parseDirectives(l)
 	}
 
 	if inputFieldsDefinitionExists(l) {
-		iote.InputFieldsDefinition = parseInputFieldsDefinition(l)
+		iote.inputFieldsDefinition = parseInputFieldsDefinition(l)
 	}
 
 	if iote.Directives == nil && iote.InputFieldsDefinition == nil {
 		panic(errors.New("Expecting at lease one of 'directives', 'input fields definition' fo input object type extension"))
 	}
 
-	iote.Loc = location{locStart, l.prevLocation().End, l.source}
+	iote.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return iote
 }
@@ -1041,15 +1041,15 @@ func parseInputObjectTypeExtension(l *lexer) *inputObjectTypeExtension {
 // https://graphql.github.io/graphql-spec/draft/#OperationDefinition
 func parseOperationDefinition(l *lexer) *operationDefinition {
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	// Shorthand query
 	// https://graphql.github.io/graphql-spec/draft/#sec-Language.Operations.Query-shorthand
 	if l.tokenEquals(tokBraceL.string()) {
 		od := &operationDefinition{}
-		od.OperationType = kwQuery
-		od.SelectionSet = *parseSelectionSet(l)
-		od.Loc = location{locStart, l.prevLocation().End, l.source}
+		od.operationType = kwQuery
+		od.selectionSet = *parseSelectionSet(l)
+		od.loc = location{locStart, l.prevLocation().End(), l.source}
 
 		return od
 	} else if !l.tokenEquals(kwQuery) &&
@@ -1064,21 +1064,21 @@ func parseOperationDefinition(l *lexer) *operationDefinition {
 		opType := tok.value
 
 		if nameExists(l) {
-			od.Name = parseName(l)
+			od.name = parseName(l)
 		}
 
 		if variableDefinitionsExist(l) {
-			od.VariableDefinitions = parseVariableDefinitions(l)
+			od.variableDefinitions = parseVariableDefinitions(l)
 		}
 
 		if directivesExist(l) {
-			od.Directives = parseDirectives(l)
+			od.directives = parseDirectives(l)
 		}
 
-		od.SelectionSet = *parseSelectionSet(l)
+		od.selectionSet = *parseSelectionSet(l)
 
-		od.OperationType = operationType(opType)
-		od.Loc = location{locStart, tok.end, l.source}
+		od.operationType = operationType(opType)
+		od.loc = location{locStart, tok.end, l.source}
 
 		return od
 	}
@@ -1087,7 +1087,7 @@ func parseOperationDefinition(l *lexer) *operationDefinition {
 // https://graphql.github.io/graphql-spec/draft/#FragmentDefinition
 func parseFragmentDefinition(l *lexer) *fragmentDefinition {
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(kwFragment) {
 		panic(errors.New("Expecting fragment keyword"))
@@ -1096,20 +1096,20 @@ func parseFragmentDefinition(l *lexer) *fragmentDefinition {
 
 		l.get()
 
-		fd.FragmentName = *parseFragmentName(l)
+		fd.fragmentName = *parseFragmentName(l)
 
-		if fd.FragmentName.Value == kwOn {
+		if fd.fragmentName.Value() == kwOn {
 			panic(errors.New("Fragment name cannot be 'on'"))
 		}
 
-		fd.TypeCondition = *parseTypeCondition(l)
+		fd.typeCondition = *parseTypeCondition(l)
 
 		if directivesExist(l) {
-			fd.Directives = parseDirectives(l)
+			fd.directives = parseDirectives(l)
 		}
 
-		fd.SelectionSet = *parseSelectionSet(l)
-		fd.Loc = location{locStart, l.prevLocation().End, l.source}
+		fd.selectionSet = *parseSelectionSet(l)
+		fd.loc = location{locStart, l.prevLocation().End(), l.source}
 
 		return fd
 	}
@@ -1143,10 +1143,10 @@ func parseName(l *lexer) *name {
 	nm := &name{}
 
 	// Populate the Name struct.
-	nm.Value = tok.value
-	nm.Loc.Start = tok.start
-	nm.Loc.End = tok.end
-	nm.Loc.Source = l.source
+	nm.value = tok.value
+	nm.loc.start = tok.start
+	nm.loc.end = tok.end
+	nm.loc.source = l.source
 
 	// Return the AST Name object.
 	return nm
@@ -1162,7 +1162,7 @@ func parseVariableDefinitions(l *lexer) *variableDefinitions {
 		vd := &variableDefinitions{}
 
 		for !l.tokenEquals(tokParenR.string()) {
-			*vd = append(*vd, *parseVariableDefinition(l))
+			*vd = append(*vd, parseVariableDefinition(l))
 		}
 
 		l.get()
@@ -1179,9 +1179,9 @@ func parseVariableDefinitions(l *lexer) *variableDefinitions {
 func parseVariableDefinition(l *lexer) *variableDefinition {
 	vd := &variableDefinition{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
-	vd.Variable = *parseVariable(l)
+	vd.variable = *parseVariable(l)
 
 	if !l.tokenEquals(tokColon.string()) {
 		panic(errors.New("Expecting a colon after variable name"))
@@ -1189,17 +1189,17 @@ func parseVariableDefinition(l *lexer) *variableDefinition {
 
 	l.get()
 
-	vd.Type = parseType(l)
+	vd._type = parseType(l)
 
 	if defaultValueExists(l) {
-		vd.DefaultValue = parseDefaultValue(l)
+		vd.defaultValue = parseDefaultValue(l)
 	}
 
 	if directivesExist(l) {
-		vd.Directives = parseDirectives(l)
+		vd.directives = parseDirectives(l)
 	}
 
-	vd.Loc = location{locStart, l.prevLocation().End, l.source}
+	vd.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return vd
 }
@@ -1227,7 +1227,7 @@ func parseType(l *lexer) _type {
 func parseListType(l *lexer) *listType {
 	lt := &listType{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(tokBracketL.string()) {
 		panic(errors.New("Expecting '[' for list type"))
@@ -1243,7 +1243,7 @@ func parseListType(l *lexer) *listType {
 
 	l.get()
 
-	lt.Loc = location{locStart, l.prevLocation().End, l.source}
+	lt.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return lt
 }
@@ -1252,8 +1252,8 @@ func parseListType(l *lexer) *listType {
 func parseNonNullType(l *lexer, t _type) *nonNullType {
 	nnt := &nonNullType{}
 
-	nnt.OfType = t
-	nnt.Loc = location{t.Location().Start, l.location().End, l.source}
+	nnt.ofType = t
+	nnt.loc = location{t.Location().Start(), l.location().End(), l.source}
 
 	l.get()
 
@@ -1266,7 +1266,7 @@ func parseDirectives(l *lexer) *directives {
 	dirs := &directives{}
 
 	for l.tokenEquals(tokAt.string()) {
-		*dirs = append(*dirs, *parseDirective(l))
+		*dirs = append(*dirs, parseDirective(l))
 	}
 
 	if len(*dirs) == 0 {
@@ -1280,20 +1280,20 @@ func parseDirectives(l *lexer) *directives {
 func parseDirective(l *lexer) *directive {
 	dir := &directive{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(tokAt.string()) {
 		panic(errors.New("Expecting '@' for directive"))
 	} else {
 		l.get()
 
-		dir.Name = *parseName(l)
+		dir.name = *parseName(l)
 
 		if argumentsExist(l) {
-			dir.Arguments = parseArguments(l)
+			dir.arguments = parseArguments(l)
 		}
 
-		dir.Loc = location{locStart, l.prevLocation().End, l.source}
+		dir.loc = location{locStart, l.prevLocation().End(), l.source}
 
 		return dir
 	}
@@ -1343,15 +1343,15 @@ func parseSelection(l *lexer) selection {
 func parseVariable(l *lexer) *variable {
 	v := &variable{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(tokDollar.string()) {
 		panic(errors.New("Expecting '$' for varible"))
 	} else {
 		l.get()
 
-		v.Name = *parseName(l)
-		v.Loc = location{locStart, l.prevLocation().End, l.source}
+		v.name = *parseName(l)
+		v.loc = location{locStart, l.prevLocation().End(), l.source}
 
 		return v
 	}
@@ -1361,15 +1361,15 @@ func parseVariable(l *lexer) *variable {
 func parseDefaultValue(l *lexer) *defaultValue {
 	dv := &defaultValue{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(tokEquals.string()) {
 		panic(errors.New("Expecting '=' for default value"))
 	} else {
 		l.get()
 
-		dv.Value = parseValue(l)
-		dv.Loc = location{locStart, l.prevLocation().End, l.source}
+		dv.value = parseValue(l)
+		dv.loc = location{locStart, l.prevLocation().End(), l.source}
 
 		return dv
 	}
@@ -1476,7 +1476,7 @@ func parseArguments(l *lexer) *arguments {
 		l.get()
 
 		for !l.tokenEquals(tokParenR.string()) {
-			*args = append(*args, *parseArgument(l))
+			*args = append(*args, parseArgument(l))
 		}
 
 		l.get()
@@ -1493,7 +1493,7 @@ func parseArguments(l *lexer) *arguments {
 func parseArgument(l *lexer) *argument {
 	arg := &argument{}
 
-	arg.Name = *parseName(l)
+	arg.name = *parseName(l)
 
 	if !l.tokenEquals(tokColon.string()) {
 		panic(errors.New("Expecting colon after argument name"))
@@ -1501,9 +1501,9 @@ func parseArgument(l *lexer) *argument {
 
 	l.get()
 
-	arg.Value = parseValue(l)
+	arg.value = parseValue(l)
 
-	arg.Loc = location{arg.Name.Location().Start, l.prevLocation().End, l.source}
+	arg.loc = location{arg.name.Location().Start(), l.prevLocation().End(), l.source}
 
 	return arg
 }
@@ -1512,27 +1512,27 @@ func parseArgument(l *lexer) *argument {
 func parseField(l *lexer) *field {
 	f := &field{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if aliasExists(l) {
-		f.Alias = parseAlias(l)
+		f.alias = parseAlias(l)
 	}
 
-	f.Name = *parseName(l)
+	f.name = *parseName(l)
 
 	if argumentsExist(l) {
-		f.Arguments = parseArguments(l)
+		f.arguments = parseArguments(l)
 	}
 
 	if directivesExist(l) {
-		f.Directives = parseDirectives(l)
+		f.directives = parseDirectives(l)
 	}
 
 	if selectionSetExists(l) {
-		f.SelectionSet = parseSelectionSet(l)
+		f.selectionSet = parseSelectionSet(l)
 	}
 
-	f.Loc = location{locStart, l.prevLocation().End, l.source}
+	f.loc = location{locStart, l.prevLocation().End(), l.source}
 
 	return f
 }
@@ -1541,20 +1541,20 @@ func parseField(l *lexer) *field {
 func parseFragmentSpread(l *lexer) *fragmentSpread {
 	fs := &fragmentSpread{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(tokSpread.string()) {
 		panic(errors.New("Expecting '...' operator for a fragment spread"))
 	} else {
 		l.get()
 
-		fs.FragmentName = *parseFragmentName(l)
+		fs.fragmentName = *parseFragmentName(l)
 
 		if directivesExist(l) {
-			fs.Directives = parseDirectives(l)
+			fs.directives = parseDirectives(l)
 		}
 
-		fs.Loc = location{locStart, l.prevLocation().End, l.source}
+		fs.loc = location{locStart, l.prevLocation().End(), l.source}
 
 		return fs
 	}
@@ -1564,7 +1564,7 @@ func parseFragmentSpread(l *lexer) *fragmentSpread {
 func parseInlineFragment(l *lexer) *inlineFragment {
 	inf := &inlineFragment{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(tokSpread.string()) {
 		panic(errors.New("Expecting '...' for an inline fragment"))
@@ -1572,15 +1572,15 @@ func parseInlineFragment(l *lexer) *inlineFragment {
 		l.get()
 
 		if typeConditionExists(l) {
-			inf.TypeCondition = parseTypeCondition(l)
+			inf.typeCondition = parseTypeCondition(l)
 		}
 
 		if directivesExist(l) {
-			inf.Directives = parseDirectives(l)
+			inf.directives = parseDirectives(l)
 		}
 
-		inf.SelectionSet = *parseSelectionSet(l)
-		inf.Loc = location{locStart, l.prevLocation().End, l.source}
+		inf.selectionSet = *parseSelectionSet(l)
+		inf.loc = location{locStart, l.prevLocation().End(), l.source}
 
 		return inf
 	}
@@ -1590,13 +1590,13 @@ func parseInlineFragment(l *lexer) *inlineFragment {
 func parseFragmentName(l *lexer) *name {
 	nam := parseName(l)
 
-	if nam.Value == kwOn {
+	if nam.Value() == kwOn {
 		panic(errors.New("Fragment name cannot be 'on'"))
 	}
 
 	fn := &name{}
 	*fn = name(*nam)
-	fn.Loc = *nam.Location()
+	fn.loc = *nam.Location()
 
 	return fn
 }
@@ -1605,15 +1605,15 @@ func parseFragmentName(l *lexer) *name {
 func parseTypeCondition(l *lexer) *typeCondition {
 	tc := &typeCondition{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(kwOn) {
 		panic(errors.New("Expecting 'on' keyword for a type condition"))
 	} else {
 		l.get()
 
-		tc.NamedType = *parseNamedType(l)
-		tc.Loc = location{locStart, l.prevLocation().End, l.source}
+		tc.namedType = *parseNamedType(l)
+		tc.loc = location{locStart, l.prevLocation().End(), l.source}
 
 		return tc
 	}
@@ -1625,7 +1625,7 @@ func parseNamedType(l *lexer) *namedType {
 
 	nt := new(namedType)
 
-	*nt = namedType(*nam)
+	nt.name = *nam
 
 	return nt
 }
@@ -1644,8 +1644,8 @@ func parseIntValue(l *lexer) *intValue {
 
 	l.get()
 
-	iv.Value = intVal
-	iv.Loc = location{tok.start, tok.end, l.source}
+	iv._value = intVal
+	iv.loc = location{tok.start, tok.end, l.source}
 
 	return iv
 }
@@ -1664,8 +1664,8 @@ func parseFloatValue(l *lexer) *floatValue {
 
 	l.get()
 
-	fv.Value = floatVal
-	fv.Loc = location{tok.start, tok.end, l.source}
+	fv._value = floatVal
+	fv.loc = location{tok.start, tok.end, l.source}
 
 	return fv
 }
@@ -1677,16 +1677,16 @@ func parseStringValue(l *lexer) *stringValue {
 	sv := &stringValue{}
 
 	if singleQuotesStringValueExists(l) {
-		sv.Value = *parseSingleQuotesStringValue(l)
+		sv._value = *parseSingleQuotesStringValue(l)
 	}
 
 	if blockStringExists(l) {
-		sv.Value = *parseBlockString(l)
+		sv._value = *parseBlockString(l)
 	}
 
 	l.get()
-	sv.Value = tok.value
-	sv.Loc = location{tok.start, tok.end, l.source}
+	sv._value = tok.value
+	sv.loc = location{tok.start, tok.end, l.source}
 
 	return sv
 }
@@ -1796,8 +1796,8 @@ func parseBooleanValue(l *lexer) *booleanValue {
 
 	l.get()
 
-	bv.Value = boolVal
-	bv.Loc = location{tok.start, tok.end, l.source}
+	bv._value = boolVal
+	bv.loc = location{tok.start, tok.end, l.source}
 
 	return bv
 }
@@ -1813,7 +1813,7 @@ func parseNullValue(l *lexer) *nullValue {
 	} else {
 		l.get()
 
-		nv.Loc = location{tok.start, tok.end, l.source}
+		nv.loc = location{tok.start, tok.end, l.source}
 
 		return nv
 	}
@@ -1823,14 +1823,14 @@ func parseNullValue(l *lexer) *nullValue {
 func parseEnumValue(l *lexer) *enumValue {
 	nam := parseName(l)
 
-	switch nam.Value {
+	switch nam.Value() {
 	case kwTrue, kwFalse, kwNull:
 		panic(errors.New("Enum value cannot be 'true', 'false' or 'null'"))
 	default:
 		nv := &enumValue{}
 
-		nv.Name = *nam
-		nv.Loc = location{nam.Location().Start, nam.Location().End, l.source}
+		nv.name = *nam
+		nv.loc = location{nam.Location().Start(), nam.Location().End(), l.source}
 
 		return nv
 	}
@@ -1840,7 +1840,7 @@ func parseEnumValue(l *lexer) *enumValue {
 func parseListValue(l *lexer) *listValue {
 	lv := &listValue{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(tokBracketL.string()) {
 		panic(errors.New("Expecting '[' for a list value"))
@@ -1848,12 +1848,12 @@ func parseListValue(l *lexer) *listValue {
 		l.get()
 
 		for !l.tokenEquals(tokBracketR.string()) {
-			lv.Values = append(lv.Values, parseValue(l))
+			lv.values = append(lv.values, parseValue(l))
 		}
 
 		l.get()
 
-		lv.Loc = location{locStart, l.prevLocation().End, l.source}
+		lv.loc = location{locStart, l.prevLocation().End(), l.source}
 
 		return lv
 	}
@@ -1863,7 +1863,7 @@ func parseListValue(l *lexer) *listValue {
 func parseObjectValue(l *lexer) *objectValue {
 	ov := &objectValue{}
 
-	locStart := l.location().Start
+	locStart := l.location().Start()
 
 	if !l.tokenEquals(tokBraceL.string()) {
 		panic(errors.New("Expecting '{' for an object value"))
@@ -1871,12 +1871,12 @@ func parseObjectValue(l *lexer) *objectValue {
 		l.get()
 
 		for !l.tokenEquals(tokBraceR.string()) {
-			ov.Values = append(ov.Values, *parseObjectField(l))
+			ov.values = append(ov.values, *parseObjectField(l))
 		}
 
 		l.get()
 
-		ov.Loc = location{locStart, l.prevLocation().End, l.source}
+		ov.loc = location{locStart, l.prevLocation().End(), l.source}
 
 		return ov
 	}
@@ -1886,7 +1886,7 @@ func parseObjectValue(l *lexer) *objectValue {
 func parseObjectField(l *lexer) *objectField {
 	of := &objectField{}
 
-	of.Name = *parseName(l)
+	of.name = *parseName(l)
 
 	if !l.tokenEquals(tokColon.string()) {
 		panic(errors.New("Expecting color after object field name"))
@@ -1894,8 +1894,8 @@ func parseObjectField(l *lexer) *objectField {
 
 	l.get()
 
-	of.Value = parseValue(l)
-	of.Loc = location{of.Name.Location().Start, l.prevLocation().End, l.source}
+	of._value = parseValue(l)
+	of.loc = location{of.name.Location().Start(), l.prevLocation().End(), l.source}
 
 	return of
 }
@@ -1903,7 +1903,7 @@ func parseObjectField(l *lexer) *objectField {
 // https://graphql.github.io/graphql-spec/draft/#Alias
 func parseAlias(l *lexer) *alias {
 	a := &alias{}
-	a.Value = parseName(l).Value
+	a.value = parseName(l).Value()
 
 	if !l.tokenEquals(tokColon.string()) {
 		panic(errors.New("Expecting colon after alias name"))

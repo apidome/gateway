@@ -1,25 +1,19 @@
 package language
 
-func collectFields(objectType interface{}, selectionSet *selectionSet, variableValues map[string]interface{}, visitedFragments *[]name) map[string][]selection {
-	if visitedFragments == nil {
-		vf := make([]name, 0)
-
-		visitedFragments = &vf
-	}
-
+func collectFields(objectType *rootOperationTypeDefinition, selectionSet selectionSet, variableValues []value, visitedFragments ...name) map[string][]selection {
 	groupedFields := make(map[string][]selection)
 
-	for _, _selection := range *selectionSet {
+	for _, _selection := range selectionSet {
 		// Check @skip directive
-		if dirExists, index := execDirectiveExists(*_selection.GetDirectives(), "skip"); dirExists {
-			skipDirective := (*_selection.GetDirectives())[index]
+		if dirExists, index := execDirectiveExists(*_selection.Directives(), "skip"); dirExists {
+			skipDirective := (*_selection.Directives())[index]
 
-			if skipDirective.Arguments != nil {
-				if argExists, index := execArgumentExists(*skipDirective.Arguments, "if"); argExists {
-					ifArg := (*skipDirective.Arguments)[index]
+			if skipDirective.Arguments() != nil {
+				if argExists, index := execArgumentExists(*skipDirective.Arguments(), "if"); argExists {
+					ifArg := (*skipDirective.Arguments())[index]
 
 					// This case should handle variable values as well
-					if val, ok := ifArg.Value.GetValue().(bool); ok {
+					if val, ok := ifArg.Value().Value().(bool); ok {
 						if val {
 							continue
 						}
@@ -29,15 +23,15 @@ func collectFields(objectType interface{}, selectionSet *selectionSet, variableV
 		}
 
 		// Check @include directive
-		if dirExists, index := execDirectiveExists(*_selection.GetDirectives(), "include"); dirExists {
-			includeDirective := (*_selection.GetDirectives())[index]
+		if dirExists, index := execDirectiveExists(*_selection.Directives(), "include"); dirExists {
+			includeDirective := (*_selection.Directives())[index]
 
 			if includeDirective.Arguments != nil {
-				if argExists, index := execArgumentExists(*includeDirective.Arguments, "if"); argExists {
-					ifArg := (*includeDirective.Arguments)[index]
+				if argExists, index := execArgumentExists(*includeDirective.Arguments(), "if"); argExists {
+					ifArg := (*includeDirective.Arguments())[index]
 
 					// This case should handle variable values as well
-					if val, ok := ifArg.Value.GetValue().(bool); ok {
+					if val, ok := ifArg.Value().Value().(bool); ok {
 						if !val {
 							continue
 						}
@@ -51,9 +45,10 @@ func collectFields(objectType interface{}, selectionSet *selectionSet, variableV
 			var responseKey string
 
 			if field.Alias != nil {
-				responseKey = field.Alias.Value
+				responseKey = field.Alias().Value()
 			} else {
-				responseKey = field.Name.Value
+				name := field.Name()
+				responseKey = name.Value()
 			}
 
 			_, exists := groupedFields[responseKey]
@@ -69,13 +64,13 @@ func collectFields(objectType interface{}, selectionSet *selectionSet, variableV
 
 		// If `selection` is a fragment spread
 		if fs, isFs := _selection.(*fragmentSpread); isFs {
-			fragmentSpreadName := fs.FragmentName.Value
+			fragmentSpreadName := fs.FragmentName()
 
-			if visitedFragmentsContainFragmentName(*visitedFragments, fragmentSpreadName) {
+			if visitedFragmentsContainFragmentName(visitedFragments, fragmentSpreadName.Value()) {
 				continue
 			}
 
-			*visitedFragments = append(*visitedFragments, fs.FragmentName)
+			visitedFragments = append(visitedFragments, fs.FragmentName())
 
 		}
 	}
@@ -86,7 +81,8 @@ func collectFields(objectType interface{}, selectionSet *selectionSet, variableV
 // Helper Functions
 func execDirectiveExists(dirs directives, dirName string) (bool, int) {
 	for i, dir := range dirs {
-		if dir.Name.Value == dirName {
+		name := dir.Name()
+		if name.Value() == dirName {
 			return true, i
 		}
 	}
@@ -96,7 +92,8 @@ func execDirectiveExists(dirs directives, dirName string) (bool, int) {
 
 func execArgumentExists(args arguments, argName string) (bool, int) {
 	for i, arg := range args {
-		if arg.Name.Value == argName {
+		name := arg.Name()
+		if name.Value() == argName {
 			return true, i
 		}
 	}
@@ -106,7 +103,7 @@ func execArgumentExists(args arguments, argName string) (bool, int) {
 
 func visitedFragmentsContainFragmentName(visitedFragments []name, fragName string) bool {
 	for _, fs := range visitedFragments {
-		if fs.Value == fragName {
+		if fs.Value() == fragName {
 			return true
 		}
 	}
