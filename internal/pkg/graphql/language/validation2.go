@@ -14,7 +14,7 @@ type variableUsage struct {
 	selectionSet selectionSet
 	field        *field
 	directive    *directive
-	argument     argument
+	argument     *argument
 	objectField  *objectField
 	listValue    *listValue
 	variable     variable
@@ -26,7 +26,7 @@ type objectValueUsage struct {
 }
 
 // http://spec.graphql.org/draft/#sec-Fragments-Must-Be-Used
-func validateFragmentsMustBeUsed(doc document) {
+func validateFragmentsMustBeUsed(doc *document) {
 	fragmentSpreadTargets := make(map[string]struct{}, 0)
 
 	// Extract fragment spread targets from all the definitions in the document.
@@ -48,7 +48,7 @@ func validateFragmentsMustBeUsed(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Fragment-spread-target-defined
-func validateFragmentSpreadTargetDefined(doc document) {
+func validateFragmentSpreadTargetDefined(doc *document) {
 	fragmentSpreadTargets := make(map[string]struct{}, 0)
 	fragmentDefinitionsNames := make(map[string]struct{})
 
@@ -76,7 +76,7 @@ func validateFragmentSpreadTargetDefined(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Fragment-spreads-must-not-form-cycles
-func validateFragmentSpreadsMustNotFormCycles(doc document) {
+func validateFragmentSpreadsMustNotFormCycles(doc *document) {
 	fragmentsPool := getFragmentsPool(doc)
 
 	// For each fragment, call detectFragmentCycles()
@@ -87,7 +87,7 @@ func validateFragmentSpreadsMustNotFormCycles(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Fragment-spread-is-possible
-func validateFragmentSpreadIsPossible(schema, doc document) {
+func validateFragmentSpreadIsPossible(schema, doc *document) {
 	// Get the fragments pool for quick access.
 	fragmentsPool := getFragmentsPool(doc)
 
@@ -109,13 +109,13 @@ func validateFragmentSpreadIsPossible(schema, doc document) {
 }
 
 func checkSpreadsPossibilityInSelectionSet(
-	schema document,
+	schema *document,
 	rootSelectionSet selectionSet,
 	selectionSet selectionSet,
 	parentType typeDefinition,
 	fragmentsPool map[string]*fragmentDefinition,
 ) {
-	// For each selection in the seleciton set:
+	// For each selection in the selection set:
 	for _, selection := range selectionSet {
 		var fragmentType _type
 
@@ -219,7 +219,7 @@ func checkSpreadsPossibilityInSelectionSet(
 }
 
 // http://spec.graphql.org/draft/#sec-Values
-func validateValuesOfCorrectType(schema, doc document) {
+func validateValuesOfCorrectType(schema, doc *document) {
 	fragmentsPool := getFragmentsPool(doc)
 
 	for _, def := range doc.definitions {
@@ -235,7 +235,7 @@ func validateValuesOfCorrectType(schema, doc document) {
 }
 
 func checkValuesOfCorrectTypeInOperation(
-	schema document,
+	schema *document,
 	root selectionSet,
 	set selectionSet,
 	fragmentsPool map[string]*fragmentDefinition,
@@ -260,7 +260,7 @@ func checkValuesOfCorrectTypeInOperation(
 		case *field:
 			if s.arguments != nil {
 				for _, arg := range *s.arguments {
-					argDef := getFieldArgumentDefinition(schema, root, *s, arg, fragmentsPool)
+					argDef := getFieldArgumentDefinition(schema, root, s, arg, fragmentsPool)
 					if !assertValueType(arg.value, argDef._type) {
 						panic(errors.New("Literal values must be compatible" +
 							" with the type expected in the position they are found" +
@@ -303,7 +303,7 @@ func assertValueType(v value, t _type) bool {
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Names
-func validateInputObjectFieldNames(schema document, doc document) {
+func validateInputObjectFieldNames(schema *document, doc *document) {
 	fragmentsPool := getFragmentsPool(doc)
 
 	for _, def := range doc.definitions {
@@ -353,7 +353,7 @@ func isInputFieldDefined(field objectField, fieldsDefinition inputFieldsDefiniti
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Uniqueness
-func validateInputObjectFieldUniqueness(doc document) {
+func validateInputObjectFieldUniqueness(doc *document) {
 	for _, def := range doc.definitions {
 		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
 			inputObjects := collectInputObjects(exeDef.SelectionSet())
@@ -377,7 +377,7 @@ func validateInputObjectFieldUniqueness(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Required-Fields
-func validateInputObjectRequiredFields(schema document, doc document) {
+func validateInputObjectRequiredFields(schema *document, doc *document) {
 	fragmentsPool := getFragmentsPool(doc)
 
 	// For each definition in the document:
@@ -418,7 +418,7 @@ func validateInputObjectRequiredFields(schema document, doc document) {
 									if inputField.name.value == fieldDef.name.value {
 										requiredFieldExists = true
 
-										_, isNull := inputField.value.(*nullValue)
+										_, isNull := inputField._value.(*nullValue)
 
 										// If the value is null, panic
 										if isNull {
@@ -443,7 +443,7 @@ func validateInputObjectRequiredFields(schema document, doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Directives-Are-Defined
-func validateDirectivesAreDefined(schema, doc document) {
+func validateDirectivesAreDefined(schema, doc *document) {
 	// For each definition in the document,
 	for _, def := range doc.definitions {
 		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
@@ -478,7 +478,7 @@ func validateDirectivesAreDefined(schema, doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Directives-Are-In-Valid-Locations
-func validateDirectivesAreInValidLocations(schema document, doc document) {
+func validateDirectivesAreInValidLocations(schema *document, doc *document) {
 	// For each definition in the document:
 	for _, def := range doc.definitions {
 		// Create a list of directive usages
@@ -492,7 +492,7 @@ func validateDirectivesAreInValidLocations(schema document, doc document) {
 			// set dirLocation to be the type of the operation.
 			// Else, set dirLocation to be fragment definition.
 			if opDef, isOpDef := exeDef.(*operationDefinition); isOpDef {
-				switch opDef.OperationType {
+				switch opDef.operationType {
 				case operationQuery:
 					{
 						dirLocation = edlQuery
@@ -518,7 +518,7 @@ func validateDirectivesAreInValidLocations(schema document, doc document) {
 								// If the directive used in a location that it is not
 								// defined to be used, panic.
 								if !checkDirectiveLocation(schema,
-									&directiveUsage{&dir, edlVariableDefinition}) {
+									&directiveUsage{dir, edlVariableDefinition}) {
 									panic(errors.New("GraphQL servers define what directives " +
 										"they support and where they support them. For each usage of a " +
 										"directive, the directive must be used in a location that the " +
@@ -538,7 +538,7 @@ func validateDirectivesAreInValidLocations(schema document, doc document) {
 				for _, dir := range *exeDef.Directives() {
 					// If the directive used in a location that it is not
 					// defined to be used, panic.
-					if !checkDirectiveLocation(schema, &directiveUsage{&dir, dirLocation}) {
+					if !checkDirectiveLocation(schema, &directiveUsage{dir, dirLocation}) {
 						panic(errors.New("GraphQL servers define what directives " +
 							"they support and where they support them. For each usage of a " +
 							"directive, the directive must be used in a location that the " +
@@ -567,7 +567,7 @@ func validateDirectivesAreInValidLocations(schema document, doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Directives-Are-Unique-Per-Location
-func validateDirectivesAreUniquePerLocation(doc document) {
+func validateDirectivesAreUniquePerLocation(doc *document) {
 	errMsg := "Directives are used to describe" +
 		" some metadata or behavioral change on the definition" +
 		" they apply to. When more than one directive of the same" +
@@ -613,7 +613,7 @@ func validateDirectivesAreUniquePerLocation(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Variable-Uniqueness
-func validateVariableUniqueness(doc document) {
+func validateVariableUniqueness(doc *document) {
 	for _, def := range doc.definitions {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
 			if opDef.variableDefinitions != nil {
@@ -633,7 +633,7 @@ func validateVariableUniqueness(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Variables-Are-Input-Types
-func validateVariableAreInputTypes(schema document, doc document) {
+func validateVariableAreInputTypes(schema *document, doc *document) {
 	for _, def := range doc.definitions {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
 			if opDef.variableDefinitions != nil {
@@ -649,7 +649,7 @@ func validateVariableAreInputTypes(schema document, doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-All-Variable-Uses-Defined
-func validateAllVariableUsesDefined(doc document) {
+func validateAllVariableUsesDefined(doc *document) {
 	fragmentsPool := getFragmentsPool(doc)
 
 	for _, def := range doc.definitions {
@@ -676,7 +676,7 @@ func validateAllVariableUsesDefined(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-All-Variables-Used
-func validateAllVariablesUsed(doc document) {
+func validateAllVariablesUsed(doc *document) {
 	fragmentsPool := getFragmentsPool(doc)
 
 	for _, def := range doc.definitions {
@@ -698,7 +698,7 @@ func validateAllVariablesUsed(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-All-Variable-Usages-are-Allowed
-func validateAllVariableUsagesAreAllowed(schema, doc document) {
+func validateAllVariableUsagesAreAllowed(schema, doc *document) {
 	for _, def := range doc.definitions {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
 			variableUsages := make(map[interface{}]*variableUsage)
@@ -708,7 +708,7 @@ func validateAllVariableUsagesAreAllowed(schema, doc document) {
 			for _, varUsage := range variableUsages {
 				for _, varDef := range *opDef.variableDefinitions {
 					if varUsage.variable.name.value == varDef.variable.name.value {
-						if !isVariableUsageAllowed(schema, &varDef, varUsage, opDef.selectionSet, fragmentsPool) {
+						if !isVariableUsageAllowed(schema, varDef, varUsage, opDef.selectionSet, fragmentsPool) {
 							panic(errors.New("Variable usages must be compatible" +
 								" with the arguments they are passed to"))
 						}
@@ -720,7 +720,7 @@ func validateAllVariableUsagesAreAllowed(schema, doc document) {
 }
 
 func isVariableUsageAllowed(
-	schema document,
+	schema *document,
 	varDef *variableDefinition,
 	variableUsage *variableUsage,
 	rootSelectionSet selectionSet,
@@ -736,12 +736,12 @@ func isVariableUsageAllowed(
 	// Get the argument definition from the schema according to the variable
 	// usage.
 	if variableUsage.directive != nil {
-		argDef = getDirectiveArgumentDefinition(schema, *variableUsage.directive, variableUsage.argument)
+		argDef = getDirectiveArgumentDefinition(schema, variableUsage.directive, variableUsage.argument)
 	} else {
 		argDef = getFieldArgumentDefinition(
 			schema,
 			rootSelectionSet,
-			*variableUsage.field,
+			variableUsage.field,
 			variableUsage.argument,
 			fragmentsPool,
 		)
@@ -749,10 +749,10 @@ func isVariableUsageAllowed(
 
 	// Let locationType be the expected type of the Argument, ObjectField, or ListValue
 	// entry where variableUsage is located.
-	locationType := argDef.Type
+	locationType := argDef._type
 
 	// Let variableType be the expected type of variableDefinition
-	variableType := varDef.Type
+	variableType := varDef._type
 
 	_, isVariableTypeANonNullType := variableType.(*nonNullType)
 	nonNullLocationType, isLocationTypeANonNullType := locationType.(*nonNullType)
@@ -790,13 +790,19 @@ func isVariableUsageAllowed(
 	return areTypesCompatible(variableType, locationType)
 }
 
-func getDirectiveArgumentDefinition(schema document, directive directive, argument argument) *inputValueDefinition {
+func getDirectiveArgumentDefinition(
+	schema *document,
+	directive *directive,
+	argument *argument,
+) *inputValueDefinition {
 	for _, def := range schema.definitions {
 		if directiveDef, isDirectiveDef := def.(*directiveDefinition); isDirectiveDef {
-			if directiveDef.argumentsDefinition != nil {
-				for _, argDef := range *directiveDef.argumentsDefinition {
-					if argDef.name.value == argument.name.value {
-						return &argDef
+			if directiveDef.name.value == directive.name.value {
+				if directiveDef.argumentsDefinition != nil {
+					for _, argDef := range *directiveDef.argumentsDefinition {
+						if argDef.name.value == argument.name.value {
+							return argDef
+						}
 					}
 				}
 			}
@@ -807,15 +813,15 @@ func getDirectiveArgumentDefinition(schema document, directive directive, argume
 }
 
 func getFieldArgumentDefinition(
-	schema document,
+	schema *document,
 	rootSelectionSet selectionSet,
-	field field,
-	argument argument,
+	field *field,
+	argument *argument,
 	fragmentsPool map[string]*fragmentDefinition,
 ) *inputValueDefinition {
 	selectionFieldDef := getFieldDefinitionByFieldSelection(
 		getRootQueryTypeDefinition(schema),
-		&field,
+		field,
 		rootSelectionSet,
 		schema,
 		fragmentsPool,
@@ -824,7 +830,7 @@ func getFieldArgumentDefinition(
 	if selectionFieldDef.argumentsDefinition != nil {
 		for _, arg := range *selectionFieldDef.argumentsDefinition {
 			if arg.name.value == argument.name.value {
-				return &arg
+				return arg
 			}
 		}
 
@@ -897,7 +903,7 @@ func areTypesCompatible(variableType, locationType _type) bool {
 }
 
 func collectObjectValueUsages(
-	schema document,
+	schema *document,
 	rootSelectionSet selectionSet,
 	selectionSet selectionSet,
 	fragmentsPool map[string]*fragmentDefinition,
@@ -939,7 +945,7 @@ func collectObjectValueUsages(
 						inputValueDef := getFieldArgumentDefinition(
 							schema,
 							rootSelectionSet,
-							*field,
+							field,
 							arg,
 							fragmentsPool,
 						)
@@ -953,7 +959,7 @@ func collectObjectValueUsages(
 			}
 
 			// If the field has a selection set, extract its variables too.
-			if field.SelectionSet != nil {
+			if field.selectionSet != nil {
 				selectionSetObjectUsages := collectObjectValueUsages(
 					schema,
 					rootSelectionSet,
@@ -1005,7 +1011,7 @@ func collectVariableUsages(
 						if _var, isVariable := arg.value.(*variable); isVariable {
 							usages[&arg] = &variableUsage{
 								field:       nil,
-								directive:   &directive,
+								directive:   directive,
 								argument:    arg,
 								listValue:   nil,
 								objectField: nil,
@@ -1016,7 +1022,7 @@ func collectVariableUsages(
 								if _var, isVariable := item.(*variable); isVariable {
 									usages[&list] = &variableUsage{
 										field:       nil,
-										directive:   &directive,
+										directive:   directive,
 										argument:    arg,
 										listValue:   list,
 										objectField: nil,
@@ -1026,10 +1032,10 @@ func collectVariableUsages(
 							}
 						} else if object, isObject := arg.value.(*objectValue); isObject {
 							for _, field := range object.values {
-								if _var, isVariable := field.value.(*variable); isVariable {
+								if _var, isVariable := field._value.(*variable); isVariable {
 									usages[&object] = &variableUsage{
 										field:       nil,
-										directive:   &directive,
+										directive:   directive,
 										argument:    arg,
 										listValue:   nil,
 										objectField: &field,
@@ -1075,7 +1081,7 @@ func collectVariableUsages(
 						}
 					} else if object, isObject := arg.value.(*objectValue); isObject {
 						for _, objectField := range object.values {
-							if _var, isVariable := objectField.value.(*variable); isVariable {
+							if _var, isVariable := objectField._value.(*variable); isVariable {
 								usages[&object] = &variableUsage{
 									field:       field,
 									directive:   nil,
@@ -1139,7 +1145,7 @@ func extractUsedVariablesNames(selectionSet selectionSet,
 							}
 						} else if object, isObject := arg.value.(*objectValue); isObject {
 							for _, field := range object.values {
-								if _var, isVariable := field.value.(*variable); isVariable {
+								if _var, isVariable := field._value.(*variable); isVariable {
 									variablesSet[_var.name.value] = struct{}{}
 								}
 							}
@@ -1166,7 +1172,7 @@ func extractUsedVariablesNames(selectionSet selectionSet,
 						}
 					} else if object, isObject := arg.value.(*objectValue); isObject {
 						for _, field := range object.values {
-							if _var, isVariable := field.value.(*variable); isVariable {
+							if _var, isVariable := field._value.(*variable); isVariable {
 								variablesSet[_var.name.value] = struct{}{}
 							}
 						}
@@ -1188,7 +1194,7 @@ func extractUsedVariablesNames(selectionSet selectionSet,
 	}
 }
 
-func getFragmentsPool(doc document) map[string]*fragmentDefinition {
+func getFragmentsPool(doc *document) map[string]*fragmentDefinition {
 	fragmentsPool := make(map[string]*fragmentDefinition)
 
 	// Populate the fragment dictionary with all the fragments in the document.
@@ -1230,7 +1236,7 @@ func detectFragmentCycles(
 	}
 }
 
-func isInputType(schema document, variableType _type) bool {
+func isInputType(schema *document, variableType _type) bool {
 	basicScalars := map[string]struct{}{
 		"Boolean": struct{}{},
 		"String":  struct{}{},
@@ -1276,7 +1282,7 @@ func isInputType(schema document, variableType _type) bool {
 	return false
 }
 
-func isOutputType(schema document, variableType _type) bool {
+func isOutputType(schema *document, variableType _type) bool {
 	basicScalars := map[string]struct{}{
 		"Boolean": struct{}{},
 		"String":  struct{}{},
@@ -1309,13 +1315,9 @@ func isOutputType(schema document, variableType _type) bool {
 					*interfaceTypeDefinition,
 					*unionTypeDefinition,
 					*enumTypeDefinition:
-					{
-						return true
-					}
+					return true
 				default:
-					{
-						return false
-					}
+					return false
 				}
 			}
 		}
@@ -1324,7 +1326,7 @@ func isOutputType(schema document, variableType _type) bool {
 	return false
 }
 
-func checkIfDirectivesInSelectionSetAreDefined(schema document, selectionSet selectionSet) {
+func checkIfDirectivesInSelectionSetAreDefined(schema *document, selectionSet selectionSet) {
 	// For each selection, look for directives.
 	for _, selection := range selectionSet {
 		// And the field contains directives
@@ -1345,7 +1347,7 @@ func checkIfDirectivesInSelectionSetAreDefined(schema document, selectionSet sel
 	}
 }
 
-func isDirectiveDefined(schema document, directive directive) {
+func isDirectiveDefined(schema *document, directive *directive) {
 	// A map that contains all graphql's built in directives for quick access.
 	builtInDirectiveNames := map[string]struct{}{
 		"skip":       struct{}{},
@@ -1409,7 +1411,7 @@ func collectInputObjects(selectionSet selectionSet) []*objectValue {
 	return inputObjects
 }
 
-func checkDirectiveLocation(schema document, usage *directiveUsage) bool {
+func checkDirectiveLocation(schema *document, usage *directiveUsage) bool {
 	// If the directive is one of the built in directives, and it has been used
 	// on a field, fragment spread or an inline fragment return true.
 	if usage.directive.name.value == "skip" ||
@@ -1478,7 +1480,7 @@ func extractDirectivesWithLocationsFromSelectionSet(selectionSet selectionSet) [
 				}
 
 				// Append the directive usage to the usages list.
-				usages = append(usages, &directiveUsage{&dir, location})
+				usages = append(usages, &directiveUsage{dir, location})
 			}
 		}
 
@@ -1529,7 +1531,7 @@ func checkDirectivesUniquenessInSelectionSet(selectionSet selectionSet) bool {
 	return true
 }
 
-func getRootQueryTypeDefinition(schema document) *objectTypeDefinition {
+func getRootQueryTypeDefinition(schema *document) *objectTypeDefinition {
 	rootQueryTypeName := "Query"
 
 	for _, def := range schema.definitions {
@@ -1557,7 +1559,7 @@ func getSelectionSetType(
 	parentType typeDefinition,
 	target *selectionSet,
 	current selectionSet,
-	schema document,
+	schema *document,
 	fragmentsPool map[string]*fragmentDefinition,
 ) _type {
 	var typeToReturn _type
@@ -1589,7 +1591,7 @@ func getSelectionSetType(
 					if t.unionMemberTypes != nil {
 						for _, unionMember := range *t.unionMemberTypes {
 							fieldType = getSelectionSetType(
-								getTypeDefinitionByType(schema, &unionMember),
+								getTypeDefinitionByType(schema, unionMember),
 								target,
 								*s.selectionSet,
 								schema,
@@ -1672,7 +1674,7 @@ func getFieldDefinitionByFieldSelection(
 	parentType typeDefinition,
 	targetSelection selection,
 	selectionSet selectionSet,
-	schema document,
+	schema *document,
 	fragmentsPool map[string]*fragmentDefinition,
 ) *fieldDefinition {
 	var tachlessFieldDefinition *fieldDefinition
@@ -1685,7 +1687,7 @@ func getFieldDefinitionByFieldSelection(
 				if t.fieldsDefinition != nil {
 					for _, fieldDef := range *t.fieldsDefinition {
 						if fieldDef.name.value == s.name.value {
-							tachlessFieldDefinition = &fieldDef
+							tachlessFieldDefinition = fieldDef
 							break
 						}
 					}
@@ -1694,7 +1696,7 @@ func getFieldDefinitionByFieldSelection(
 				if t.fieldsDefinition != nil {
 					for _, fieldDef := range *t.fieldsDefinition {
 						if fieldDef.name.value == s.name.value {
-							tachlessFieldDefinition = &fieldDef
+							tachlessFieldDefinition = fieldDef
 							break
 						}
 					}
@@ -1703,7 +1705,7 @@ func getFieldDefinitionByFieldSelection(
 				if t.unionMemberTypes != nil {
 					for _, unionMember := range *t.unionMemberTypes {
 						fieldDef := getFieldDefinitionByFieldSelection(
-							getTypeDefinitionByType(schema, &unionMember),
+							getTypeDefinitionByType(schema, unionMember),
 							targetSelection,
 							selectionSet,
 							schema,
@@ -1759,7 +1761,7 @@ func getFieldDefinitionByFieldSelection(
 	panic(errors.New("empty selection cannot query for selection type"))
 }
 
-func getTypeDefinitionByType(schema document, t _type) typeDefinition {
+func getTypeDefinitionByType(schema *document, t _type) typeDefinition {
 	for _, def := range schema.definitions {
 		if typeDef, isTypeDef := def.(typeDefinition); isTypeDef {
 			if typeDef.Name().value == t.TypeName() {
@@ -1772,7 +1774,7 @@ func getTypeDefinitionByType(schema document, t _type) typeDefinition {
 }
 
 // http://spec.graphql.org/draft/#GetPossibleTypes()
-func getPossibleTypes(schema document, typeDef typeDefinition) map[string]struct{} {
+func getPossibleTypes(schema *document, typeDef typeDefinition) map[string]struct{} {
 	typesSet := make(map[string]struct{})
 
 	switch v := typeDef.(type) {

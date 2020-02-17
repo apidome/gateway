@@ -85,7 +85,7 @@ query goodComplexDefaultValue($search: ComplexInput = { name: "Fido" }) {
 		t.Fatal("query parse failed: ", err)
 	}
 
-	validateValuesOfCorrectType(*schemaAST, *queryAST)
+	validateValuesOfCorrectType(schemaAST, queryAST)
 
 	t.Log("Validation Succeeded")
 }
