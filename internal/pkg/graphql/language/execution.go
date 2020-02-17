@@ -26,7 +26,7 @@ func collectFields(objectType *rootOperationTypeDefinition, selectionSet selecti
 		if dirExists, index := execDirectiveExists(*_selection.Directives(), "include"); dirExists {
 			includeDirective := (*_selection.Directives())[index]
 
-			if includeDirective.Arguments != nil {
+			if includeDirective.arguments != nil {
 				if argExists, index := execArgumentExists(*includeDirective.Arguments(), "if"); argExists {
 					ifArg := (*includeDirective.Arguments())[index]
 
@@ -44,7 +44,7 @@ func collectFields(objectType *rootOperationTypeDefinition, selectionSet selecti
 		if field, isField := _selection.(*field); isField {
 			var responseKey string
 
-			if field.Alias != nil {
+			if field.alias != nil {
 				responseKey = field.Alias().Value()
 			} else {
 				name := field.Name()

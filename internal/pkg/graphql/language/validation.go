@@ -142,7 +142,7 @@ func getAnonymousOperationDefinitions(doc *document) []operationDefinition {
 		opDef, isOpDef := def.(*operationDefinition)
 
 		if isOpDef {
-			if opDef.Name == nil {
+			if opDef.name == nil {
 				anons = append(anons, *opDef)
 			}
 		}

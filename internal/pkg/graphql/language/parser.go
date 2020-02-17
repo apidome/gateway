@@ -809,9 +809,9 @@ func parseObjectTypeExtension(l *lexer) *objectTypeExtension {
 		ote.fieldsDefinition = parseFieldsDefinition(l)
 	}
 
-	if ote.ImplementsInterfaces == nil &&
-		ote.Directives == nil &&
-		ote.FieldsDefinition == nil {
+	if ote.implementsInterfaces == nil &&
+		ote.directives == nil &&
+		ote.fieldsDefinition == nil {
 		panic(errors.New("Expecting at least one of 'implements interface', 'directives', 'fields definition' for object type extension"))
 	}
 
@@ -842,7 +842,7 @@ func parseInterfaceTypeExtension(l *lexer) *interfaceTypeExtension {
 		ite.fieldsDefinition = parseFieldsDefinition(l)
 	}
 
-	if ite.Directives == nil && ite.FieldsDefinition == nil {
+	if ite.directives == nil && ite.fieldsDefinition == nil {
 		panic(errors.New("Expecting at least one of 'directives', 'fields definition' for interface type extension"))
 	}
 
@@ -873,7 +873,7 @@ func parseUnionTypeExtension(l *lexer) *unionTypeExtension {
 		ute.unionMemberTypes = parseUnionMemberTypes(l)
 	}
 
-	if ute.Directives == nil && ute.UnionMemberTypes == nil {
+	if ute.directives == nil && ute.unionMemberTypes == nil {
 		panic(errors.New("Expecting at  least one of 'directives', 'union member types' for union type extension"))
 	}
 
@@ -904,7 +904,7 @@ func parseEnumTypeExtension(l *lexer) *enumTypeExtension {
 		ete.enumValuesDefinition = parseEnumValuesDefinition(l)
 	}
 
-	if ete.Directives == nil && ete.EnumValuesDefinition == nil {
+	if ete.directives == nil && ete.enumValuesDefinition == nil {
 		panic(errors.New("Expecting at least one of 'directives', 'enum values definition' for enum type extension"))
 	}
 
@@ -998,7 +998,7 @@ func parseSchemaExtension(l *lexer) *schemaExtension {
 
 	l.get()
 
-	if se.Directives == nil && se.RootOperationTypeDefinitions == nil {
+	if se.directives == nil && se.rootOperationTypeDefinitions == nil {
 		panic(errors.New("Expecting directives or root operation type definitions for schema extension"))
 	}
 
@@ -1029,7 +1029,7 @@ func parseInputObjectTypeExtension(l *lexer) *inputObjectTypeExtension {
 		iote.inputFieldsDefinition = parseInputFieldsDefinition(l)
 	}
 
-	if iote.Directives == nil && iote.InputFieldsDefinition == nil {
+	if iote.directives == nil && iote.inputFieldsDefinition == nil {
 		panic(errors.New("Expecting at lease one of 'directives', 'input fields definition' fo input object type extension"))
 	}
 
