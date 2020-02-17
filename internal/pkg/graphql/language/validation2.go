@@ -30,16 +30,16 @@ func validateFragmentsMustBeUsed(doc document) {
 	fragmentSpreadTargets := make(map[string]struct{}, 0)
 
 	// Extract fragment spread targets from all the definitions in the document.
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		exeDef := def.(executableDefinition)
-		extractUsedFragmentsNames(exeDef.GetSelectionSet(), fragmentSpreadTargets)
+		extractUsedFragmentsNames(exeDef.SelectionSet(), fragmentSpreadTargets)
 	}
 
 	// For each fragment definition in the document, check if it's name exists
 	// in the fragment spread targets set. If not, panic.
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		if fragDef, ok := def.(*fragmentDefinition); ok {
-			if _, ok := fragmentSpreadTargets[fragDef.FragmentName.Value]; !ok {
+			if _, ok := fragmentSpreadTargets[fragDef.fragmentName.value]; !ok {
 				panic(errors.New("Defined fragments must be used within " +
 					"a document"))
 			}
@@ -53,16 +53,16 @@ func validateFragmentSpreadTargetDefined(doc document) {
 	fragmentDefinitionsNames := make(map[string]struct{})
 
 	// Collect all the fragment definitions' names into a dictionary of names.
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		if fragDef, ok := def.(*fragmentDefinition); ok {
-			fragmentDefinitionsNames[fragDef.FragmentName.Value] = struct{}{}
+			fragmentDefinitionsNames[fragDef.fragmentName.value] = struct{}{}
 		}
 	}
 
 	// Extract fragment spread targets from all the definitions in the document.
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		exeDef := def.(executableDefinition)
-		extractUsedFragmentsNames(exeDef.GetSelectionSet(), fragmentSpreadTargets)
+		extractUsedFragmentsNames(exeDef.SelectionSet(), fragmentSpreadTargets)
 	}
 
 	// Verify that all the targets in the targets set are referring to a defined fragment.
@@ -95,12 +95,12 @@ func validateFragmentSpreadIsPossible(schema, doc document) {
 	rootQueryTypeDef := getRootQueryTypeDefinition(schema)
 
 	// For each operation in the document, check its spreads' possibility.
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
 			checkSpreadsPossibilityInSelectionSet(
 				schema,
-				opDef.GetSelectionSet(),
-				opDef.GetSelectionSet(),
+				opDef.SelectionSet(),
+				opDef.SelectionSet(),
 				rootQueryTypeDef,
 				fragmentsPool,
 			)
@@ -125,7 +125,7 @@ func checkSpreadsPossibilityInSelectionSet(
 		case *field:
 			// If the field contains selection set of its own, check its
 			// spreads' possibility.
-			if s.SelectionSet != nil {
+			if s.selectionSet != nil {
 				fieldDef := getFieldDefinitionByFieldSelection(
 					parentType,
 					s,
@@ -137,38 +137,38 @@ func checkSpreadsPossibilityInSelectionSet(
 				checkSpreadsPossibilityInSelectionSet(
 					schema,
 					rootSelectionSet,
-					*s.SelectionSet,
-					getTypeDefinitionByType(schema, fieldDef.Type),
+					*s.selectionSet,
+					getTypeDefinitionByType(schema, fieldDef._type),
 					fragmentsPool,
 				)
 			}
 		// If the selection is an inline fragment:
 		case *inlineFragment:
 			// Save the fragment's type for later use.
-			fragmentType = &s.TypeCondition.NamedType
+			fragmentType = &s.typeCondition.namedType
 
 			// Check the fragment's selection set spreads' possibility.
 			checkSpreadsPossibilityInSelectionSet(
 				schema,
 				rootSelectionSet,
-				s.SelectionSet,
+				s.selectionSet,
 				getTypeDefinitionByType(schema, fragmentType),
 				fragmentsPool,
 			)
 		// If the selection is a fragment spread:
 		case *fragmentSpread:
 			// Get the fragment definition that the spread points to.
-			fragment := fragmentsPool[s.FragmentName.Value]
+			fragment := fragmentsPool[s.fragmentName.value]
 
 			// Save the fragment's type for later use.
-			fragmentType = &fragment.TypeCondition.NamedType
+			fragmentType = &fragment.typeCondition.namedType
 
 			// Check the fragment's selection set spreads' possibility.
 			checkSpreadsPossibilityInSelectionSet(
 				schema,
 				rootSelectionSet,
-				fragment.SelectionSet,
-				getTypeDefinitionByType(schema, &fragment.TypeCondition.NamedType),
+				fragment.selectionSet,
+				getTypeDefinitionByType(schema, &fragment.typeCondition.namedType),
 				fragmentsPool,
 			)
 		}
@@ -222,12 +222,12 @@ func checkSpreadsPossibilityInSelectionSet(
 func validateValuesOfCorrectType(schema, doc document) {
 	fragmentsPool := getFragmentsPool(doc)
 
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
 			checkValuesOfCorrectTypeInOperation(
 				schema,
-				opDef.SelectionSet,
-				opDef.SelectionSet,
+				opDef.selectionSet,
+				opDef.selectionSet,
 				fragmentsPool,
 			)
 		}
@@ -241,12 +241,12 @@ func checkValuesOfCorrectTypeInOperation(
 	fragmentsPool map[string]*fragmentDefinition,
 ) {
 	for _, selection := range set {
-		if selection.GetDirectives() != nil {
-			for _, dir := range *selection.GetDirectives() {
-				if dir.Arguments != nil {
-					for _, arg := range *dir.Arguments {
+		if selection.Directives() != nil {
+			for _, dir := range *selection.Directives() {
+				if dir.arguments != nil {
+					for _, arg := range *dir.arguments {
 						argDef := getDirectiveArgumentDefinition(schema, dir, arg)
-						if !assertValueType(arg.Value, argDef.Type) {
+						if !assertValueType(arg.value, argDef._type) {
 							panic(errors.New("Literal values must be compatible" +
 								" with the type expected in the position they are found" +
 								" as per the coercion rules."))
@@ -258,10 +258,10 @@ func checkValuesOfCorrectTypeInOperation(
 
 		switch s := selection.(type) {
 		case *field:
-			if s.Arguments != nil {
-				for _, arg := range *s.Arguments {
+			if s.arguments != nil {
+				for _, arg := range *s.arguments {
 					argDef := getFieldArgumentDefinition(schema, root, *s, arg, fragmentsPool)
-					if !assertValueType(arg.Value, argDef.Type) {
+					if !assertValueType(arg.value, argDef._type) {
 						panic(errors.New("Literal values must be compatible" +
 							" with the type expected in the position they are found" +
 							" as per the coercion rules."))
@@ -272,14 +272,14 @@ func checkValuesOfCorrectTypeInOperation(
 			checkValuesOfCorrectTypeInOperation(
 				schema,
 				root,
-				s.SelectionSet,
+				s.selectionSet,
 				fragmentsPool,
 			)
 		case *fragmentSpread:
 			checkValuesOfCorrectTypeInOperation(
 				schema,
 				root,
-				fragmentsPool[s.FragmentName.Value].SelectionSet,
+				fragmentsPool[s.fragmentName.value].selectionSet,
 				fragmentsPool,
 			)
 		}
@@ -306,12 +306,12 @@ func assertValueType(v value, t _type) bool {
 func validateInputObjectFieldNames(schema document, doc document) {
 	fragmentsPool := getFragmentsPool(doc)
 
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
 			objectValueUsages := collectObjectValueUsages(
 				schema,
-				exeDef.GetSelectionSet(),
-				exeDef.GetSelectionSet(),
+				exeDef.SelectionSet(),
+				exeDef.SelectionSet(),
 				fragmentsPool,
 			)
 
@@ -321,11 +321,11 @@ func validateInputObjectFieldNames(schema document, doc document) {
 				inputObjectTypeDef, isInputObjectTypeDef := typeDef.(*inputObjectTypeDefinition)
 
 				if isInputObjectTypeDef {
-					if inputObjectTypeDef.InputFieldsDefinition != nil {
-						for _, inputField := range usage.object.Values {
+					if inputObjectTypeDef.inputFieldsDefinition != nil {
+						for _, inputField := range usage.object.values {
 							if !isInputFieldDefined(
 								inputField,
-								*inputObjectTypeDef.InputFieldsDefinition,
+								*inputObjectTypeDef.inputFieldsDefinition,
 							) {
 								panic(errors.New("Every input field provided in an input" +
 									" object value must be defined in the set of possible fields of" +
@@ -344,7 +344,7 @@ func validateInputObjectFieldNames(schema document, doc document) {
 
 func isInputFieldDefined(field objectField, fieldsDefinition inputFieldsDefinition) bool {
 	for _, fieldDef := range fieldsDefinition {
-		if fieldDef.Name.Value == field.Name.Value {
+		if fieldDef.name.value == field.name.value {
 			return true
 		}
 	}
@@ -354,22 +354,22 @@ func isInputFieldDefined(field objectField, fieldsDefinition inputFieldsDefiniti
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Uniqueness
 func validateInputObjectFieldUniqueness(doc document) {
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
-			inputObjects := collectInputObjects(exeDef.GetSelectionSet())
+			inputObjects := collectInputObjects(exeDef.SelectionSet())
 
 			for _, inputObject := range inputObjects {
 				fields := make(map[string]struct{})
 
-				for _, inputField := range inputObject.Values {
-					if _, isFieldAlreadyExists := fields[inputField.Name.Value]; isFieldAlreadyExists {
+				for _, inputField := range inputObject.values {
+					if _, isFieldAlreadyExists := fields[inputField.name.value]; isFieldAlreadyExists {
 						panic(errors.New("Input objects must not contain" +
 							" more than one field of the same name, otherwise an" +
 							" ambiguity would exist which includes an ignored" +
 							" portion of syntax"))
 					}
 
-					fields[inputField.Name.Value] = struct{}{}
+					fields[inputField.name.value] = struct{}{}
 				}
 			}
 		}
@@ -381,14 +381,14 @@ func validateInputObjectRequiredFields(schema document, doc document) {
 	fragmentsPool := getFragmentsPool(doc)
 
 	// For each definition in the document:
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		// If it is an executable definition:
 		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
 			// Collect input object values from the executable definition.
 			inputObjectUsages := collectObjectValueUsages(
 				schema,
-				exeDef.GetSelectionSet(),
-				exeDef.GetSelectionSet(),
+				exeDef.SelectionSet(),
+				exeDef.SelectionSet(),
 				fragmentsPool,
 			)
 
@@ -400,25 +400,25 @@ func validateInputObjectRequiredFields(schema document, doc document) {
 				// If the type definition is an input object type definition:
 				if inputObjectTypeDef, isInputObjectTypeDef := typeDef.(*inputObjectTypeDefinition); isInputObjectTypeDef {
 					// If the input object type definition has input fields definition:
-					if inputObjectTypeDef.InputFieldsDefinition != nil {
+					if inputObjectTypeDef.inputFieldsDefinition != nil {
 						// For each field definition:
-						for _, fieldDef := range *inputObjectTypeDef.InputFieldsDefinition {
-							_, isNonNull := fieldDef.Type.(*nonNullType)
+						for _, fieldDef := range *inputObjectTypeDef.inputFieldsDefinition {
+							_, isNonNull := fieldDef._type.(*nonNullType)
 
 							// If the field's expected type is a non null type and it does not
 							// have a default value, the field must exist in the object usage:
-							if isNonNull && fieldDef.DefaultValue == nil {
+							if isNonNull && fieldDef.defaultValue == nil {
 								// Set a flag that indicates if the required field has been found
 								// in the object usage
 								requiredFieldExists := false
 
 								// For each field in the object usage:
-								for _, inputField := range inputObjectUsage.object.Values {
+								for _, inputField := range inputObjectUsage.object.values {
 									// If the field's name equals to the field definition's name:
-									if inputField.Name.Value == fieldDef.Name.Value {
+									if inputField.name.value == fieldDef.name.value {
 										requiredFieldExists = true
 
-										_, isNull := inputField.Value.(*nullValue)
+										_, isNull := inputField.value.(*nullValue)
 
 										// If the value is null, panic
 										if isNull {
@@ -445,12 +445,12 @@ func validateInputObjectRequiredFields(schema document, doc document) {
 // http://spec.graphql.org/draft/#sec-Directives-Are-Defined
 func validateDirectivesAreDefined(schema, doc document) {
 	// For each definition in the document,
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
-			if exeDef.GetDirectives() != nil {
+			if exeDef.Directives() != nil {
 				// For each directive in the executable definition, check if
 				// it is defined.
-				for _, directive := range *exeDef.GetDirectives() {
+				for _, directive := range *exeDef.Directives() {
 					isDirectiveDefined(schema, directive)
 				}
 			}
@@ -458,12 +458,12 @@ func validateDirectivesAreDefined(schema, doc document) {
 			// If the definition is an operation definition, it is possible to
 			// use directives in the context of the operation's variables.
 			if opDef, isOpDef := exeDef.(*operationDefinition); isOpDef {
-				if opDef.VariableDefinitions != nil {
+				if opDef.variableDefinitions != nil {
 					// For each variable definition, check if its directives
 					// are defined.
-					for _, varDef := range *opDef.VariableDefinitions {
-						if varDef.Directives != nil {
-							for _, directive := range *varDef.Directives {
+					for _, varDef := range *opDef.variableDefinitions {
+						if varDef.directives != nil {
+							for _, directive := range *varDef.directives {
 								isDirectiveDefined(schema, directive)
 							}
 						}
@@ -472,7 +472,7 @@ func validateDirectivesAreDefined(schema, doc document) {
 			}
 
 			// Check (recursively) the directives in the operation's selection set.
-			checkIfDirectivesInSelectionSetAreDefined(schema, exeDef.GetSelectionSet())
+			checkIfDirectivesInSelectionSetAreDefined(schema, exeDef.SelectionSet())
 		}
 	}
 }
@@ -480,7 +480,7 @@ func validateDirectivesAreDefined(schema, doc document) {
 // http://spec.graphql.org/draft/#sec-Directives-Are-In-Valid-Locations
 func validateDirectivesAreInValidLocations(schema document, doc document) {
 	// For each definition in the document:
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		// Create a list of directive usages
 		directiveUsages := make([]*directiveUsage, 0)
 
@@ -508,13 +508,13 @@ func validateDirectivesAreInValidLocations(schema document, doc document) {
 				}
 
 				// If the operation definition has variable definitions:
-				if opDef.VariableDefinitions != nil {
+				if opDef.variableDefinitions != nil {
 					// For each variable definition:
-					for _, varDef := range *opDef.VariableDefinitions {
+					for _, varDef := range *opDef.variableDefinitions {
 						// If the variable definition has directives:
-						if varDef.Directives != nil {
+						if varDef.directives != nil {
 							// For each directive:
-							for _, dir := range *varDef.Directives {
+							for _, dir := range *varDef.directives {
 								// If the directive used in a location that it is not
 								// defined to be used, panic.
 								if !checkDirectiveLocation(schema,
@@ -533,9 +533,9 @@ func validateDirectivesAreInValidLocations(schema document, doc document) {
 			}
 
 			// If the definition has directives:
-			if exeDef.GetDirectives() != nil {
+			if exeDef.Directives() != nil {
 				// For each directive:
-				for _, dir := range *exeDef.GetDirectives() {
+				for _, dir := range *exeDef.Directives() {
 					// If the directive used in a location that it is not
 					// defined to be used, panic.
 					if !checkDirectiveLocation(schema, &directiveUsage{&dir, dirLocation}) {
@@ -549,7 +549,7 @@ func validateDirectivesAreInValidLocations(schema document, doc document) {
 
 			// Get a list of all directive usages in the executable definition's selection set.
 			directiveUsages = append(directiveUsages,
-				extractDirectivesWithLocationsFromSelectionSet(exeDef.GetSelectionSet())...)
+				extractDirectivesWithLocationsFromSelectionSet(exeDef.SelectionSet())...)
 
 			// For each directive usage:
 			for _, usage := range directiveUsages {
@@ -576,7 +576,7 @@ func validateDirectivesAreUniquePerLocation(doc document) {
 		"allowed per location."
 
 	// For each definition in the document:
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		// If the definition is an executable definition:
 		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
 
@@ -585,12 +585,12 @@ func validateDirectivesAreUniquePerLocation(doc document) {
 			// Else, set dirLocation to be fragment definition.
 			if opDef, isOpDef := exeDef.(*operationDefinition); isOpDef {
 				// If the operation definition has variable definitions:
-				if opDef.VariableDefinitions != nil {
+				if opDef.variableDefinitions != nil {
 					// For each variable definition:
-					for _, varDef := range *opDef.VariableDefinitions {
+					for _, varDef := range *opDef.variableDefinitions {
 						// If the variable definition has directives:
-						if varDef.Directives != nil {
-							if !checkDirectivesUniqueness(*varDef.Directives) {
+						if varDef.directives != nil {
+							if !checkDirectivesUniqueness(*varDef.directives) {
 								panic(errors.New(errMsg))
 							}
 						}
@@ -599,13 +599,13 @@ func validateDirectivesAreUniquePerLocation(doc document) {
 			}
 
 			// If the definition has directives:
-			if exeDef.GetDirectives() != nil {
-				if !checkDirectivesUniqueness(*exeDef.GetDirectives()) {
+			if exeDef.Directives() != nil {
+				if !checkDirectivesUniqueness(*exeDef.Directives()) {
 					panic(errors.New(errMsg))
 				}
 			}
 
-			if !checkDirectivesUniquenessInSelectionSet(exeDef.GetSelectionSet()) {
+			if !checkDirectivesUniquenessInSelectionSet(exeDef.SelectionSet()) {
 				panic(errors.New(errMsg))
 			}
 		}
@@ -614,18 +614,18 @@ func validateDirectivesAreUniquePerLocation(doc document) {
 
 // http://spec.graphql.org/draft/#sec-Variable-Uniqueness
 func validateVariableUniqueness(doc document) {
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
-			if opDef.VariableDefinitions != nil {
+			if opDef.variableDefinitions != nil {
 				variablesSet := make(map[string]struct{}, 0)
 
-				for _, variable := range *opDef.VariableDefinitions {
-					if _, isVariableExists := variablesSet[variable.Variable.Name.Value]; isVariableExists {
+				for _, variable := range *opDef.variableDefinitions {
+					if _, isVariableExists := variablesSet[variable.variable.name.value]; isVariableExists {
 						panic(errors.New("If any operation defines more than one" +
 							" variable with the same name, it is ambiguous and invalid"))
 					}
 
-					variablesSet[variable.Variable.Name.Value] = struct{}{}
+					variablesSet[variable.variable.name.value] = struct{}{}
 				}
 			}
 		}
@@ -634,11 +634,11 @@ func validateVariableUniqueness(doc document) {
 
 // http://spec.graphql.org/draft/#sec-Variables-Are-Input-Types
 func validateVariableAreInputTypes(schema document, doc document) {
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
-			if opDef.VariableDefinitions != nil {
-				for _, variable := range *opDef.VariableDefinitions {
-					if !isInputType(schema, variable.Type) {
+			if opDef.variableDefinitions != nil {
+				for _, variable := range *opDef.variableDefinitions {
+					if !isInputType(schema, variable._type) {
 						panic(errors.New("Variables can only be input types. " +
 							"Objects, unions, and interfaces cannot be used as inputs."))
 					}
@@ -652,15 +652,15 @@ func validateVariableAreInputTypes(schema document, doc document) {
 func validateAllVariableUsesDefined(doc document) {
 	fragmentsPool := getFragmentsPool(doc)
 
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
 			usedVariablesSet := make(map[string]struct{}, 0)
-			extractUsedVariablesNames(opDef.SelectionSet, usedVariablesSet, fragmentsPool)
+			extractUsedVariablesNames(opDef.selectionSet, usedVariablesSet, fragmentsPool)
 
 			definedVariables := make(map[string]struct{}, 0)
-			if opDef.VariableDefinitions != nil {
-				for _, variable := range *opDef.VariableDefinitions {
-					definedVariables[variable.Variable.Name.Value] = struct{}{}
+			if opDef.variableDefinitions != nil {
+				for _, variable := range *opDef.variableDefinitions {
+					definedVariables[variable.variable.name.value] = struct{}{}
 				}
 			}
 
@@ -679,14 +679,14 @@ func validateAllVariableUsesDefined(doc document) {
 func validateAllVariablesUsed(doc document) {
 	fragmentsPool := getFragmentsPool(doc)
 
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
-			if opDef.VariableDefinitions != nil {
+			if opDef.variableDefinitions != nil {
 				usedVariablesSet := make(map[string]struct{}, 0)
-				extractUsedVariablesNames(opDef.SelectionSet, usedVariablesSet, fragmentsPool)
+				extractUsedVariablesNames(opDef.selectionSet, usedVariablesSet, fragmentsPool)
 
-				for _, variable := range *opDef.VariableDefinitions {
-					if _, isVariableUsed := usedVariablesSet[variable.Variable.Name.Value]; !isVariableUsed {
+				for _, variable := range *opDef.variableDefinitions {
+					if _, isVariableUsed := usedVariablesSet[variable.variable.name.value]; !isVariableUsed {
 						panic(errors.New("All variables defined by an operation" +
 							" must be used in that operation or a fragment transitively " +
 							"included by that operation"))
@@ -699,16 +699,16 @@ func validateAllVariablesUsed(doc document) {
 
 // http://spec.graphql.org/draft/#sec-All-Variable-Usages-are-Allowed
 func validateAllVariableUsagesAreAllowed(schema, doc document) {
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
 			variableUsages := make(map[interface{}]*variableUsage)
 			fragmentsPool := getFragmentsPool(doc)
-			collectVariableUsages(opDef.SelectionSet, variableUsages, fragmentsPool)
+			collectVariableUsages(opDef.selectionSet, variableUsages, fragmentsPool)
 
 			for _, varUsage := range variableUsages {
-				for _, varDef := range *opDef.VariableDefinitions {
-					if varUsage.variable.Name.Value == varDef.Variable.Name.Value {
-						if !isVariableUsageAllowed(schema, &varDef, varUsage, opDef.SelectionSet, fragmentsPool) {
+				for _, varDef := range *opDef.variableDefinitions {
+					if varUsage.variable.name.value == varDef.variable.name.value {
+						if !isVariableUsageAllowed(schema, &varDef, varUsage, opDef.selectionSet, fragmentsPool) {
 							panic(errors.New("Variable usages must be compatible" +
 								" with the arguments they are passed to"))
 						}
@@ -761,15 +761,15 @@ func isVariableUsageAllowed(
 	if isLocationTypeANonNullType && !isVariableTypeANonNullType {
 		// Let hasNonNullVariableDefaultValue be true if a default value exists for
 		// variableDefinition and is not the value null.
-		if varDef.DefaultValue != nil {
-			if _, isNullValue := (*varDef).DefaultValue.Value.(*nullValue); !isNullValue {
+		if varDef.defaultValue != nil {
+			if _, isNullValue := (*varDef).defaultValue.value.(*nullValue); !isNullValue {
 				hasNonNullVariableDefaultValue = true
 			}
 		}
 
 		// Let hasLocationDefaultValue be true if a default value exists for the Argument
 		// or ObjectField where variableUsage is located.
-		if argDef.DefaultValue != nil {
+		if argDef.defaultValue != nil {
 			hasLocationDefaultValue = true
 		}
 
@@ -780,7 +780,7 @@ func isVariableUsageAllowed(
 		}
 
 		// Let nullableLocationType be the unwrapped nullable type of locationType.
-		nullableLocationType := nonNullLocationType.OfType
+		nullableLocationType := nonNullLocationType.ofType
 
 		// Check if the types are compatible.
 		return areTypesCompatible(variableType, nullableLocationType)
@@ -791,11 +791,11 @@ func isVariableUsageAllowed(
 }
 
 func getDirectiveArgumentDefinition(schema document, directive directive, argument argument) *inputValueDefinition {
-	for _, def := range schema.Definitions {
+	for _, def := range schema.definitions {
 		if directiveDef, isDirectiveDef := def.(*directiveDefinition); isDirectiveDef {
-			if directiveDef.ArgumentsDefinition != nil {
-				for _, argDef := range *directiveDef.ArgumentsDefinition {
-					if argDef.Name.Value == argument.Name.Value {
+			if directiveDef.argumentsDefinition != nil {
+				for _, argDef := range *directiveDef.argumentsDefinition {
+					if argDef.name.value == argument.name.value {
 						return &argDef
 					}
 				}
@@ -821,16 +821,16 @@ func getFieldArgumentDefinition(
 		fragmentsPool,
 	)
 
-	if selectionFieldDef.ArgumentsDefinition != nil {
-		for _, arg := range *selectionFieldDef.ArgumentsDefinition {
-			if arg.Name.Value == argument.Name.Value {
+	if selectionFieldDef.argumentsDefinition != nil {
+		for _, arg := range *selectionFieldDef.argumentsDefinition {
+			if arg.name.value == argument.name.value {
 				return &arg
 			}
 		}
 
 		panic(errors.New(fmt.Sprintf("could not find argument %s in field definition named %s",
-			argument.Name.Value,
-			selectionFieldDef.Name.Value)))
+			argument.name.value,
+			selectionFieldDef.name.value)))
 	} else {
 		panic(errors.New("cannot find an argument definition in a field definition that " +
 			"does not contain argument definitions"))
@@ -849,10 +849,10 @@ func areTypesCompatible(variableType, locationType _type) bool {
 		}
 
 		// Let nullableLocationType be the unwrapped nullable type of locationType.
-		nullableLocationType := nonNullLocationType.OfType
+		nullableLocationType := nonNullLocationType.ofType
 
 		// Let nullableVariableType be the unwrapped nullable type of variableType.
-		nullableVariableType := nonNullVariableType.OfType
+		nullableVariableType := nonNullVariableType.ofType
 
 		// Return the result of areTypesCompatible with the unwrapped types.
 		return areTypesCompatible(nullableVariableType, nullableLocationType)
@@ -861,7 +861,7 @@ func areTypesCompatible(variableType, locationType _type) bool {
 	// Otherwise, if variableType is a non‐null type:
 	if isVariableTypeIsNonNullType {
 		// Let nullableVariableType be the unwrapped nullable type of variableType.
-		nullableVariableType := nonNullVariableType.OfType
+		nullableVariableType := nonNullVariableType.ofType
 
 		// Return the result of areTypesCompatible with the unwrapped types.
 		return areTypesCompatible(nullableVariableType, locationType)
@@ -893,7 +893,7 @@ func areTypesCompatible(variableType, locationType _type) bool {
 	}
 
 	// Return true if variableType and locationType are identical, otherwise false.
-	return variableType.GetTypeName() == locationType.GetTypeName()
+	return variableType.TypeName() == locationType.TypeName()
 }
 
 func collectObjectValueUsages(
@@ -907,18 +907,18 @@ func collectObjectValueUsages(
 	// Loop over the selection in the selection set.
 	for _, selection := range selectionSet {
 		// If the selection has directives, check their arguments too.
-		if selection.GetDirectives() != nil {
-			for _, directive := range *selection.GetDirectives() {
-				if directive.Arguments != nil {
+		if selection.Directives() != nil {
+			for _, directive := range *selection.Directives() {
+				if directive.arguments != nil {
 					// For each argument, if it is a variable, add it to the variables set.
 					// If it is a list, check each item in the list.
 					// If it is an object, check each value in the object.
-					for _, arg := range *directive.Arguments {
-						if object, isObject := arg.Value.(*objectValue); isObject {
+					for _, arg := range *directive.arguments {
+						if object, isObject := arg.value.(*objectValue); isObject {
 							inputValueDef := getDirectiveArgumentDefinition(schema, directive, arg)
 
 							usages = append(usages, objectValueUsage{
-								locationType: inputValueDef.Type,
+								locationType: inputValueDef._type,
 								object:       *object,
 							})
 						}
@@ -930,12 +930,12 @@ func collectObjectValueUsages(
 		// If the selection is a field, extract its variable usages
 		// (the field's arguments, and the field's directive's arguments).
 		if field, isField := selection.(*field); isField {
-			if field.Arguments != nil {
+			if field.arguments != nil {
 				// For each argument, if it is a variable, add it to the variables set.
 				// If it is a list, check each item in the list.
 				// If it is an object, check each value in the object.
-				for _, arg := range *field.Arguments {
-					if object, isObject := arg.Value.(*objectValue); isObject {
+				for _, arg := range *field.arguments {
+					if object, isObject := arg.value.(*objectValue); isObject {
 						inputValueDef := getFieldArgumentDefinition(
 							schema,
 							rootSelectionSet,
@@ -945,7 +945,7 @@ func collectObjectValueUsages(
 						)
 
 						usages = append(usages, objectValueUsage{
-							locationType: inputValueDef.Type,
+							locationType: inputValueDef._type,
 							object:       *object,
 						})
 					}
@@ -957,7 +957,7 @@ func collectObjectValueUsages(
 				selectionSetObjectUsages := collectObjectValueUsages(
 					schema,
 					rootSelectionSet,
-					*field.SelectionSet,
+					*field.selectionSet,
 					fragmentsPool,
 				)
 
@@ -967,7 +967,7 @@ func collectObjectValueUsages(
 			inlineFragObjectUsages := collectObjectValueUsages(
 				schema,
 				rootSelectionSet,
-				inlineFrag.SelectionSet,
+				inlineFrag.selectionSet,
 				fragmentsPool,
 			)
 
@@ -976,7 +976,7 @@ func collectObjectValueUsages(
 			inlineFragObjectUsages := collectObjectValueUsages(
 				schema,
 				rootSelectionSet,
-				fragmentsPool[fragSpread.FragmentName.Value].SelectionSet,
+				fragmentsPool[fragSpread.fragmentName.value].selectionSet,
 				fragmentsPool,
 			)
 
@@ -995,14 +995,14 @@ func collectVariableUsages(
 	// Loop over the selection in the selection set.
 	for _, selection := range selectionSet {
 		// If the selection has directives, check their arguments too.
-		if selection.GetDirectives() != nil {
-			for _, directive := range *selection.GetDirectives() {
-				if directive.Arguments != nil {
+		if selection.Directives() != nil {
+			for _, directive := range *selection.Directives() {
+				if directive.arguments != nil {
 					// For each argument, if it is a variable, add it to the variables set.
 					// If it is a list, check each item in the list.
 					// If it is an object, check each value in the object.
-					for _, arg := range *directive.Arguments {
-						if _var, isVariable := arg.Value.(*variable); isVariable {
+					for _, arg := range *directive.arguments {
+						if _var, isVariable := arg.value.(*variable); isVariable {
 							usages[&arg] = &variableUsage{
 								field:       nil,
 								directive:   &directive,
@@ -1011,8 +1011,8 @@ func collectVariableUsages(
 								objectField: nil,
 								variable:    *_var,
 							}
-						} else if list, isList := arg.Value.(*listValue); isList {
-							for _, item := range list.Values {
+						} else if list, isList := arg.value.(*listValue); isList {
+							for _, item := range list.values {
 								if _var, isVariable := item.(*variable); isVariable {
 									usages[&list] = &variableUsage{
 										field:       nil,
@@ -1024,9 +1024,9 @@ func collectVariableUsages(
 									}
 								}
 							}
-						} else if object, isObject := arg.Value.(*objectValue); isObject {
-							for _, field := range object.Values {
-								if _var, isVariable := field.Value.(*variable); isVariable {
+						} else if object, isObject := arg.value.(*objectValue); isObject {
+							for _, field := range object.values {
+								if _var, isVariable := field.value.(*variable); isVariable {
 									usages[&object] = &variableUsage{
 										field:       nil,
 										directive:   &directive,
@@ -1046,12 +1046,12 @@ func collectVariableUsages(
 		// If the selection is a field, extract its variable usages
 		// (the field's arguments, and the field's directive's arguments).
 		if field, isField := selection.(*field); isField {
-			if field.Arguments != nil {
+			if field.arguments != nil {
 				// For each argument, if it is a variable, add it to the variables set.
 				// If it is a list, check each item in the list.
 				// If it is an object, check each value in the object.
-				for _, arg := range *field.Arguments {
-					if _var, isVariable := arg.Value.(*variable); isVariable {
+				for _, arg := range *field.arguments {
+					if _var, isVariable := arg.value.(*variable); isVariable {
 						usages[&arg] = &variableUsage{
 							field:       field,
 							directive:   nil,
@@ -1060,8 +1060,8 @@ func collectVariableUsages(
 							objectField: nil,
 							variable:    *_var,
 						}
-					} else if list, isList := arg.Value.(*listValue); isList {
-						for _, item := range list.Values {
+					} else if list, isList := arg.value.(*listValue); isList {
+						for _, item := range list.values {
 							if _var, isVariable := item.(*variable); isVariable {
 								usages[&list] = &variableUsage{
 									field:       field,
@@ -1073,9 +1073,9 @@ func collectVariableUsages(
 								}
 							}
 						}
-					} else if object, isObject := arg.Value.(*objectValue); isObject {
-						for _, objectField := range object.Values {
-							if _var, isVariable := objectField.Value.(*variable); isVariable {
+					} else if object, isObject := arg.value.(*objectValue); isObject {
+						for _, objectField := range object.values {
+							if _var, isVariable := objectField.value.(*variable); isVariable {
 								usages[&object] = &variableUsage{
 									field:       field,
 									directive:   nil,
@@ -1091,13 +1091,13 @@ func collectVariableUsages(
 			}
 
 			// If the field has a selection set, extract its variables too.
-			if field.SelectionSet != nil {
-				collectVariableUsages(*field.SelectionSet, usages, fragmentsPool)
+			if field.selectionSet != nil {
+				collectVariableUsages(*field.selectionSet, usages, fragmentsPool)
 			}
 		} else if inlineFrag, isInlineFrag := selection.(*inlineFragment); isInlineFrag {
-			collectVariableUsages(*inlineFrag.GetSelections(), usages, fragmentsPool)
+			collectVariableUsages(*inlineFrag.SelectionSet(), usages, fragmentsPool)
 		} else if fragSpread, isFragSpread := selection.(*fragmentSpread); isFragSpread {
-			collectVariableUsages(fragmentsPool[fragSpread.FragmentName.Value].SelectionSet,
+			collectVariableUsages(fragmentsPool[fragSpread.fragmentName.value].selectionSet,
 				usages,
 				fragmentsPool)
 		}
@@ -1109,9 +1109,9 @@ func extractUsedFragmentsNames(selectionSet selectionSet, targetsSet map[string]
 		// If the selection is a fragment spread, append it's name to the names slice.
 		// Else, extract the fragment names from all spreads in the selection's selectionSet.
 		if fragmentSpread, ok := selection.(*fragmentSpread); ok {
-			targetsSet[fragmentSpread.FragmentName.Value] = struct{}{}
-		} else if selection.GetSelections() != nil {
-			extractUsedFragmentsNames(*selection.GetSelections(), targetsSet)
+			targetsSet[fragmentSpread.fragmentName.value] = struct{}{}
+		} else if selection.SelectionSet() != nil {
+			extractUsedFragmentsNames(*selection.SelectionSet(), targetsSet)
 		}
 	}
 }
@@ -1122,25 +1122,25 @@ func extractUsedVariablesNames(selectionSet selectionSet,
 	// Loop over the selection in the selection set.
 	for _, selection := range selectionSet {
 		// If the selection has directives, check their arguments too.
-		if selection.GetDirectives() != nil {
-			for _, directive := range *selection.GetDirectives() {
-				if directive.Arguments != nil {
+		if selection.Directives() != nil {
+			for _, directive := range *selection.Directives() {
+				if directive.arguments != nil {
 					// For each argument, if it is a variable, add it to the variables set.
 					// If it is a list, check each item in the list.
 					// If it is an object, check each value in the object.
-					for _, arg := range *directive.Arguments {
-						if _var, isVariable := arg.Value.(*variable); isVariable {
-							variablesSet[_var.Name.Value] = struct{}{}
-						} else if list, isList := arg.Value.(*listValue); isList {
-							for _, item := range list.Values {
+					for _, arg := range *directive.arguments {
+						if _var, isVariable := arg.value.(*variable); isVariable {
+							variablesSet[_var.name.value] = struct{}{}
+						} else if list, isList := arg.value.(*listValue); isList {
+							for _, item := range list.values {
 								if _var, isVariable := item.(*variable); isVariable {
-									variablesSet[_var.Name.Value] = struct{}{}
+									variablesSet[_var.name.value] = struct{}{}
 								}
 							}
-						} else if object, isObject := arg.Value.(*objectValue); isObject {
-							for _, field := range object.Values {
-								if _var, isVariable := field.Value.(*variable); isVariable {
-									variablesSet[_var.Name.Value] = struct{}{}
+						} else if object, isObject := arg.value.(*objectValue); isObject {
+							for _, field := range object.values {
+								if _var, isVariable := field.value.(*variable); isVariable {
+									variablesSet[_var.name.value] = struct{}{}
 								}
 							}
 						}
@@ -1151,23 +1151,23 @@ func extractUsedVariablesNames(selectionSet selectionSet,
 		// If the selection is a field, extract its variable usages
 		// (the field's arguments, and the field's directive's arguments).
 		if field, isField := selection.(*field); isField {
-			if field.Arguments != nil {
+			if field.arguments != nil {
 				// For each argument, if it is a variable, add it to the variables set.
 				// If it is a list, check each item in the list.
 				// If it is an object, check each value in the object.
-				for _, arg := range *field.Arguments {
-					if _var, isVariable := arg.Value.(*variable); isVariable {
-						variablesSet[_var.Name.Value] = struct{}{}
-					} else if list, isList := arg.Value.(*listValue); isList {
-						for _, item := range list.Values {
+				for _, arg := range *field.arguments {
+					if _var, isVariable := arg.value.(*variable); isVariable {
+						variablesSet[_var.name.value] = struct{}{}
+					} else if list, isList := arg.value.(*listValue); isList {
+						for _, item := range list.values {
 							if _var, isVariable := item.(*variable); isVariable {
-								variablesSet[_var.Name.Value] = struct{}{}
+								variablesSet[_var.name.value] = struct{}{}
 							}
 						}
-					} else if object, isObject := arg.Value.(*objectValue); isObject {
-						for _, field := range object.Values {
-							if _var, isVariable := field.Value.(*variable); isVariable {
-								variablesSet[_var.Name.Value] = struct{}{}
+					} else if object, isObject := arg.value.(*objectValue); isObject {
+						for _, field := range object.values {
+							if _var, isVariable := field.value.(*variable); isVariable {
+								variablesSet[_var.name.value] = struct{}{}
 							}
 						}
 					}
@@ -1175,13 +1175,13 @@ func extractUsedVariablesNames(selectionSet selectionSet,
 			}
 
 			// If the field has a selection set, extract its variables too.
-			if field.SelectionSet != nil {
-				extractUsedVariablesNames(*field.SelectionSet, variablesSet, fragmentsPool)
+			if field.selectionSet != nil {
+				extractUsedVariablesNames(*field.selectionSet, variablesSet, fragmentsPool)
 			}
 		} else if inlineFrag, isInlineFrag := selection.(*inlineFragment); isInlineFrag {
-			extractUsedVariablesNames(*inlineFrag.GetSelections(), variablesSet, fragmentsPool)
+			extractUsedVariablesNames(*inlineFrag.SelectionSet(), variablesSet, fragmentsPool)
 		} else if fragSpread, isFragSpread := selection.(*fragmentSpread); isFragSpread {
-			extractUsedVariablesNames(fragmentsPool[fragSpread.FragmentName.Value].SelectionSet,
+			extractUsedVariablesNames(fragmentsPool[fragSpread.fragmentName.value].selectionSet,
 				variablesSet,
 				fragmentsPool)
 		}
@@ -1194,9 +1194,9 @@ func getFragmentsPool(doc document) map[string]*fragmentDefinition {
 	// Populate the fragment dictionary with all the fragments in the document.
 	// the key of the dictionary is the name of the fragment definition for easy
 	// access.
-	for _, def := range doc.Definitions {
+	for _, def := range doc.definitions {
 		if fragDef, ok := def.(*fragmentDefinition); ok {
-			fragmentsPool[fragDef.FragmentName.Value] = fragDef
+			fragmentsPool[fragDef.fragmentName.value] = fragDef
 		}
 	}
 
@@ -1212,7 +1212,7 @@ func detectFragmentCycles(
 	spreads := make(map[string]struct{}, 0)
 
 	// Extract all fragment spreads descendants of fragDef.
-	extractUsedFragmentsNames(fragDef.GetSelectionSet(), spreads)
+	extractUsedFragmentsNames(fragDef.SelectionSet(), spreads)
 
 	// For each spread, make sure that it is not already exists in visited.
 	// If it is, panic.
@@ -1238,14 +1238,14 @@ func isInputType(schema document, variableType _type) bool {
 		"Float":   struct{}{},
 	}
 
-	if _, isBasicType := basicScalars[variableType.GetTypeName()]; isBasicType {
+	if _, isBasicType := basicScalars[variableType.TypeName()]; isBasicType {
 		return true
 	}
 
 	if nonNullType, isNonNullType := variableType.(*nonNullType); isNonNullType {
 		// Let unwrappedType be the unwrapped type of type.
 		// Return IsInputType(unwrappedType)
-		return isInputType(schema, nonNullType.OfType)
+		return isInputType(schema, nonNullType.ofType)
 	}
 
 	if listType, isListType := variableType.(*listType); isListType {
@@ -1254,9 +1254,9 @@ func isInputType(schema document, variableType _type) bool {
 		return isInputType(schema, listType.OfType)
 	}
 
-	for _, def := range schema.Definitions {
+	for _, def := range schema.definitions {
 		if typeDef, isTypeDef := def.(typeDefinition); isTypeDef {
-			if typeDef.GetName().Value == variableType.GetTypeName() {
+			if typeDef.Name().value == variableType.TypeName() {
 				switch typeDef.(type) {
 				case *scalarTypeDefinition,
 					*enumTypeDefinition,
@@ -1284,14 +1284,14 @@ func isOutputType(schema document, variableType _type) bool {
 		"Float":   struct{}{},
 	}
 
-	if _, isBasicType := basicScalars[variableType.GetTypeName()]; isBasicType {
+	if _, isBasicType := basicScalars[variableType.TypeName()]; isBasicType {
 		return true
 	}
 
 	if nonNullType, isNonNullType := variableType.(*nonNullType); isNonNullType {
 		// Let unwrappedType be the unwrapped type of type.
 		// Return IsInputType(unwrappedType)
-		return isOutputType(schema, nonNullType.OfType)
+		return isOutputType(schema, nonNullType.ofType)
 	}
 
 	if listType, isListType := variableType.(*listType); isListType {
@@ -1300,9 +1300,9 @@ func isOutputType(schema document, variableType _type) bool {
 		return isOutputType(schema, listType.OfType)
 	}
 
-	for _, def := range schema.Definitions {
+	for _, def := range schema.definitions {
 		if typeDef, isTypeDef := def.(typeDefinition); isTypeDef {
-			if typeDef.GetName().Value == variableType.GetTypeName() {
+			if typeDef.Name().value == variableType.TypeName() {
 				switch typeDef.(type) {
 				case *scalarTypeDefinition,
 					*objectTypeDefinition,
@@ -1328,9 +1328,9 @@ func checkIfDirectivesInSelectionSetAreDefined(schema document, selectionSet sel
 	// For each selection, look for directives.
 	for _, selection := range selectionSet {
 		// And the field contains directives
-		if selection.GetDirectives() != nil {
+		if selection.Directives() != nil {
 			// For each directive, decide whether it is defined or not.
-			for _, directive := range *selection.GetDirectives() {
+			for _, directive := range *selection.Directives() {
 				// If the directive is not defined (which means the directive is not a built in
 				// directive and we could not find a proper directive definition in
 				// the schema), return false.
@@ -1339,8 +1339,8 @@ func checkIfDirectivesInSelectionSetAreDefined(schema document, selectionSet sel
 		}
 
 		// If the field contains a selection set, check it's directives too.
-		if selection.GetSelections() != nil {
-			checkIfDirectivesInSelectionSetAreDefined(schema, *selection.GetSelections())
+		if selection.SelectionSet() != nil {
+			checkIfDirectivesInSelectionSetAreDefined(schema, *selection.SelectionSet())
 		}
 	}
 }
@@ -1355,15 +1355,15 @@ func isDirectiveDefined(schema document, directive directive) {
 
 	// Check if the directive is a build in directive. If it is, turn on the
 	// flag. Else, Search the directive in the schema.
-	if _, isBuiltInDirective := builtInDirectiveNames[directive.Name.Value]; isBuiltInDirective {
+	if _, isBuiltInDirective := builtInDirectiveNames[directive.name.value]; isBuiltInDirective {
 		return
 	} else {
 		// For each definition in the schema, if it is a directive definition,
 		// compare its name to the current directive from the document.
-		for _, def := range schema.Definitions {
+		for _, def := range schema.definitions {
 			if directiveDef, isDirectiveDef := def.(*directiveDefinition); isDirectiveDef {
 				// If the name are equal, turn on the flag.
-				if directiveDef.Name.Value == directive.Name.Value {
+				if directiveDef.name.value == directive.name.value {
 					return
 				}
 			}
@@ -1380,20 +1380,20 @@ func collectInputObjects(selectionSet selectionSet) []*objectValue {
 
 	for _, selection := range selectionSet {
 		if field, isField := selection.(*field); isField {
-			if field.Arguments != nil {
-				for _, arg := range *field.Arguments {
-					if object, isObject := arg.Value.(*objectValue); isObject {
+			if field.arguments != nil {
+				for _, arg := range *field.arguments {
+					if object, isObject := arg.value.(*objectValue); isObject {
 						inputObjects = append(inputObjects, object)
 					}
 				}
 			}
 		}
 
-		if selection.GetDirectives() != nil {
-			for _, directive := range *selection.GetDirectives() {
-				if directive.Arguments != nil {
-					for _, arg := range *directive.Arguments {
-						if object, isObject := arg.Value.(*objectValue); isObject {
+		if selection.Directives() != nil {
+			for _, directive := range *selection.Directives() {
+				if directive.arguments != nil {
+					for _, arg := range *directive.arguments {
+						if object, isObject := arg.value.(*objectValue); isObject {
 							inputObjects = append(inputObjects, object)
 						}
 					}
@@ -1401,8 +1401,8 @@ func collectInputObjects(selectionSet selectionSet) []*objectValue {
 			}
 		}
 
-		if selection.GetSelections() != nil {
-			inputObjects = append(inputObjects, collectInputObjects(*selection.GetSelections())...)
+		if selection.SelectionSet() != nil {
+			inputObjects = append(inputObjects, collectInputObjects(*selection.SelectionSet())...)
 		}
 	}
 
@@ -1412,8 +1412,8 @@ func collectInputObjects(selectionSet selectionSet) []*objectValue {
 func checkDirectiveLocation(schema document, usage *directiveUsage) bool {
 	// If the directive is one of the built in directives, and it has been used
 	// on a field, fragment spread or an inline fragment return true.
-	if usage.directive.Name.Value == "skip" ||
-		usage.directive.Name.Value == "include" {
+	if usage.directive.name.value == "skip" ||
+		usage.directive.name.value == "include" {
 		if usage.location == edlField || usage.location == edlFragmentSpread ||
 			usage.location == edlInlineFragment {
 			return true
@@ -1421,15 +1421,15 @@ func checkDirectiveLocation(schema document, usage *directiveUsage) bool {
 	}
 
 	//For each definition in the schema:
-	for _, def := range schema.Definitions {
+	for _, def := range schema.definitions {
 		// If the definition is a directive definition:
 		if dirDef, isDirDef := def.(*directiveDefinition); isDirDef {
 			// If the name of the directive definition equals to the name of the
 			// given directive:
-			if usage.directive.Name.Value == dirDef.Name.Value {
+			if usage.directive.name.value == dirDef.name.value {
 				// For each location in the directive definition, compare it with the
 				// given location. If they are equal return true.
-				for _, location := range dirDef.DirectiveLocations {
+				for _, location := range dirDef.directiveLocations {
 					// TODO: change directiveLocation type from string to
 					// TODO: executableDirectiveLocation in order to remove the
 					// TODO: conversion to string.
@@ -1457,9 +1457,9 @@ func extractDirectivesWithLocationsFromSelectionSet(selectionSet selectionSet) [
 	// For each selection in the selection set:
 	for _, selection := range selectionSet {
 		// If the selection has directives:
-		if selection.GetDirectives() != nil {
+		if selection.Directives() != nil {
 			// For each directive, set the location to be the kind of the selection.
-			for _, dir := range *selection.GetDirectives() {
+			for _, dir := range *selection.Directives() {
 				var location executableDirectiveLocation
 
 				switch selection.(type) {
@@ -1483,8 +1483,8 @@ func extractDirectivesWithLocationsFromSelectionSet(selectionSet selectionSet) [
 		}
 
 		// If the selection has a selection set, get a list of all of its directive usages.
-		if selection.GetSelections() != nil {
-			usages = append(usages, extractDirectivesWithLocationsFromSelectionSet(*selection.GetSelections())...)
+		if selection.SelectionSet() != nil {
+			usages = append(usages, extractDirectivesWithLocationsFromSelectionSet(*selection.SelectionSet())...)
 		}
 	}
 
@@ -1498,12 +1498,12 @@ func checkDirectivesUniqueness(directives directives) bool {
 	// For each directive in directives.
 	for _, dir := range directives {
 		// If the directive name already exists in the unique set, return false.
-		if _, isDirNameAlreadyExists := directivesSet[dir.Name.Value]; isDirNameAlreadyExists {
+		if _, isDirNameAlreadyExists := directivesSet[dir.name.value]; isDirNameAlreadyExists {
 			return false
 		}
 
 		// Insert the directive name to the unique set.
-		directivesSet[dir.Name.Value] = struct{}{}
+		directivesSet[dir.name.value] = struct{}{}
 	}
 
 	return true
@@ -1513,14 +1513,14 @@ func checkDirectivesUniquenessInSelectionSet(selectionSet selectionSet) bool {
 	// For each selection in the selection set:
 	for _, selection := range selectionSet {
 		// If the selection has directives, check their uniqueness.
-		if selection.GetDirectives() != nil {
-			if !checkDirectivesUniqueness(*selection.GetDirectives()) {
+		if selection.Directives() != nil {
+			if !checkDirectivesUniqueness(*selection.Directives()) {
 				return false
 			}
 		}
 
-		if selection.GetSelections() != nil {
-			if !checkDirectivesUniquenessInSelectionSet(*selection.GetSelections()) {
+		if selection.SelectionSet() != nil {
+			if !checkDirectivesUniquenessInSelectionSet(*selection.SelectionSet()) {
 				return false
 			}
 		}
@@ -1532,19 +1532,19 @@ func checkDirectivesUniquenessInSelectionSet(selectionSet selectionSet) bool {
 func getRootQueryTypeDefinition(schema document) *objectTypeDefinition {
 	rootQueryTypeName := "Query"
 
-	for _, def := range schema.Definitions {
+	for _, def := range schema.definitions {
 		if schemaDef, isSchemaDef := def.(*schemaDefinition); isSchemaDef {
-			for _, rootOperationType := range schemaDef.RootOperationTypeDefinitions {
-				if rootOperationType.OperationType == operationQuery {
-					rootQueryTypeName = rootOperationType.NamedType.Value
+			for _, rootOperationType := range schemaDef.rootOperationTypeDefinitions {
+				if rootOperationType.operationType == operationQuery {
+					rootQueryTypeName = rootOperationType.namedType.value
 				}
 			}
 		}
 	}
 
-	for _, def := range schema.Definitions {
+	for _, def := range schema.definitions {
 		if objectTypeDef, isObjectTypeDef := def.(*objectTypeDefinition); isObjectTypeDef {
-			if objectTypeDef.Name.Value == rootQueryTypeName {
+			if objectTypeDef.name.value == rootQueryTypeName {
 				return objectTypeDef
 			}
 		}
@@ -1564,34 +1564,34 @@ func getSelectionSetType(
 	for _, selection := range current {
 		switch s := selection.(type) {
 		case *field:
-			if s.SelectionSet != nil {
+			if s.selectionSet != nil {
 				var fieldType _type
 				switch t := parentType.(type) {
 				case *objectTypeDefinition:
-					if t.FieldsDefinition != nil {
-						for _, fieldDef := range *t.FieldsDefinition {
-							if fieldDef.Name.Value == s.Name.Value {
-								fieldType = fieldDef.Type
+					if t.fieldsDefinition != nil {
+						for _, fieldDef := range *t.fieldsDefinition {
+							if fieldDef.name.value == s.name.value {
+								fieldType = fieldDef._type
 								break
 							}
 						}
 					}
 				case *interfaceTypeDefinition:
-					if t.FieldsDefinition != nil {
-						for _, fieldDef := range *t.FieldsDefinition {
-							if fieldDef.Name.Value == s.Name.Value {
-								fieldType = fieldDef.Type
+					if t.fieldsDefinition != nil {
+						for _, fieldDef := range *t.fieldsDefinition {
+							if fieldDef.name.value == s.name.value {
+								fieldType = fieldDef._type
 								break
 							}
 						}
 					}
 				case *unionTypeDefinition:
-					if t.UnionMemberTypes != nil {
-						for _, unionMember := range *t.UnionMemberTypes {
+					if t.unionMemberTypes != nil {
+						for _, unionMember := range *t.unionMemberTypes {
 							fieldType = getSelectionSetType(
 								getTypeDefinitionByType(schema, &unionMember),
 								target,
-								*s.SelectionSet,
+								*s.selectionSet,
 								schema,
 								fragmentsPool)
 
@@ -1602,13 +1602,13 @@ func getSelectionSetType(
 					}
 				}
 
-				if s.SelectionSet == target {
+				if s.selectionSet == target {
 					return fieldType
 				} else {
 					fieldSelectionSetType := getSelectionSetType(
 						getTypeDefinitionByType(schema, fieldType),
 						target,
-						*s.SelectionSet,
+						*s.selectionSet,
 						schema,
 						fragmentsPool,
 					)
@@ -1621,14 +1621,14 @@ func getSelectionSetType(
 				return nil
 			}
 		case *inlineFragment:
-			if s.SelectionSet != nil {
-				if &s.SelectionSet == target {
-					return &s.TypeCondition.NamedType
+			if s.selectionSet != nil {
+				if &s.selectionSet == target {
+					return &s.typeCondition.namedType
 				} else {
 					inlineFragSelectionSetType := getSelectionSetType(
-						getTypeDefinitionByType(schema, &s.TypeCondition.NamedType),
+						getTypeDefinitionByType(schema, &s.typeCondition.namedType),
 						target,
-						s.SelectionSet,
+						s.selectionSet,
 						schema,
 						fragmentsPool,
 					)
@@ -1639,16 +1639,16 @@ func getSelectionSetType(
 				}
 			}
 		case *fragmentSpread:
-			frag := fragmentsPool[s.FragmentName.Value]
+			frag := fragmentsPool[s.fragmentName.value]
 
-			if frag.SelectionSet != nil {
-				if &frag.SelectionSet == target {
-					return &frag.TypeCondition.NamedType
+			if frag.selectionSet != nil {
+				if &frag.selectionSet == target {
+					return &frag.typeCondition.namedType
 				} else {
 					fragSelectionSetType := getSelectionSetType(
-						getTypeDefinitionByType(schema, &frag.TypeCondition.NamedType),
+						getTypeDefinitionByType(schema, &frag.typeCondition.namedType),
 						target,
-						frag.SelectionSet,
+						frag.selectionSet,
 						schema,
 						fragmentsPool,
 					)
@@ -1682,26 +1682,26 @@ func getFieldDefinitionByFieldSelection(
 		case *field:
 			switch t := parentType.(type) {
 			case *objectTypeDefinition:
-				if t.FieldsDefinition != nil {
-					for _, fieldDef := range *t.FieldsDefinition {
-						if fieldDef.Name.Value == s.Name.Value {
+				if t.fieldsDefinition != nil {
+					for _, fieldDef := range *t.fieldsDefinition {
+						if fieldDef.name.value == s.name.value {
 							tachlessFieldDefinition = &fieldDef
 							break
 						}
 					}
 				}
 			case *interfaceTypeDefinition:
-				if t.FieldsDefinition != nil {
-					for _, fieldDef := range *t.FieldsDefinition {
-						if fieldDef.Name.Value == s.Name.Value {
+				if t.fieldsDefinition != nil {
+					for _, fieldDef := range *t.fieldsDefinition {
+						if fieldDef.name.value == s.name.value {
 							tachlessFieldDefinition = &fieldDef
 							break
 						}
 					}
 				}
 			case *unionTypeDefinition:
-				if t.UnionMemberTypes != nil {
-					for _, unionMember := range *t.UnionMemberTypes {
+				if t.unionMemberTypes != nil {
+					for _, unionMember := range *t.unionMemberTypes {
 						fieldDef := getFieldDefinitionByFieldSelection(
 							getTypeDefinitionByType(schema, &unionMember),
 							targetSelection,
@@ -1719,16 +1719,16 @@ func getFieldDefinitionByFieldSelection(
 			}
 
 			if tachlessFieldDefinition == nil {
-				panic(errors.New("could not find a field definition named " + s.Name.Value))
+				panic(errors.New("could not find a field definition named " + s.name.value))
 			}
 
 			if selection == targetSelection {
 				return tachlessFieldDefinition
-			} else if s.GetSelections() != nil {
+			} else if s.SelectionSet() != nil {
 				return getFieldDefinitionByFieldSelection(
-					getTypeDefinitionByType(schema, tachlessFieldDefinition.Type),
+					getTypeDefinitionByType(schema, tachlessFieldDefinition._type),
 					targetSelection,
-					*s.GetSelections(),
+					*s.SelectionSet(),
 					schema,
 					fragmentsPool,
 				)
@@ -1737,9 +1737,9 @@ func getFieldDefinitionByFieldSelection(
 			}
 		case *inlineFragment:
 			return getFieldDefinitionByFieldSelection(
-				getTypeDefinitionByType(schema, &s.TypeCondition.NamedType),
+				getTypeDefinitionByType(schema, &s.typeCondition.namedType),
 				targetSelection,
-				*s.GetSelections(),
+				*s.SelectionSet(),
 				schema,
 				fragmentsPool,
 			)
@@ -1747,10 +1747,10 @@ func getFieldDefinitionByFieldSelection(
 			return getFieldDefinitionByFieldSelection(
 				getTypeDefinitionByType(
 					schema,
-					&fragmentsPool[s.FragmentName.Value].TypeCondition.NamedType,
+					&fragmentsPool[s.fragmentName.value].typeCondition.namedType,
 				),
 				targetSelection,
-				*s.GetSelections(),
+				*s.SelectionSet(),
 				schema, fragmentsPool,
 			)
 		}
@@ -1760,15 +1760,15 @@ func getFieldDefinitionByFieldSelection(
 }
 
 func getTypeDefinitionByType(schema document, t _type) typeDefinition {
-	for _, def := range schema.Definitions {
+	for _, def := range schema.definitions {
 		if typeDef, isTypeDef := def.(typeDefinition); isTypeDef {
-			if typeDef.GetName().Value == t.GetTypeName() {
+			if typeDef.Name().value == t.TypeName() {
 				return typeDef
 			}
 		}
 	}
 
-	panic(errors.New("could not find a type definition named: " + t.GetTypeName()))
+	panic(errors.New("could not find a type definition named: " + t.TypeName()))
 }
 
 // http://spec.graphql.org/draft/#GetPossibleTypes()
@@ -1777,23 +1777,23 @@ func getPossibleTypes(schema document, typeDef typeDefinition) map[string]struct
 
 	switch v := typeDef.(type) {
 	case *objectTypeDefinition:
-		typesSet[v.Name.Value] = struct{}{}
+		typesSet[v.name.value] = struct{}{}
 	case *interfaceTypeDefinition:
-		for _, def := range schema.Definitions {
+		for _, def := range schema.definitions {
 			if objectTypeDef, isObjectTypeDef := def.(*objectTypeDefinition); isObjectTypeDef {
-				if objectTypeDef.ImplementsInterfaces != nil {
-					for _, iface := range *objectTypeDef.ImplementsInterfaces {
-						if iface.GetTypeName() == v.Name.Value {
-							typesSet[objectTypeDef.Name.Value] = struct{}{}
+				if objectTypeDef.implementsInterfaces != nil {
+					for _, iface := range *objectTypeDef.implementsInterfaces {
+						if iface.TypeName() == v.name.value {
+							typesSet[objectTypeDef.name.value] = struct{}{}
 						}
 					}
 				}
 			}
 		}
 	case *unionTypeDefinition:
-		if v.UnionMemberTypes != nil {
-			for _, unionMember := range *v.UnionMemberTypes {
-				typesSet[unionMember.GetTypeName()] = struct{}{}
+		if v.unionMemberTypes != nil {
+			for _, unionMember := range *v.unionMemberTypes {
+				typesSet[unionMember.TypeName()] = struct{}{}
 			}
 		}
 	default:
