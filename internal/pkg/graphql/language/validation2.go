@@ -25,6 +25,10 @@ type objectValueUsage struct {
 	object       objectValue
 }
 
+/**************************/
+/** Validation Functions **/
+/**************************/
+
 // http://spec.graphql.org/draft/#sec-Fragments-Must-Be-Used
 func validateFragmentsMustBeUsed(doc *document) {
 	fragmentSpreadTargets := make(map[string]struct{}, 0)
@@ -41,7 +45,7 @@ func validateFragmentsMustBeUsed(doc *document) {
 		if fragDef, ok := def.(*fragmentDefinition); ok {
 			if _, ok := fragmentSpreadTargets[fragDef.fragmentName.value]; !ok {
 				panic(errors.New("Defined fragments must be used within " +
-					"a document"))
+					"a document: \"" + fragDef.fragmentName.value + "\" is not used"))
 			}
 		}
 	}
@@ -70,7 +74,7 @@ func validateFragmentSpreadTargetDefined(doc *document) {
 	for target := range fragmentSpreadTargets {
 		if _, ok := fragmentDefinitionsNames[target]; !ok {
 			panic(errors.New("Named fragment spreads must refer to fragments" +
-				" defined within the document"))
+				" defined within the document: \"" + target + "\" is not defined"))
 		}
 	}
 }
@@ -104,116 +108,6 @@ func validateFragmentSpreadIsPossible(schema, doc *document) {
 				rootQueryTypeDef,
 				fragmentsPool,
 			)
-		}
-	}
-}
-
-func checkSpreadsPossibilityInSelectionSet(
-	schema *document,
-	rootSelectionSet selectionSet,
-	selectionSet selectionSet,
-	parentType typeDefinition,
-	fragmentsPool map[string]*fragmentDefinition,
-) {
-	// For each selection in the selection set:
-	for _, selection := range selectionSet {
-		var fragmentType _type
-
-		// Check the selection's type:
-		switch s := selection.(type) {
-		// If the selection is a field:
-		case *field:
-			// If the field contains selection set of its own, check its
-			// spreads' possibility.
-			if s.selectionSet != nil {
-				fieldDef := getFieldDefinitionByFieldSelection(
-					parentType,
-					s,
-					rootSelectionSet,
-					schema,
-					fragmentsPool,
-				)
-
-				checkSpreadsPossibilityInSelectionSet(
-					schema,
-					rootSelectionSet,
-					*s.selectionSet,
-					getTypeDefinitionByType(schema, fieldDef._type),
-					fragmentsPool,
-				)
-			}
-		// If the selection is an inline fragment:
-		case *inlineFragment:
-			// Save the fragment's type for later use.
-			fragmentType = &s.typeCondition.namedType
-
-			// Check the fragment's selection set spreads' possibility.
-			checkSpreadsPossibilityInSelectionSet(
-				schema,
-				rootSelectionSet,
-				s.selectionSet,
-				getTypeDefinitionByType(schema, fragmentType),
-				fragmentsPool,
-			)
-		// If the selection is a fragment spread:
-		case *fragmentSpread:
-			// Get the fragment definition that the spread points to.
-			fragment := fragmentsPool[s.fragmentName.value]
-
-			// Save the fragment's type for later use.
-			fragmentType = &fragment.typeCondition.namedType
-
-			// Check the fragment's selection set spreads' possibility.
-			checkSpreadsPossibilityInSelectionSet(
-				schema,
-				rootSelectionSet,
-				fragment.selectionSet,
-				getTypeDefinitionByType(schema, &fragment.typeCondition.namedType),
-				fragmentsPool,
-			)
-		}
-
-		// If fragmentType is not nil, it means that the current selection is either
-		// an inline fragment or a fragment spread, so we need to check the spread's
-		// possibility.
-		if fragmentType != nil {
-			// Get the possible types of the parent type.
-			parentPossibleTypes := getPossibleTypes(schema, parentType)
-
-			// Get the possible types of the fragment type.
-			fragmentPossibleTypes := getPossibleTypes(
-				schema,
-				getTypeDefinitionByType(schema, fragmentType),
-			)
-
-			// Create a dictionary that will hold the intersection of the two types
-			// dictionaries.
-			intersectingTypes := make(map[string]struct{})
-
-			// For each type in the fragment possible types:
-			for t := range fragmentPossibleTypes {
-				// If it also exists in the parent possible types, insert it to the
-				// intersecting types dictionary.
-				if _, ok := parentPossibleTypes[t]; ok {
-					intersectingTypes[t] = struct{}{}
-				}
-			}
-
-			// For each type in the parent possible types:
-			for t := range parentPossibleTypes {
-				// If it also exists in the fragment possible types, insert it to the
-				// intersecting types dictionary.
-				if _, ok := fragmentPossibleTypes[t]; ok {
-					intersectingTypes[t] = struct{}{}
-				}
-			}
-
-			// If intersectingTypes does not contain any types, the fragment spread
-			// is not valid, panic.
-			if len(intersectingTypes) < 1 {
-				panic(errors.New("A fragment spread is only valid if its type" +
-					" condition could ever apply within the parent type."))
-			}
 		}
 	}
 }
@@ -299,11 +193,11 @@ func assertValueType(v value, t _type) bool {
 	case *objectValue:
 	}
 
-	return false
+	return true
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Names
-func validateInputObjectFieldNames(schema *document, doc *document) {
+func validateInputObjectFieldNames(schema, doc *document) {
 	fragmentsPool := getFragmentsPool(doc)
 
 	for _, def := range doc.definitions {
@@ -342,16 +236,6 @@ func validateInputObjectFieldNames(schema *document, doc *document) {
 	}
 }
 
-func isInputFieldDefined(field objectField, fieldsDefinition inputFieldsDefinition) bool {
-	for _, fieldDef := range fieldsDefinition {
-		if fieldDef.name.value == field.name.value {
-			return true
-		}
-	}
-
-	return false
-}
-
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Uniqueness
 func validateInputObjectFieldUniqueness(doc *document) {
 	for _, def := range doc.definitions {
@@ -377,7 +261,7 @@ func validateInputObjectFieldUniqueness(doc *document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Required-Fields
-func validateInputObjectRequiredFields(schema *document, doc *document) {
+func validateInputObjectRequiredFields(schema, doc *document) {
 	fragmentsPool := getFragmentsPool(doc)
 
 	// For each definition in the document:
@@ -478,7 +362,7 @@ func validateDirectivesAreDefined(schema, doc *document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Directives-Are-In-Valid-Locations
-func validateDirectivesAreInValidLocations(schema *document, doc *document) {
+func validateDirectivesAreInValidLocations(schema, doc *document) {
 	// For each definition in the document:
 	for _, def := range doc.definitions {
 		// Create a list of directive usages
@@ -633,7 +517,7 @@ func validateVariableUniqueness(doc *document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Variables-Are-Input-Types
-func validateVariableAreInputTypes(schema *document, doc *document) {
+func validateVariableAreInputTypes(schema, doc *document) {
 	for _, def := range doc.definitions {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
 			if opDef.variableDefinitions != nil {
@@ -718,6 +602,10 @@ func validateAllVariableUsagesAreAllowed(schema, doc *document) {
 		}
 	}
 }
+
+/**********************/
+/** Helper Functions **/
+/**********************/
 
 func isVariableUsageAllowed(
 	schema *document,
@@ -1225,7 +1113,8 @@ func detectFragmentCycles(
 	for spread := range spreads {
 		if _, ok := visited[spread]; ok {
 			panic(errors.New("The graph of fragment spreads must not" +
-				" form any cycles including spreading itself"))
+				" form any cycles including spreading itself: \"" + spread + "\"" +
+				" has been visited more than once in a single execution path"))
 		}
 
 		// Add the spread to the visited set.
@@ -1804,4 +1693,124 @@ func getPossibleTypes(schema *document, typeDef typeDefinition) map[string]struc
 	}
 
 	return typesSet
+}
+
+func checkSpreadsPossibilityInSelectionSet(
+	schema *document,
+	rootSelectionSet selectionSet,
+	selectionSet selectionSet,
+	parentType typeDefinition,
+	fragmentsPool map[string]*fragmentDefinition,
+) {
+	// For each selection in the selection set:
+	for _, selection := range selectionSet {
+		var fragmentType _type
+
+		// Check the selection's type:
+		switch s := selection.(type) {
+		// If the selection is a field:
+		case *field:
+			// If the field contains selection set of its own, check its
+			// spreads' possibility.
+			if s.selectionSet != nil {
+				fieldDef := getFieldDefinitionByFieldSelection(
+					parentType,
+					s,
+					rootSelectionSet,
+					schema,
+					fragmentsPool,
+				)
+
+				checkSpreadsPossibilityInSelectionSet(
+					schema,
+					rootSelectionSet,
+					*s.selectionSet,
+					getTypeDefinitionByType(schema, fieldDef._type),
+					fragmentsPool,
+				)
+			}
+		// If the selection is an inline fragment:
+		case *inlineFragment:
+			// Save the fragment's type for later use.
+			fragmentType = &s.typeCondition.namedType
+
+			// Check the fragment's selection set spreads' possibility.
+			checkSpreadsPossibilityInSelectionSet(
+				schema,
+				rootSelectionSet,
+				s.selectionSet,
+				getTypeDefinitionByType(schema, fragmentType),
+				fragmentsPool,
+			)
+		// If the selection is a fragment spread:
+		case *fragmentSpread:
+			// Get the fragment definition that the spread points to.
+			fragment := fragmentsPool[s.fragmentName.value]
+
+			// Save the fragment's type for later use.
+			fragmentType = &fragment.typeCondition.namedType
+
+			// Check the fragment's selection set spreads' possibility.
+			checkSpreadsPossibilityInSelectionSet(
+				schema,
+				rootSelectionSet,
+				fragment.selectionSet,
+				getTypeDefinitionByType(schema, &fragment.typeCondition.namedType),
+				fragmentsPool,
+			)
+		}
+
+		// If fragmentType is not nil, it means that the current selection is either
+		// an inline fragment or a fragment spread, so we need to check the spread's
+		// possibility.
+		if fragmentType != nil {
+			// Get the possible types of the parent type.
+			parentPossibleTypes := getPossibleTypes(schema, parentType)
+
+			// Get the possible types of the fragment type.
+			fragmentPossibleTypes := getPossibleTypes(
+				schema,
+				getTypeDefinitionByType(schema, fragmentType),
+			)
+
+			// Create a dictionary that will hold the intersection of the two types
+			// dictionaries.
+			intersectingTypes := make(map[string]struct{})
+
+			// For each type in the fragment possible types:
+			for t := range fragmentPossibleTypes {
+				// If it also exists in the parent possible types, insert it to the
+				// intersecting types dictionary.
+				if _, ok := parentPossibleTypes[t]; ok {
+					intersectingTypes[t] = struct{}{}
+				}
+			}
+
+			// For each type in the parent possible types:
+			for t := range parentPossibleTypes {
+				// If it also exists in the fragment possible types, insert it to the
+				// intersecting types dictionary.
+				if _, ok := fragmentPossibleTypes[t]; ok {
+					intersectingTypes[t] = struct{}{}
+				}
+			}
+
+			// If intersectingTypes does not contain any types, the fragment spread
+			// is not valid, panic.
+			if len(intersectingTypes) < 1 {
+				panic(errors.New("A fragment spread is only valid if its type" +
+					" condition could ever apply within the parent type."))
+			}
+		}
+	}
+}
+
+func isInputFieldDefined(field objectField, fieldsDefinition inputFieldsDefinition) bool {
+	for _, fieldDef := range fieldsDefinition {
+		if fieldDef.name.value == field.name.value {
+			return true
+		}
+	}
+
+	return false
 }

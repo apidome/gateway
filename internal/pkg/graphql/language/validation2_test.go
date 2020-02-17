@@ -61,17 +61,16 @@ type Dog implements Pet {
 `
 
 	query := `
-fragment goodBooleanArg on Arguments {
-  booleanArgField(booleanArg: true)
+query {
+	dog {
+		...catInDogFragmentInvalid
+	}
 }
 
-fragment coercedIntIntoFloatArg on Arguments {
-  # Note: The input coercion rules for Float allow Int literals.
-  floatArgField(floatArg: 123)
-}
-
-query goodComplexDefaultValue($search: ComplexInput = { name: "Fido" }) {
-  findDog(complex: $search)
+fragment catInDogFragmentInvalid on Dog {
+  ... on Cat {
+    meowVolume
+  }
 }
 `
 
@@ -85,7 +84,22 @@ query goodComplexDefaultValue($search: ComplexInput = { name: "Fido" }) {
 		t.Fatal("query parse failed: ", err)
 	}
 
+	validateFragmentsMustBeUsed(queryAST)
+	validateFragmentSpreadTargetDefined(queryAST)
+	validateFragmentSpreadsMustNotFormCycles(queryAST)
+	validateFragmentSpreadIsPossible(schemaAST, queryAST)
 	validateValuesOfCorrectType(schemaAST, queryAST)
+	validateInputObjectFieldNames(schemaAST, queryAST)
+	validateInputObjectFieldUniqueness(queryAST)
+	validateInputObjectRequiredFields(schemaAST, queryAST)
+	validateDirectivesAreDefined(schemaAST, queryAST)
+	validateDirectivesAreInValidLocations(schemaAST, queryAST)
+	validateDirectivesAreUniquePerLocation(queryAST)
+	validateVariableUniqueness(queryAST)
+	validateVariableAreInputTypes(schemaAST, queryAST)
+	validateAllVariableUsesDefined(queryAST)
+	validateAllVariablesUsed(queryAST)
+	validateAllVariableUsagesAreAllowed(schemaAST, queryAST)
 
 	t.Log("Validation Succeeded")
 }
