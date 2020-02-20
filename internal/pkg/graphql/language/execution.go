@@ -1,6 +1,8 @@
 package language
 
-func collectFields(objectType *rootOperationTypeDefinition, selectionSet selectionSet, variableValues []value, visitedFragments ...name) map[string][]selection {
+import "fmt"
+
+func collectFields(doc *document, objectType *rootOperationTypeDefinition, selectionSet selectionSet, variableValues []value, visitedFragments ...*name) map[string][]selection {
 	groupedFields := make(map[string][]selection)
 
 	for _, _selection := range selectionSet {
@@ -72,13 +74,67 @@ func collectFields(objectType *rootOperationTypeDefinition, selectionSet selecti
 
 			visitedFragments = append(visitedFragments, fs.FragmentName())
 
+			fragment := getFragmentByName(doc, fragmentSpreadName.Value())
+
+			if fragment == nil {
+				continue
+			}
+
+			fragmentType := fragment.TypeCondition()
+
+			if !DoesFragmentTypeApply(doc, objectType, fragmentType) {
+				continue
+			}
+
 		}
 	}
 
 	return groupedFields
 }
 
+func DoesFragmentTypeApply(doc *document, objectType *rootOperationTypeDefinition, fragmentType *typeCondition) bool {
+	typeDefinition := getTypeDefinitionByName(doc, fragmentType.NamedType().TypeName())
+
+	if objectType, isObjectType := typeDefinition.(*objectTypeDefinition); isObjectType {
+		return objectType.Name().Value() == fragmentType.NamedType().TypeName()
+	}
+
+	// if interfaceType, isInterfaceType := typeDefinition.(*interfaceTypeDefinition); isInterfaceType {
+	// 	objectTypeDefinition := getTypeDefinitionByName(doc, objectType.NamedType().TypeName())
+
+	// 	// for _, implementedInterface := objectTypeDefinition.ImplementsInterfaces() {
+
+	// 	// }
+	// }
+
+	return false
+}
+
 // Helper Functions
+func getTypeDefinitionByName(doc *document, namedType string) typeDefinition {
+	for _, def := range doc.Definitions() {
+		if typeDef, isTypeDef := def.(typeDefinition); isTypeDef {
+			if typeDef.Name().Value() == namedType {
+				return typeDef
+			}
+		}
+	}
+
+	panic(fmt.Sprintf("no type found by name %s", namedType))
+}
+
+func getFragmentByName(doc *document, fragmentName string) *fragmentDefinition {
+	for _, def := range doc.Definitions() {
+		if fragmentDef, isFragmentDef := def.(*fragmentDefinition); isFragmentDef {
+			if fragmentDef.Name().Value() == fragmentName {
+				return fragmentDef
+			}
+		}
+	}
+
+	return nil
+}
+
 func execDirectiveExists(dirs directives, dirName string) (bool, int) {
 	for i, dir := range dirs {
 		name := dir.Name()
@@ -101,7 +157,7 @@ func execArgumentExists(args arguments, argName string) (bool, int) {
 	return false, -1
 }
 
-func visitedFragmentsContainFragmentName(visitedFragments []name, fragName string) bool {
+func visitedFragmentsContainFragmentName(visitedFragments []*name, fragName string) bool {
 	for _, fs := range visitedFragments {
 		if fs.Value() == fragName {
 			return true

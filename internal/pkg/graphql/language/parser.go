@@ -1625,7 +1625,7 @@ func parseNamedType(l *lexer) *namedType {
 
 	nt := new(namedType)
 
-	nt.name = *nam
+	nt.value = nam.value
 
 	return nt
 }

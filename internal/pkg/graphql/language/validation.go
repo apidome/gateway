@@ -57,7 +57,7 @@ func validateSingleRootField(doc *document, schema *schemaDefinition) {
 		selectionSet := sub.SelectionSet()
 
 		variableValues := make([]value, 0)
-		groupedFieldSet := collectFields(subscriptionType, selectionSet, variableValues)
+		groupedFieldSet := collectFields(doc, subscriptionType, selectionSet, variableValues)
 
 		if len(groupedFieldSet) != 1 {
 			panic("validateSingleRootField")
@@ -142,7 +142,7 @@ func getAnonymousOperationDefinitions(doc *document) []operationDefinition {
 		opDef, isOpDef := def.(*operationDefinition)
 
 		if isOpDef {
-			if opDef.name == nil {
+			if opDef.Name == nil {
 				anons = append(anons, *opDef)
 			}
 		}

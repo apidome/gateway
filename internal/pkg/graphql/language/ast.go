@@ -132,8 +132,8 @@ func (a *argument) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (arg *argument) Name() name {
-	return arg.name
+func (arg *argument) Name() *name {
+	return &arg.name
 }
 
 func (arg *argument) Value() value {
@@ -162,8 +162,8 @@ func (d *directive) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (dir *directive) Name() name {
-	return dir.name
+func (dir *directive) Name() *name {
+	return &dir.name
 }
 
 func (dir *directive) Arguments() *arguments {
@@ -316,8 +316,8 @@ func (f *fragmentDefinition) SelectionSet() selectionSet {
 	return f.selectionSet
 }
 
-func (f *fragmentDefinition) TypeCondition() typeCondition {
-	return f.typeCondition
+func (f *fragmentDefinition) TypeCondition() *typeCondition {
+	return &f.typeCondition
 }
 
 /*
@@ -396,8 +396,8 @@ func (rotd *rootOperationTypeDefinition) OperationType() operationType {
 	return rotd.operationType
 }
 
-func (rotd *rootOperationTypeDefinition) NamedType() namedType {
-	return rotd.namedType
+func (rotd *rootOperationTypeDefinition) NamedType() *namedType {
+	return &rotd.namedType
 }
 
 type rootOperationTypeDefinitions []*rootOperationTypeDefinition
@@ -438,8 +438,8 @@ func (dd *directiveDefinition) Description() *description {
 	return dd.description
 }
 
-func (dd *directiveDefinition) Name() name {
-	return dd.name
+func (dd *directiveDefinition) Name() *name {
+	return &dd.name
 }
 
 func (dd *directiveDefinition) ArgumentsDefinition() *argumentsDefinition {
@@ -481,8 +481,8 @@ func (ivd *inputValueDefinition) Description() *description {
 	return ivd.description
 }
 
-func (ivd *inputValueDefinition) Name() name {
-	return ivd.name
+func (ivd *inputValueDefinition) Name() *name {
+	return &ivd.name
 }
 
 func (ivd *inputValueDefinition) Type() _type {
@@ -503,7 +503,7 @@ type typeDefinition interface {
 	typeSystemDefinition
 	typeDefinition() typeDefinition
 	Description() *description
-	Name() name
+	Name() *name
 	Directives() *directives
 }
 
@@ -551,8 +551,8 @@ func (s *scalarTypeDefinition) Description() *description {
 	return s.description
 }
 
-func (s *scalarTypeDefinition) Name() name {
-	return s.name
+func (s *scalarTypeDefinition) Name() *name {
+	return &s.name
 }
 
 func (s *scalarTypeDefinition) Directives() *directives {
@@ -602,8 +602,8 @@ func (o *objectTypeDefinition) Description() *description {
 	return o.description
 }
 
-func (o *objectTypeDefinition) Name() name {
-	return o.name
+func (o *objectTypeDefinition) Name() *name {
+	return &o.name
 }
 
 func (o *objectTypeDefinition) Directives() *directives {
@@ -658,8 +658,8 @@ func (i *interfaceTypeDefinition) Description() *description {
 	return i.description
 }
 
-func (i *interfaceTypeDefinition) Name() name {
-	return i.name
+func (i *interfaceTypeDefinition) Name() *name {
+	return &i.name
 }
 
 func (i *interfaceTypeDefinition) Directives() *directives {
@@ -710,8 +710,8 @@ func (u *unionTypeDefinition) Description() *description {
 	return u.description
 }
 
-func (u *unionTypeDefinition) Name() name {
-	return u.name
+func (u *unionTypeDefinition) Name() *name {
+	return &u.name
 }
 
 func (u *unionTypeDefinition) Directives() *directives {
@@ -762,8 +762,8 @@ func (e *enumTypeDefinition) Description() *description {
 	return e.description
 }
 
-func (e *enumTypeDefinition) Name() name {
-	return e.name
+func (e *enumTypeDefinition) Name() *name {
+	return &e.name
 }
 
 func (e *enumTypeDefinition) Directives() *directives {
@@ -799,8 +799,8 @@ func (e *enumValueDefinition) Description() *description {
 	return e.description
 }
 
-func (e *enumValueDefinition) EnumValue() enumValue {
-	return e.enumValue
+func (e *enumValueDefinition) EnumValue() *enumValue {
+	return &e.enumValue
 }
 
 func (e *enumValueDefinition) Directives() *directives {
@@ -849,8 +849,8 @@ func (i *inputObjectTypeDefinition) Description() *description {
 	return i.description
 }
 
-func (i *inputObjectTypeDefinition) Name() name {
-	return i.name
+func (i *inputObjectTypeDefinition) Name() *name {
+	return &i.name
 }
 
 func (i *inputObjectTypeDefinition) Directives() *directives {
@@ -887,8 +887,8 @@ func (v *variableDefinition) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (v *variableDefinition) Variable() variable {
-	return v.variable
+func (v *variableDefinition) Variable() *variable {
+	return &v.variable
 }
 
 func (v *variableDefinition) Type() _type {
@@ -936,8 +936,8 @@ func (f *fieldDefinition) Description() *description {
 	return f.description
 }
 
-func (f *fieldDefinition) Name() name {
-	return f.name
+func (f *fieldDefinition) Name() *name {
+	return &f.name
 }
 
 func (f *fieldDefinition) ArgumentsDefinition() *argumentsDefinition {
@@ -1004,7 +1004,7 @@ func (s *schemaExtension) RootOperationTypeDefinitions() *rootOperationTypeDefin
 type typeExtension interface {
 	typeSystemExtension
 	typeExtension() typeExtension
-	Name() name
+	Name() *name
 }
 
 var _ typeExtension = (*scalarTypeExtension)(nil)
@@ -1044,8 +1044,8 @@ func (s *scalarTypeExtension) typeExtension() typeExtension {
 	return s
 }
 
-func (s *scalarTypeExtension) Name() name {
-	return s.name
+func (s *scalarTypeExtension) Name() *name {
+	return &s.name
 }
 
 func (s *scalarTypeExtension) Directives() *directives {
@@ -1088,8 +1088,8 @@ func (s *objectTypeExtension) typeExtension() typeExtension {
 	return s
 }
 
-func (o *objectTypeExtension) Name() name {
-	return o.name
+func (o *objectTypeExtension) Name() *name {
+	return &o.name
 }
 
 func (o *objectTypeExtension) Directives() *directives {
@@ -1123,8 +1123,8 @@ func (i *interfaceTypeExtension) typeExtension() typeExtension {
 	return i
 }
 
-func (i *interfaceTypeExtension) Name() name {
-	return i.name
+func (i *interfaceTypeExtension) Name() *name {
+	return &i.name
 }
 
 func (i *interfaceTypeExtension) Directives() *directives {
@@ -1154,8 +1154,8 @@ func (s *unionTypeExtension) typeExtension() typeExtension {
 	return s
 }
 
-func (u *unionTypeExtension) Name() name {
-	return u.name
+func (u *unionTypeExtension) Name() *name {
+	return &u.name
 }
 
 func (u *unionTypeExtension) Directives() *directives {
@@ -1185,8 +1185,8 @@ func (s *enumTypeExtension) typeExtension() typeExtension {
 	return s
 }
 
-func (e *enumTypeExtension) Name() name {
-	return e.name
+func (e *enumTypeExtension) Name() *name {
+	return &e.name
 }
 
 func (e *enumTypeExtension) Directives() *directives {
@@ -1216,8 +1216,8 @@ func (s *inputObjectTypeExtension) typeExtension() typeExtension {
 	return s
 }
 
-func (i *inputObjectTypeExtension) Name() name {
-	return i.name
+func (i *inputObjectTypeExtension) Name() *name {
+	return &i.name
 }
 
 func (i *inputObjectTypeExtension) Directives() *directives {
@@ -1266,8 +1266,8 @@ func (f *field) Alias() *alias {
 	return f.alias
 }
 
-func (f *field) Name() name {
-	return f.name
+func (f *field) Name() *name {
+	return &f.name
 }
 
 func (f *field) Arguments() *arguments {
@@ -1294,8 +1294,8 @@ func (f *fragmentSpread) Directives() *directives {
 	return f.directives
 }
 
-func (f *fragmentSpread) FragmentName() name {
-	return f.fragmentName
+func (f *fragmentSpread) FragmentName() *name {
+	return &f.fragmentName
 }
 
 type inlineFragment struct {
@@ -1331,9 +1331,7 @@ var _ _type = (*namedType)(nil)
 var _ _type = (*listType)(nil)
 var _ _type = (*nonNullType)(nil)
 
-type namedType struct {
-	name
-}
+type namedType name
 
 func (n *namedType) _type() _type {
 	return n
@@ -1384,8 +1382,8 @@ type typeCondition struct {
 	locator
 }
 
-func (t *typeCondition) NamedType() namedType {
-	return t.namedType
+func (t *typeCondition) NamedType() *namedType {
+	return &t.namedType
 }
 
 type unionMemberTypes []*namedType
@@ -1435,8 +1433,8 @@ func (of *objectField) Value() interface{} {
 	return of._value.Value()
 }
 
-func (of *objectField) Name() name {
-	return of.name
+func (of *objectField) Name() *name {
+	return &of.name
 }
 
 type objectValue struct {
@@ -1565,8 +1563,8 @@ func (v *variable) Value() interface{} {
 	return nil
 }
 
-func (v *variable) Name() name {
-	return v.name
+func (v *variable) Name() *name {
+	return &v.name
 }
 
 type defaultValue struct {
