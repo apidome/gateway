@@ -180,6 +180,10 @@ func checkValuesOfCorrectTypeInOperation(
 	}
 }
 
+func assertValueType(v value, t _type) bool {
+	// TODO: Implement
+}
+
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Names
 func validateInputObjectFieldNames(schema, doc *document) {
 	fragmentsPool := getFragmentsPool(doc)
