@@ -181,19 +181,7 @@ func checkValuesOfCorrectTypeInOperation(
 }
 
 func assertValueType(v value, t _type) bool {
-	// TODO: implement
-	switch v.(type) {
-	case *intValue:
-	case *floatValue:
-	case *booleanValue:
-	case *stringValue:
-	case *nullValue:
-	case *enumValue:
-	case *listValue:
-	case *objectValue:
-	}
-
-	return true
+	// TODO: Implement
 }
 
 // http://spec.graphql.org/draft/#sec-Input-Object-Field-Names
@@ -1812,5 +1800,55 @@ func isInputFieldDefined(field objectField, fieldsDefinition inputFieldsDefiniti
 		}
 	}
 
+	return false
+}
+
+func isIntCoercible(v value) bool {
+	if intVal, isInt := v.(*intValue); isInt {
+		if intVal._value <= 2^32 || intVal._value >= -(2^32) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isFloatCoercible(v value) bool {
+	if _, isFloat := v.(*floatValue); isFloat {
+		return true
+	} else if _, isInt := v.(*intValue); isInt {
+		return true
+	}
+
+	return false
+}
+
+func isStringCoercible(v value) bool {
+	_, isString := v.(*stringValue)
+	return isString
+}
+
+func isBooleanCoercible(v value) bool {
+	_, isBool := v.(*booleanValue)
+	return isBool
+}
+
+func isIdCoercible(v value) bool {
+	if _, isString := v.(*stringValue); isString {
+		return true
+	} else if _, isInt := v.(*intValue); isInt {
+		return true
+	}
+
+	return false
+}
+
+func isEnumCoercible(v value) bool {
+	_, isEnum := v.(*enumValue)
+	return isEnum
+}
+
+func isInputObjectCoercible(v value) bool {
+	// TODO: Implement
 	return false
 }
