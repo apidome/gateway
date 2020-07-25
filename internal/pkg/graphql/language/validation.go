@@ -1,5 +1,7 @@
 package language
 
+import "fmt"
+
 // Main validation function
 func validateDocument(schema *document, docRoot *document) {
 
@@ -50,17 +52,18 @@ func validateLoneAnonymousOperation(doc *document) {
 
 //! http://spec.graphql.org/draft/#sec-Single-root-field
 func validateSingleRootField(doc *document, schema *schemaDefinition) {
-	subscriptionOperations := getSubscriptionOperations(doc)
+	subscriptionOperations := getSubscriptionOperationDefinitions(doc)
 
 	for _, sub := range subscriptionOperations {
 		subscriptionType := getRootSubscriptionType(schema)
 		selectionSet := sub.SelectionSet()
 
-		variableValues := make([]value, 0)
+		variableValues := []variable{}
 		groupedFieldSet := collectFields(doc, subscriptionType, selectionSet, variableValues)
 
 		if len(groupedFieldSet) != 1 {
-			panic("validateSingleRootField")
+			panic(fmt.Sprintf("validateSingleRootField: groupFieldSet has more than 1 entry. subscriptionType: {{%v}}, selectionSet: {{%v}}, variableValues: {{%v}}",
+				subscriptionType, selectionSet, variableValues))
 		}
 	}
 }
@@ -142,7 +145,7 @@ func getAnonymousOperationDefinitions(doc *document) []operationDefinition {
 		opDef, isOpDef := def.(*operationDefinition)
 
 		if isOpDef {
-			if opDef.Name == nil {
+			if opDef.Name() == nil {
 				anons = append(anons, *opDef)
 			}
 		}
@@ -151,25 +154,25 @@ func getAnonymousOperationDefinitions(doc *document) []operationDefinition {
 	return anons
 }
 
-func getSubscriptionOperations(doc *document) []operationDefinition {
-	subscriptions := make([]operationDefinition, 0)
+func getSubscriptionOperationDefinitions(doc *document) []operationDefinition {
+	subscriptionOperationDefinitions := make([]operationDefinition, 0)
 
 	for _, def := range doc.Definitions() {
 		opDef, isOpDef := def.(*operationDefinition)
 
 		if isOpDef {
 			if opDef.OperationType() == operationSubscription {
-				subscriptions = append(subscriptions, *opDef)
+				subscriptionOperationDefinitions = append(subscriptionOperationDefinitions, *opDef)
 			}
 		}
 	}
 
-	return subscriptions
+	return subscriptionOperationDefinitions
 }
 
 func getRootSubscriptionType(schema *schemaDefinition) *rootOperationTypeDefinition {
 	rootOperationTypeDefinitions := schema.RootOperationTypeDefinitions()
-	for i, _ := range rootOperationTypeDefinitions {
+	for i := range rootOperationTypeDefinitions {
 		if rootOperationTypeDefinitions[i].OperationType() == operationSubscription {
 			return rootOperationTypeDefinitions[i]
 		}
