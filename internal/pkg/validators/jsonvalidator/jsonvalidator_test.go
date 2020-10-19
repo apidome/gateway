@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/omeryahud/caf/internal/pkg/validators/jsonvalidator"
+	"github.com/apidome/gateway/internal/pkg/validators/jsonvalidator"
 )
 
 //const succeed = "\u2713"

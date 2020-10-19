@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/omeryahud/caf/internal/pkg/jsonwalker"
+	"github.com/apidome/gateway/internal/pkg/jsonwalker"
 	"github.com/pkg/errors"
 )
 

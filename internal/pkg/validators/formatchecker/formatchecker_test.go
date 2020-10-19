@@ -3,7 +3,7 @@ package formatchecker_test
 import (
 	"testing"
 
-	"github.com/omeryahud/caf/internal/pkg/validators/formatchecker"
+	"github.com/apidome/gateway/internal/pkg/validators/formatchecker"
 )
 
 type test struct {
