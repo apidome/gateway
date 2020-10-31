@@ -37,6 +37,8 @@
                 "clientAuth": false,
                 "apis": [
                     {
+                        "type": "REST",
+                        "version": "draft-07",
                         "endpoints": [
                             {
                                 "path": "/api/v1/person/:id",
