@@ -1,17 +1,12 @@
-# caf
-Cloud Application Firewall
+# APIDome Gateway
+A security gateway for cloud web applications.
 
-## Project Structure Source
-https://github.com/golang-standards/project-layout
+# Intoduction
 
+# Getting started
 
-## High Level Design
-### Proxy
-- Listen to requests from client
-- Forwards request as-is to the target
+# Configuration
 
-### REST Engine
-- Validate REST schema (Implement RFC)
-- Check POST/PUT/PATCH/etc (Methods that contain a JSON body)
-- Validate JSON structure (Make sure all required fields exist)
-- Validate the data of each field (RegEx at this point, Validation functions in the future)
+```json
+
+```
