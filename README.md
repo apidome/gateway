@@ -11,8 +11,25 @@ In its current version, the gateway can:
 
 
 # Getting started
+## Container environment
+Download the most updated [docker image]().
 
-# Configuration
+## Bare metal/Virtual Machine
+Once you installed Golang runtime environemt and prepared your [configuration](https://github.com/apidome/gateway/tree/release-0.1#configuration) file, you can execute the gateway.
+In order to run the gateway on a machine, you need to either download the proper executable or clone the repo and execute it on your own.
+
+### Executables
+- [Windows]()
+- [Linux]()
+
+### Clone and Run
+```bash
+    git clone https://github.com/apidome/gateway.git
+    go run <path_to_repo>/cmd/gateway/main.go <path_to_configuration_file>
+```
+
+
+## Configuration
 ### Structure
 
 ```js
