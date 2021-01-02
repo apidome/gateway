@@ -3,7 +3,21 @@ A security gateway for cloud web applications.
 
 # Intoduction
 
+---
+
+### A cross platform API gateway
+At its base, APIDome developed for container environments but can also be installed in a bare metal machines and virtual machines. All it requires is the [Golang runtime environment](https://golang.org/) to be installed on the hosting platform.
+In its current version, the gateway can:
+- Handle SSL or plain text connections
+- Request for client certificates
+- Validate and Filter HTTP requests payloads based on a json schema
+
+
 # Getting started
+
+---
+
+
 
 # Configuration
 ### Structure
@@ -42,11 +56,11 @@ A security gateway for cloud web applications.
                 // A list of APIs that the entity serves.
                 "apis": [
                     {
-                        // Supported API types - REST or GraphQL
+                        // Supported API types - for now supports REST APIs only.
                         "type": "REST",
 
                         // The spec version that the gateway should rely on.
-                        "version": "draft-07",
+                        "version": "<version>",
 
                         // A list of endpoints that the API serves.
                         // (GraphQL APIs should have only one endpoint)
