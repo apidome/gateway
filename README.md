@@ -2,9 +2,6 @@
 A security gateway for cloud web applications.
 
 # Intoduction
-
----
-
 ### A cross platform API gateway
 At its base, APIDome developed for container environments but can also be installed in a bare metal machines and virtual machines. All it requires is the [Golang runtime environment](https://golang.org/) to be installed on the hosting platform.
 In its current version, the gateway can:
@@ -15,14 +12,10 @@ In its current version, the gateway can:
 
 # Getting started
 
----
-
-
-
 # Configuration
 ### Structure
 
-```json
+```js
 {
     // This configuration section determines how the gateway will communicate
     // with the outer world.
