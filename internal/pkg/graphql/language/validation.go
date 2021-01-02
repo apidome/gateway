@@ -1,6 +1,10 @@
 package language
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/pkg/errors"
+)
 
 // Main validation function
 func validateDocument(schema *document, docRoot *document) {
@@ -95,7 +99,15 @@ func validateArgumentUniqueness(doc document) {
 
 //! http://spec.graphql.org/draft/#sec-Fragment-Name-Uniqueness
 func validateFragmentNameUniqueness(doc document) {
+	fragmentsPool := make(map[string]*fragmentDefinition)
 
+	for _, def := range doc.definitions {
+		if fragDef, ok := def.(*fragmentDefinition); ok {
+			fragmentsPool[fragDef.fragmentName.value] = fragDef
+		} else {
+			panic(errors.New("Fragment names must be unique"))
+		}
+	}
 }
 
 //! http://spec.graphql.org/draft/#sec-Fragment-Spread-Type-Existence
