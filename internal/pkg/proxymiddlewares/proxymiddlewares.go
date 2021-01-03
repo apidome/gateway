@@ -1,14 +1,13 @@
 package proxymiddlewares
 
 import (
-	"github.com/Creespye/caf/internal/pkg/httputils"
-	"github.com/Creespye/caf/internal/pkg/validators"
 	"log"
 	"net/http"
 
-	"github.com/Creespye/caf/internal/pkg/proxy"
-
-	"github.com/Creespye/caf/internal/pkg/middleman"
+	"github.com/apidome/gateway/internal/pkg/httputils"
+	"github.com/apidome/gateway/internal/pkg/middleman"
+	"github.com/apidome/gateway/internal/pkg/proxy"
+	"github.com/apidome/gateway/internal/pkg/validators"
 )
 
 // CreateRequest creates a new request as a copy
@@ -66,6 +65,8 @@ func SendResponse() middleman.Middleware {
 			store["targetResponse"].(*http.Response),
 			store["targetResponseBody"].([]byte))
 
+		end()
+
 		return err
 	}
 }
@@ -91,10 +92,15 @@ func PrintTargetResponseBody() middleman.Middleware {
 }
 
 // ValidateRequest is a middleware that handles validation of an HTTP request.
-func ValidateRequest(validator *validators.Validator) middleman.Middleware {
+func ValidateRequest(path, method string, validator validators.Validator) middleman.Middleware {
 	return func(res http.ResponseWriter, req *http.Request,
 		store middleman.Store, end middleman.End) error {
-		//validator.Validate()
+		err := validator.Validate(path, method, store["requestBody"].([]byte))
+		if err != nil {
+			end()
+			return err
+		}
+
 		return nil
 	}
 }

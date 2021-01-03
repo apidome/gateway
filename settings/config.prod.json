@@ -1,0 +1,64 @@
+{
+    "general": {},
+    "out": {
+        "port": "3000",
+        "ssl": true,
+        "certPath": "certs/localhost/localhost.crt",
+        "keyPath": "certs/localhost/localhost.key"
+    },
+    "in": {
+        "targets": [
+            {
+                "host": "rapidapi.com",
+                "port": "443",
+                "ssl": true,
+                "clientAuth": false,
+                "apis": [
+                    {
+                        "type": "REST",
+                        "version": "draft-07",
+                        "endpoints": [
+                            {
+                                "path": "/apidojo/api/yahoo-finance1/details",
+                                "method": "GET",
+                                "schema": "schemas/schema1.json"
+                            }
+                        ],
+                        "validator": {
+                            "monitor": true
+                        }
+                    }
+                ]
+            },
+            {
+                "host": "example.com",
+                "port": "80",
+                "ssl": false,
+                "clientAuth": false,
+                "apis": [
+                    {
+                        "type": "REST",
+                        "version": "draft-07",
+                        "endpoints": [
+                            {
+                                "path": "/api/v1/person/:id",
+                                "method": "PUT",
+                                "schema": "schemas/schema2.json"
+                            },
+                            {
+                                "path": "/api/v1/product",
+                                "method": "POST",
+                                "schema": "schemas/schema2.json"
+                            },
+                            {
+                                "path": "/api/v1/store",
+                                "method": "POST",
+                                "schema": "schemas/schema2.json"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

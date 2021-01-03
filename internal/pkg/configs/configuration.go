@@ -11,27 +11,25 @@ import (
 
 var config *Configuration
 
-/*
-Configuration is a struct that represents a JSON object
-that contains the configuration of our project.
-*/
+// Configuration is a struct that represents a JSON object
+// that contains the configuration of our project.
 type Configuration struct {
-	In               In  `json:"in"`
-	Out              Out `json:"out"`
+	General          General `json:"general"`
+	In               In      `json:"in"`
+	Out              Out     `json:"out"`
 	SettingsFilePath string
 }
 
-/*
-GetConf function gets a pointer to a Configuration struct and populates it
-with configuration from a JSON file.
-*/
+// GetConfiguration function gets a pointer to a Configuration
+// struct and populates it with configuration from a JSON file.
 func GetConfiguration() (*Configuration, error) {
 	// if first time GetConfiguration called
 	if config == nil {
 		args := os.Args
 
 		if len(args) < 2 {
-			log.Panicln("Not enough arguments, probably missing configuration file path.")
+			log.Panicln("Not enough arguments, probably " +
+				"missing configuration file path.")
 		}
 
 		config = &Configuration{
@@ -47,27 +45,40 @@ func GetConfiguration() (*Configuration, error) {
 	return config, nil
 }
 
+// readConf reads configurations from a file and stores it in the
+// received Configuration pointer.
 func readConf(config *Configuration) error {
-	// Open the configuration file.
-	file, err := os.Open(config.SettingsFilePath)
-	if err != nil {
-		return err
-	}
-
-	// When the function is done, close the file.
-	defer file.Close()
-
-	// Read the data from the file.
-	bytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		return err
-	}
+	bytes, err := ioutil.ReadFile(config.SettingsFilePath)
 
 	// Unmarshal the json bytes into the.
 	err = json.Unmarshal(bytes, config)
+	if err != nil {
+		return err
+	}
 
-	// Create settings folder path from setting file path for extracting relative certs path
-	SettingsFolderPath := path.Dir(strings.ReplaceAll(config.SettingsFilePath, "\\", "/")) + "/"
+	// Create settings folder path from setting file path
+	// for extracting relative certs path
+	SettingsFolderPath :=
+		path.Dir(strings.ReplaceAll(config.SettingsFilePath, "\\", "/")) + "/"
+
+	// Read the schema of each endpoint from
+	// file and set it in the schema field.
+	for _, target := range config.In.Targets {
+		for _, api := range target.Apis {
+			for _, endpoint := range api.Endpoints {
+				// Read the data from file.
+				schema, err :=
+					ioutil.ReadFile(SettingsFolderPath + endpoint.Schema)
+
+				if err != nil {
+					return err
+				}
+
+				// Set the actual schema in the endpoint.
+				endpoint.Schema = string(schema)
+			}
+		}
+	}
 
 	config.Out.CertificatePath =
 		SettingsFolderPath + config.Out.CertificatePath

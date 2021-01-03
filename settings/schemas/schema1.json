@@ -1,0 +1,167 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://api.example.com/profile.json#",
+    "type": "object",
+    "default": {
+        "a": 1
+    },
+    "propertyNames": {
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+    },
+    "dependencies": {
+        "age": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[a-zA-Z0-9\\-]+(\\s[a-zA-Z0-9\\-]+)*$"
+                }
+            },
+            "patternProperties": {
+                "^ag": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": true
+        }
+    },
+    "patternProperties": {
+        "^ag": {
+            "type": "integer"
+        }
+    },
+    "additionalProperties": {
+        "type": "string"
+    },
+    "properties": {
+        "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-zA-Z0-9\\-]+(\\s[a-zA-Z0-9\\-]+)*$"
+        },
+        "age": {
+            "type": "integer",
+            "exclusiveMinimum": 18,
+            "exclusiveMaximum": 100,
+            "multipleOf": 0.25
+        },
+        "email": {
+            "type": "string",
+            "maxLength": 128,
+            "format": "email"
+        },
+        "website": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "maxLength": 128,
+            "format": "hostname"
+        },
+        "location": {
+            "type": "object",
+            "minProperties": 2,
+            "maxProperties": 2,
+            "properties": {
+                "country": {
+                    "enum": [
+                        "US",
+                        "CA",
+                        "GB"
+                    ]
+                },
+                "address": {
+                    "type": "string",
+                    "maxLength": 128
+                }
+            },
+            "required": [
+                "country",
+                "address"
+            ]
+        },
+        "available_for_hire": {
+            "type": "boolean"
+        },
+        "interests": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+                "type": "string",
+                "maxLength": 120
+            },
+            "additionalItems": {
+                "type": "string",
+                "maxLength": 2
+            }
+        },
+        "skills": {
+            "type": "array",
+            "uniqueItems": true,
+            "minItems": 2,
+            "maxItems": 2,
+            "contains": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64,
+                        "pattern": "^[a-zA-Z0-9\\-]+(\\s[a-zA-Z0-9\\-]+)*$"
+                    }
+                },
+                "patternProperties": {
+                    "^ag": {
+                        "type": "integer"
+                    }
+                },
+                "additionalProperties": {}
+            },
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 10,
+                        "maxLength": 64
+                    },
+                    "value": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100,
+                        "multipleOf": 0.25
+                    }
+                },
+                "required": [
+                    "name",
+                    "value"
+                ]
+            }
+        }
+    },
+    "required": [
+        "name",
+        "age",
+        "email",
+        "location",
+        "available_for_hire",
+        "interests",
+        "skills"
+    ],
+    "if": {
+        "type": "object"
+    },
+    "then": {
+        "minProperties": 9,
+        "maxProperties": 9
+    },
+    "else": {
+        "minProperties": 8,
+        "maxProperties": 8
+    }
+}
