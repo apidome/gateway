@@ -19,8 +19,8 @@ Once you installed Golang runtime environemt and prepared your [configuration](h
 In order to run the gateway on a machine, you need to either download the proper executable or clone the repo and execute it on your own.
 
 ### Executables
-- [Windows](https://github.com/apidome/gateway/releases/download/0.1/apidome_gateway_0.1_windows.exe)
-- [Linux](https://github.com/apidome/gateway/releases/download/0.1/apidome_gateway_0.1_linux.exe)
+- [Windows](https://github.com/apidome/gateway/releases)
+- [Linux](https://github.com/apidome/gateway/releases)
 
 ### Clone and Run
 ```bash
