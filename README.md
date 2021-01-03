@@ -12,7 +12,7 @@ In its current version, the gateway can:
 
 # Getting started
 ## Container environment
-Download the most updated [docker image]().
+Download the most updated [docker image](https://hub.docker.com/r/apidome/gateway).
 
 ## Bare metal/Virtual Machine
 Once you installed Golang runtime environemt and prepared your [configuration](https://github.com/apidome/gateway/tree/release-0.1#configuration) file, you can execute the gateway.
