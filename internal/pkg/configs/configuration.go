@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
-	"strings"
+	"path/filepath"
+	"fmt"
 )
 
 var config *Configuration
@@ -56,11 +56,6 @@ func readConf(config *Configuration) error {
 		return err
 	}
 
-	// Create settings folder path from setting file path
-	// for extracting relative certs path
-	SettingsFolderPath :=
-		path.Dir(strings.ReplaceAll(config.SettingsFilePath, "\\", "/")) + "/"
-
 	// Read the schema of each endpoint from
 	// file and set it in the schema field.
 	for _, target := range config.In.Targets {
@@ -68,7 +63,7 @@ func readConf(config *Configuration) error {
 			for _, endpoint := range api.Endpoints {
 				// Read the data from file.
 				schema, err :=
-					ioutil.ReadFile(SettingsFolderPath + endpoint.Schema)
+					ioutil.ReadFile(endpoint.Schema)
 
 				if err != nil {
 					return err
@@ -80,10 +75,11 @@ func readConf(config *Configuration) error {
 		}
 	}
 
-	config.Out.CertificatePath =
-		SettingsFolderPath + config.Out.CertificatePath
+	config.Out.CertificatePath =filepath.FromSlash(config.Out.CertificatePath)
 
-	config.Out.KeyPath = SettingsFolderPath + config.Out.KeyPath
+	config.Out.KeyPath = filepath.FromSlash(config.Out.KeyPath)
+
+	fmt.Println(config.Out.CertificatePath, config.Out.KeyPath)
 
 	// Return the error
 	return err
