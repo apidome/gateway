@@ -1,0 +1,1 @@
+go build -o apidome_gateway_windows.exe ..\cmd\gateway\main.go

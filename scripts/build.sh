@@ -1,0 +1,1 @@
+env GOOS=linux go build -o apidome_gateway_linux ../cmd/gateway/main.go
