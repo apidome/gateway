@@ -83,13 +83,84 @@ func validateFieldSelectionMerging(doc document) {
 }
 
 //! http://spec.graphql.org/draft/#sec-Leaf-Field-Selections
-func validateLeafFieldSelections(doc document) {
+func validateLeafFieldSelections(schema, doc document) {
+	errMsg := "Field selections on scalars or enums are never allowed\n" +
+	" because they are the leaf nodes of any GraphQL querys"
 
+	for _, def := range doc.definitions {
+		if execDef, isExecDef := def.(executableDefinition); isExecDef {
+			if execDef.SelectionSet() != nil {
+				if !isLeafSelectionValid(
+					schema,
+					execDef.SelectionSet(),
+					execDef.SelectionSet(),
+					getRootQueryTypeDefinition(&schema),
+					getFragmentsPool(&doc),
+				 ) {
+					panic(errors.New(errMsg))
+				}
+			}
+		}
+	}
+}
+
+// TODO: Add fragment handling
+func isLeafSelectionValid(
+	schema document,
+	rootSelectionSet selectionSet,
+	selectionSet selectionSet,
+	parentType typeDefinition,
+	fragmetsPool map[string]*fragmentDefinition,
+) bool {
+	for _, selection := range selectionSet {
+		// If the selection have no sub selection, it a leaf selection.
+		isLeafSelection := selection.SelectionSet() == nil
+
+		// Get the field definition from the schems.
+		fieldDef := getFieldDefinitionByFieldSelection(
+			parentType,
+			selection,
+			selectionSet,
+			schema,
+			fragmetsPool,
+		)
+
+		// Get the type definition of the selection's return value.
+		selectionType := getTypeDefinitionByType(&schema, fieldDef.Type())
+
+		// If selectionType is a scalar or enum:
+		// 	The subselection set of that selection must be empty
+		// If selectionType is an interface, union, or object
+		// 	The subselection set of that selection must NOT BE empty
+		switch selectionType.(type) {
+		case *scalarTypeDefinition, *enumTypeDefinition:
+			if !isLeafSelection {
+				return false
+			}
+		case *interfaceTypeDefinition, *unionTypeDefinition, *objectTypeDefinition:
+			if isLeafSelection {
+				return false
+			}
+		}
+
+		if !isLeafSelection {
+			if !isLeafSelectionValid(
+				schema,
+				rootSelectionSet,
+				selection.SelectionSet(),
+				fragmentsPool
+			) {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 //! http://spec.graphql.org/draft/#sec-Argument-Names
 func validateArgumentNames(doc document) {
-
+	
 }
 
 //! http://spec.graphql.org/draft/#sec-Argument-Uniqueness
