@@ -221,8 +221,63 @@ func doesFragmentSpreadTypeExist(
 }
 
 //! http://spec.graphql.org/draft/#sec-Fragments-On-Composite-Types
-func validateFragmentsOnCompositeTypes(doc document) {
-	
+func validateFragmentsOnCompositeTypes(schema, doc document) {
+	errMsg := "Fragments can only be declared on unions, interfaces, and objects." +
+	" They are invalid on scalars. They can only be applied on non‐leaf fields." +
+	" This rule applies to both inline and named fragments."
+
+	for _, def := range doc.Definitions() {
+		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
+			if !isFragmentOnCompositeType(
+				schema,
+				exeDef.SelectionSet(),
+				getFragmentsPool(&doc),
+			) {
+				panic(errors.New(errMsg))
+			}
+		}
+	}
+}
+
+func isFragmentOnCompositeType(
+	schema document,
+	selectionSet selectionSet,
+	fragmentsPool map[string]*fragmentDefinition,
+) bool {
+	for _, selection := range selectionSet {
+		nextSelectionSet := *(selection.SelectionSet())
+		switch t := selection.(type) {
+		case *fragmentSpread:
+			fragment := fragmentsPool[t.fragmentName.value]
+			nextSelectionSet = fragment.SelectionSet()
+			fragmentType := fragment.typeCondition.namedType._type()
+			typeDef := getTypeDefinitionByType(&schema, fragmentType)
+			if !isCompositeType(typeDef) {
+				return false
+			}
+		case *inlineFragment:
+			inlineFragType := t.typeCondition.namedType._type()
+			typeDef := getTypeDefinitionByType(&schema, inlineFragType)
+			if !isCompositeType(typeDef) {
+				return false
+			}
+		}
+
+		if !isFragmentOnCompositeType(schema, nextSelectionSet, fragmentsPool) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func isCompositeType(typeDef typeDefinition) bool {
+	switch typeDef.(type) {
+	case *objectTypeDefinition, *interfaceTypeDefinition, *unionTypeDefinition:
+		return true
+	}
+
+	return false
 }
 
 // Helper functions
