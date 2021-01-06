@@ -110,11 +110,16 @@ func isLeafSelectionValid(
 	rootSelectionSet selectionSet,
 	selectionSet selectionSet,
 	parentType typeDefinition,
-	fragmetsPool map[string]*fragmentDefinition,
+	fragmentsPool map[string]*fragmentDefinition,
 ) bool {
 	for _, selection := range selectionSet {
+		nextSelectionSet := *selection.SelectionSet()
+		if fragSpread, isFragSpread := selection.(*fragmentSpread); isFragSpread {
+			nextSelectionSet = fragmentsPool[fragSpread.fragmentName.value].selectionSet
+		}
+
 		// If the selection have no sub selection, it a leaf selection.
-		isLeafSelection := selection.SelectionSet() == nil
+		isLeafSelection := nextSelectionSet == nil
 
 		// Get the field definition from the schems.
 		fieldDef := getFieldDefinitionByFieldSelection(
@@ -122,7 +127,7 @@ func isLeafSelectionValid(
 			selection,
 			selectionSet,
 			schema,
-			fragmetsPool,
+			fragmentsPool,
 		)
 
 		// Get the type definition of the selection's return value.
@@ -147,8 +152,9 @@ func isLeafSelectionValid(
 			if !isLeafSelectionValid(
 				schema,
 				rootSelectionSet,
-				selection.SelectionSet(),
-				fragmentsPool
+				nextSelectionSet,
+				selectionType,
+				fragmentsPool,
 			) {
 				return false
 			}
