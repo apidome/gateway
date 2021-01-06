@@ -72,11 +72,6 @@ func validateSingleRootField(doc *document, schema *schemaDefinition) {
 	}
 }
 
-//! http://spec.graphql.org/draft/#sec-Field-Selections-on-Objects-Interfaces-and-Unions-Types
-func validateFieldSelectionsOnObjectsInterfaceAndUnionsTypes(doc document) {
-
-}
-
 //! http://spec.graphql.org/draft/#sec-Field-Selection-Merging
 func validateFieldSelectionMerging(doc document) {
 
@@ -104,7 +99,6 @@ func validateLeafFieldSelections(schema, doc document) {
 	}
 }
 
-// TODO: Add fragment handling
 func isLeafSelectionValid(
 	schema document,
 	rootSelectionSet selectionSet,
@@ -126,7 +120,7 @@ func isLeafSelectionValid(
 			parentType,
 			selection,
 			selectionSet,
-			schema,
+			&schema,
 			fragmentsPool,
 		)
 
@@ -188,13 +182,47 @@ func validateFragmentNameUniqueness(doc document) {
 }
 
 //! http://spec.graphql.org/draft/#sec-Fragment-Spread-Type-Existence
-func validateFragmentSpreadTypeExistence(doc document) {
+func validateFragmentSpreadTypeExistence(schema, doc document) {
+	for _, def := range doc.Definitions() {
+		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
+			doesFragmentSpreadTypeExist(
+				schema,
+				exeDef.SelectionSet(),
+				getFragmentsPool(&doc),
+			)			
+		}
+	}
+}
 
+func doesFragmentSpreadTypeExist(
+	schema document,
+	selectionSet selectionSet,
+	fragmentsPool map[string]*fragmentDefinition,
+) {
+	for _, selection := range selectionSet {
+		nextSelectionSet := *(selection.SelectionSet())
+		switch t := selection.(type) {
+		case *fragmentSpread:
+			fragment := fragmentsPool[t.fragmentName.value]
+			fragmentType := fragment.typeCondition.namedType._type()
+			getTypeDefinitionByType(&schema, fragmentType)
+			nextSelectionSet = fragment.SelectionSet()
+		case *inlineFragment:
+			inlineFragType := t.typeCondition.namedType._type()
+			getTypeDefinitionByType(&schema, inlineFragType)
+		}
+
+		doesFragmentSpreadTypeExist(
+			schema,
+			nextSelectionSet,
+			fragmentsPool,
+		)
+	}
 }
 
 //! http://spec.graphql.org/draft/#sec-Fragments-On-Composite-Types
 func validateFragmentsOnCompositeTypes(doc document) {
-
+	
 }
 
 // Helper functions
