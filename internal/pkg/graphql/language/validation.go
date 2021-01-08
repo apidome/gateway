@@ -8,11 +8,45 @@ import (
 
 // Main validation function
 func validateDocument(schema *document, docRoot *document) {
+	if docRoot == nil {
+		panic(errors.New("Recieved nil document, validation failed"))
+	}
+
+	if schema == nil {
+		panic(errors.New("Cannot validate a document based on a nil schema"))
+	}
+	validateExecutableDefinitions(docRoot)
+	validateOperationNameUniqueness(docRoot)
+	validateLoneAnonymousOperation(docRoot)
+	validateSingleRootField(docRoot, schema)
+	validateFieldSelectionMerging(docRoot)
+	validateLeafFieldSelections(schema, docRoot)
+	validateArgumentNames(schema, docRoot)
+	validateArgumentUniqueness(schema, docRoot)
+	validateFragmentNameUniqueness(docRoot)
+	validateFragmentSpreadTypeExistence(schema, docRoot)
+	validateFragmentsOnCompositeTypes(schema, docRoot)
+	validateFragmentsMustBeUsed(docRoot)
+	validateFragmentSpreadTargetDefined(docRoot)
+	validateFragmentSpreadsMustNotFormCycles(docRoot)
+	validateFragmentSpreadIsPossible(schema, docRoot)
+	validateValuesOfCorrectType(schema, docRoot)
+	validateInputObjectFieldNames(schema, docRoot)
+	validateInputObjectFieldUniqueness(docRoot)
+	validateInputObjectRequiredFields(schema, docRoot)
+	validateDirectivesAreDefined(schema, docRoot)
+	validateDirectivesAreInValidLocations(schema, docRoot)
+	validateDirectivesAreUniquePerLocation(docRoot)
+	validateVariableUniqueness(docRoot)
+	validateVariableAreInputTypes(schema, docRoot)
+	validateAllVariableUsesDefined(docRoot)
+	validateAllVariablesUsed(docRoot)
+	validateAllVariableUsagesAreAllowed(schema, docRoot)
 
 }
 
 // spec.graphql.org/draft/#sec-Executable-Definitions
-func validateExecutableDefinitions(doc document) {
+func validateExecutableDefinitions(doc *document) {
 	for _, def := range doc.Definitions() {
 		_, isExecDef := def.(executableDefinition)
 
@@ -23,7 +57,7 @@ func validateExecutableDefinitions(doc document) {
 }
 
 // http://spec.graphql.org/draft/#sec-Operation-Name-Uniqueness
-func validateOperationNameUniqueness(doc document) {
+func validateOperationNameUniqueness(doc *document) {
 	names := make(map[string]struct{})
 
 	for _, op := range doc.Definitions() {
@@ -55,7 +89,7 @@ func validateLoneAnonymousOperation(doc *document) {
 }
 
 //! http://spec.graphql.org/draft/#sec-Single-root-field
-func validateSingleRootField(doc *document, schema *schemaDefinition) {
+func validateSingleRootField(schema, doc *document) {
 	subscriptionOperations := getSubscriptionOperationDefinitions(doc)
 
 	for _, sub := range subscriptionOperations {
@@ -73,8 +107,8 @@ func validateSingleRootField(doc *document, schema *schemaDefinition) {
 }
 
 //! http://spec.graphql.org/draft/#sec-Field-Selection-Merging
-func validateFieldSelectionMerging(doc document) {
-	fragmentsPool := getFragmentsPool(&doc)
+func validateFieldSelectionMerging(doc *document) {
+	fragmentsPool := getFragmentsPool(doc)
 	for _, def := range  doc.Definitions() {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
 			checkFieldSelectionMergingInOpDef(opDef.SelectionSet(), fragmentsPool)
@@ -107,7 +141,7 @@ func sameResponseShape(typeA, typeB _type) bool {
 }
 
 //! http://spec.graphql.org/draft/#sec-Leaf-Field-Selections
-func validateLeafFieldSelections(schema, doc document) {
+func validateLeafFieldSelections(schema, doc *document) {
 	errMsg := "Field selections on scalars or enums are never allowed\n" +
 	" because they are the leaf nodes of any GraphQL querys"
 
@@ -118,8 +152,8 @@ func validateLeafFieldSelections(schema, doc document) {
 					schema,
 					execDef.SelectionSet(),
 					execDef.SelectionSet(),
-					getRootQueryTypeDefinition(&schema),
-					getFragmentsPool(&doc),
+					getRootQueryTypeDefinition(schema),
+					getFragmentsPool(doc),
 				 ) {
 					panic(errors.New(errMsg))
 				}
@@ -129,7 +163,7 @@ func validateLeafFieldSelections(schema, doc document) {
 }
 
 func isLeafSelectionValid(
-	schema document,
+	schema *document,
 	rootSelectionSet selectionSet,
 	selectionSet selectionSet,
 	parentType typeDefinition,
@@ -149,12 +183,12 @@ func isLeafSelectionValid(
 			parentType,
 			selection,
 			selectionSet,
-			&schema,
+			schema,
 			fragmentsPool,
 		)
 
 		// Get the type definition of the selection's return value.
-		selectionType := getTypeDefinitionByType(&schema, fieldDef.Type())
+		selectionType := getTypeDefinitionByType(schema, fieldDef.Type())
 
 		// If selectionType is a scalar or enum:
 		// 	The subselection set of that selection must be empty
@@ -188,8 +222,8 @@ func isLeafSelectionValid(
 }
 
 //! http://spec.graphql.org/draft/#sec-Argument-Names
-func validateArgumentNames(schema, doc document) {
-	fragmentsPool := getFragmentsPool(&doc)
+func validateArgumentNames(schema, doc *document) {
+	fragmentsPool := getFragmentsPool(doc)
 
 	for _, def := range doc.Definitions() {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
@@ -204,7 +238,7 @@ func validateArgumentNames(schema, doc document) {
 }
 
 func checkArgumentNamesInOpDef(
-	schema document,
+	schema *document,
 	rootSelection selectionSet,
 	selectionSet selectionSet,
 	fragmentsPool map[string]*fragmentDefinition,
@@ -214,7 +248,7 @@ func checkArgumentNamesInOpDef(
 			for _, dir := range *selection.Directives() {
 				if dir.arguments != nil {
 					for _, arg := range *dir.arguments {
-						getDirectiveArgumentDefinition(&schema, dir, arg)
+						getDirectiveArgumentDefinition(schema, dir, arg)
 					}
 				}
 			}
@@ -224,7 +258,7 @@ func checkArgumentNamesInOpDef(
 		case *field:
 			if s.arguments != nil {
 				for _, arg := range *s.arguments {
-					getFieldArgumentDefinition(&schema, rootSelection, s, arg, fragmentsPool)
+					getFieldArgumentDefinition(schema, rootSelection, s, arg, fragmentsPool)
 				}
 			}
 		case *inlineFragment:
@@ -246,8 +280,8 @@ func checkArgumentNamesInOpDef(
 }
 
 //! http://spec.graphql.org/draft/#sec-Argument-Uniqueness
-func validateArgumentUniqueness(schema, doc document) {
-	fragmentsPool := getFragmentsPool(&doc)
+func validateArgumentUniqueness(schema, doc *document) {
+	fragmentsPool := getFragmentsPool(doc)
 
 	for _, def := range doc.Definitions() {
 		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
@@ -262,7 +296,7 @@ func validateArgumentUniqueness(schema, doc document) {
 }
 
 func checkArgumentUniquenessInOpDef(
-	schema document,
+	schema *document,
 	rootSelection selectionSet,
 	selectionSet selectionSet,
 	fragmentsPool map[string]*fragmentDefinition,
@@ -311,7 +345,7 @@ func checkArgumentUniquenessInOpDef(
 }
 
 //! http://spec.graphql.org/draft/#sec-Fragment-Name-Uniqueness
-func validateFragmentNameUniqueness(doc document) {
+func validateFragmentNameUniqueness(doc *document) {
 	fragmentsPool := make(map[string]*fragmentDefinition)
 
 	for _, def := range doc.definitions {
@@ -324,20 +358,20 @@ func validateFragmentNameUniqueness(doc document) {
 }
 
 //! http://spec.graphql.org/draft/#sec-Fragment-Spread-Type-Existence
-func validateFragmentSpreadTypeExistence(schema, doc document) {
+func validateFragmentSpreadTypeExistence(schema, doc *document) {
 	for _, def := range doc.Definitions() {
 		if exeDef, isExeDef := def.(executableDefinition); isExeDef {
 			doesFragmentSpreadTypeExist(
 				schema,
 				exeDef.SelectionSet(),
-				getFragmentsPool(&doc),
+				getFragmentsPool(doc),
 			)			
 		}
 	}
 }
 
 func doesFragmentSpreadTypeExist(
-	schema document,
+	schema *document,
 	selectionSet selectionSet,
 	fragmentsPool map[string]*fragmentDefinition,
 ) {
@@ -347,11 +381,11 @@ func doesFragmentSpreadTypeExist(
 		case *fragmentSpread:
 			fragment := fragmentsPool[t.fragmentName.value]
 			fragmentType := fragment.typeCondition.namedType._type()
-			getTypeDefinitionByType(&schema, fragmentType)
+			getTypeDefinitionByType(schema, fragmentType)
 			nextSelectionSet = fragment.SelectionSet()
 		case *inlineFragment:
 			inlineFragType := t.typeCondition.namedType._type()
-			getTypeDefinitionByType(&schema, inlineFragType)
+			getTypeDefinitionByType(schema, inlineFragType)
 		}
 
 		doesFragmentSpreadTypeExist(
@@ -363,7 +397,7 @@ func doesFragmentSpreadTypeExist(
 }
 
 //! http://spec.graphql.org/draft/#sec-Fragments-On-Composite-Types
-func validateFragmentsOnCompositeTypes(schema, doc document) {
+func validateFragmentsOnCompositeTypes(schema, doc *document) {
 	errMsg := "Fragments can only be declared on unions, interfaces, and objects." +
 	" They are invalid on scalars. They can only be applied on non‐leaf fields." +
 	" This rule applies to both inline and named fragments."
@@ -373,7 +407,7 @@ func validateFragmentsOnCompositeTypes(schema, doc document) {
 			if !isFragmentOnCompositeType(
 				schema,
 				exeDef.SelectionSet(),
-				getFragmentsPool(&doc),
+				getFragmentsPool(doc),
 			) {
 				panic(errors.New(errMsg))
 			}
@@ -382,7 +416,7 @@ func validateFragmentsOnCompositeTypes(schema, doc document) {
 }
 
 func isFragmentOnCompositeType(
-	schema document,
+	schema *document,
 	selectionSet selectionSet,
 	fragmentsPool map[string]*fragmentDefinition,
 ) bool {
@@ -393,13 +427,13 @@ func isFragmentOnCompositeType(
 			fragment := fragmentsPool[t.fragmentName.value]
 			nextSelectionSet = fragment.SelectionSet()
 			fragmentType := fragment.typeCondition.namedType._type()
-			typeDef := getTypeDefinitionByType(&schema, fragmentType)
+			typeDef := getTypeDefinitionByType(schema, fragmentType)
 			if !isCompositeType(typeDef) {
 				return false
 			}
 		case *inlineFragment:
 			inlineFragType := t.typeCondition.namedType._type()
-			typeDef := getTypeDefinitionByType(&schema, inlineFragType)
+			typeDef := getTypeDefinitionByType(schema, inlineFragType)
 			if !isCompositeType(typeDef) {
 				return false
 			}
@@ -484,7 +518,7 @@ func getSubscriptionOperationDefinitions(doc *document) []operationDefinition {
 	return subscriptionOperationDefinitions
 }
 
-func getRootSubscriptionType(schema *schemaDefinition) *rootOperationTypeDefinition {
+func getRootSubscriptionType(schema *document) *rootOperationTypeDefinition {
 	rootOperationTypeDefinitions := schema.RootOperationTypeDefinitions()
 	for i := range rootOperationTypeDefinitions {
 		if rootOperationTypeDefinitions[i].OperationType() == operationSubscription {
@@ -2341,5 +2375,5 @@ func isEnumCoercible(v value) bool {
 
 func isInputObjectCoercible(v value) bool {
 	// TODO: Implement
-	return false
+	panic("isInputObjectCoercible not implemented")
 }
