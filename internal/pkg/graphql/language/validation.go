@@ -217,8 +217,68 @@ func checkArgumentNamesInOpDef(
 }
 
 //! http://spec.graphql.org/draft/#sec-Argument-Uniqueness
-func validateArgumentUniqueness(doc document) {
+func validateArgumentUniqueness(schema, doc document) {
+	fragmentsPool := getFragmentsPool(&doc)
 
+	for _, def := range doc.Definitions() {
+		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
+			checkArgumentUniquenessInOpDef(
+				schema,
+				opDef.selectionSet,
+				opDef.selectionSet,
+				fragmentsPool,
+			)
+		}
+	}
+}
+
+func checkArgumentUniquenessInOpDef(
+	schema document,
+	rootSelection selectionSet,
+	selectionSet selectionSet,
+	fragmentsPool map[string]*fragmentDefinition,
+) {
+	for _, selection := range selectionSet {
+		if selection.Directives() != nil {
+			for _, dir := range *selection.Directives() {
+				if dir.arguments != nil {
+					argNameDict := make(map[string]interface{})
+
+					for _, arg := range *dir.arguments {
+						if _, isRedundantArgument := argNameDict[arg.name.value]; isRedundantArgument {
+							panic(errors.New("Ambiguous argument name " + arg.name.value))
+						}	
+					}
+				}
+			}
+		}
+
+		switch s := selection.(type) {
+		case *field:
+			if s.arguments != nil {
+				argNameDict := make(map[string]interface{})
+					for _, arg := range *s.arguments {
+					if _, isRedundantArgument := argNameDict[arg.name.value]; isRedundantArgument {
+						panic(errors.New("Ambiguous argument name " + arg.name.value))
+					}	
+				}
+			}
+		case *inlineFragment:
+			checkArgumentNamesInOpDef(
+				schema,
+				rootSelection,
+				s.selectionSet,
+				fragmentsPool,
+			)
+		case *fragmentSpread:
+			checkArgumentNamesInOpDef(
+				schema,
+				rootSelection,
+				fragmentsPool[s.fragmentName.value].selectionSet,
+				fragmentsPool,
+			)
+		}
+	}
 }
 
 //! http://spec.graphql.org/draft/#sec-Fragment-Name-Uniqueness
