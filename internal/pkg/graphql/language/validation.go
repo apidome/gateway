@@ -159,8 +159,61 @@ func isLeafSelectionValid(
 }
 
 //! http://spec.graphql.org/draft/#sec-Argument-Names
-func validateArgumentNames(doc document) {
-	
+func validateArgumentNames(schema, doc document) {
+	fragmentsPool := getFragmentsPool(&doc)
+
+	for _, def := range doc.Definitions() {
+		if opDef, isOpDef := def.(*operationDefinition); isOpDef {
+			checkArgumentNamesInOpDef(
+				schema,
+				opDef.selectionSet,
+				opDef.selectionSet,
+				fragmentsPool,
+			)
+		}
+	}
+}
+
+func checkArgumentNamesInOpDef(
+	schema document,
+	rootSelection selectionSet,
+	selectionSet selectionSet,
+	fragmentsPool map[string]*fragmentDefinition,
+) {
+	for _, selection := range selectionSet {
+		if selection.Directives() != nil {
+			for _, dir := range *selection.Directives() {
+				if dir.arguments != nil {
+					for _, arg := range *dir.arguments {
+						getDirectiveArgumentDefinition(&schema, dir, arg)
+					}
+				}
+			}
+		}
+
+		switch s := selection.(type) {
+		case *field:
+			if s.arguments != nil {
+				for _, arg := range *s.arguments {
+					getFieldArgumentDefinition(&schema, rootSelection, s, arg, fragmentsPool)
+				}
+			}
+		case *inlineFragment:
+			checkArgumentNamesInOpDef(
+				schema,
+				rootSelection,
+				s.selectionSet,
+				fragmentsPool,
+			)
+		case *fragmentSpread:
+			checkArgumentNamesInOpDef(
+				schema,
+				rootSelection,
+				fragmentsPool[s.fragmentName.value].selectionSet,
+				fragmentsPool,
+			)
+		}
+	}
 }
 
 //! http://spec.graphql.org/draft/#sec-Argument-Uniqueness
