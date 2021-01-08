@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/omeryahud/caf/internal/pkg/validators/graphqlvalidator"
+	"github.com/apidome/gateway/internal/pkg/validators/graphqlvalidator"
 
-	"github.com/omeryahud/caf/internal/pkg/configs"
-	"github.com/omeryahud/caf/internal/pkg/middleman"
-	"github.com/omeryahud/caf/internal/pkg/proxymiddlewares"
-	"github.com/omeryahud/caf/internal/pkg/validators"
-	"github.com/omeryahud/caf/internal/pkg/validators/jsonvalidator"
+	"github.com/apidome/gateway/internal/pkg/configs"
+	"github.com/apidome/gateway/internal/pkg/middleman"
+	"github.com/apidome/gateway/internal/pkg/proxymiddlewares"
+	"github.com/apidome/gateway/internal/pkg/validators"
+	"github.com/apidome/gateway/internal/pkg/validators/jsonvalidator"
 	"github.com/pkg/errors"
 )
 

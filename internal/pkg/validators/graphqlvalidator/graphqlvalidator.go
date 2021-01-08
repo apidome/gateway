@@ -3,7 +3,7 @@ package graphqlvalidator
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/omeryahud/caf/internal/pkg/graphql/language"
+	"github.com/apidome/gateway/internal/pkg/graphql/language"
 	"github.com/pkg/errors"
 )
 

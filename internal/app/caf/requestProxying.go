@@ -1,8 +1,8 @@
 package caf
 
 import (
-	"github.com/omeryahud/caf/internal/pkg/middleman"
-	"github.com/omeryahud/caf/internal/pkg/proxy"
+	"github.com/apidome/gateway/internal/pkg/middleman"
+	"github.com/apidome/gateway/internal/pkg/proxy"
 )
 
 // requestProxying assembles all client request middlewares

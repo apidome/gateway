@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/omeryahud/caf/internal/pkg/httputils"
+	"github.com/apidome/gateway/internal/pkg/httputils"
 )
 
 var (

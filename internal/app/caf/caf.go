@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/omeryahud/caf/internal/pkg/configs"
-	"github.com/omeryahud/caf/internal/pkg/middleman"
-	"github.com/omeryahud/caf/internal/pkg/proxy"
+	"github.com/apidome/gateway/internal/pkg/configs"
+	"github.com/apidome/gateway/internal/pkg/middleman"
+	"github.com/apidome/gateway/internal/pkg/proxy"
 )
 
 var config *configs.Configuration

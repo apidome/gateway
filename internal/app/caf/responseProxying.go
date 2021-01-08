@@ -1,9 +1,9 @@
 package caf
 
 import (
-	"github.com/omeryahud/caf/internal/pkg/middleman"
-	"github.com/omeryahud/caf/internal/pkg/proxy"
-	"github.com/omeryahud/caf/internal/pkg/proxymiddlewares"
+	"github.com/apidome/gateway/internal/pkg/middleman"
+	"github.com/apidome/gateway/internal/pkg/proxy"
+	"github.com/apidome/gateway/internal/pkg/proxymiddlewares"
 )
 
 // responseProxying assembles all target response middlewares

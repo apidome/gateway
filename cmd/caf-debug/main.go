@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/omeryahud/caf/internal/pkg/graphql/language"
+	"github.com/apidome/gateway/internal/pkg/graphql/language"
 )
 
 func main() {

@@ -4,10 +4,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/omeryahud/caf/internal/pkg/httputils"
-	"github.com/omeryahud/caf/internal/pkg/middleman"
-	"github.com/omeryahud/caf/internal/pkg/proxy"
-	"github.com/omeryahud/caf/internal/pkg/validators"
+	"github.com/apidome/gateway/internal/pkg/httputils"
+	"github.com/apidome/gateway/internal/pkg/middleman"
+	"github.com/apidome/gateway/internal/pkg/proxy"
+	"github.com/apidome/gateway/internal/pkg/validators"
 )
 
 // CreateRequest creates a new request as a copy
