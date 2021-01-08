@@ -519,10 +519,14 @@ func getSubscriptionOperationDefinitions(doc *document) []operationDefinition {
 }
 
 func getRootSubscriptionType(schema *document) *rootOperationTypeDefinition {
-	rootOperationTypeDefinitions := schema.RootOperationTypeDefinitions()
-	for i := range rootOperationTypeDefinitions {
-		if rootOperationTypeDefinitions[i].OperationType() == operationSubscription {
-			return rootOperationTypeDefinitions[i]
+	for _, def := range schema.Definitions() {
+		if schemaDef, ok := def.(*schemaDefinition); ok {
+			rootOperationTypeDefinitions := schemaDef.RootOperationTypeDefinitions()
+			for i := range rootOperationTypeDefinitions {
+				if rootOperationTypeDefinitions[i].OperationType() == operationSubscription {
+					return rootOperationTypeDefinitions[i]
+				}
+			}
 		}
 	}
 
